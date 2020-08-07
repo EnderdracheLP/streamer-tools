@@ -1,0 +1,11 @@
+{
+    "version": "0.0.0",
+    "uses": [
+        {
+            "id": "beatsaber-hook",
+            "path": "extern/beatsaber-hook",
+            "tree": "so-update",
+            "url": "https://github.com/sc2ad/beatsaber-hook.git"
+        }
+    ]
+}
