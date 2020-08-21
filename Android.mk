@@ -27,10 +27,21 @@ include $(PREBUILT_SHARED_LIBRARY)
 
 # Build the beatsaber-hook shared library, SPECIFICALLY VERSIONED!
 include $(CLEAR_VARS)
-LOCAL_MODULE	        := beatsaber-hook_2019_0_2_1
-LOCAL_SRC_FILES         := ./include/libs/libbeatsaber-hook_2019_0_2_1
+LOCAL_MODULE	        := beatsaber-hook_2019_0_4_3
+LOCAL_CPP_FEATURES := rtti exceptions
+LOCAL_EXPORT_CFLAGS := -DNEED_UNSAFE_CSHARP
+LOCAL_SRC_FILES         := ./include/libs/libbeatsaber-hook_2019_0_4_3.so
 LOCAL_EXPORT_C_INCLUDES := ./extern/beatsaber-hook/shared/
 include $(PREBUILT_SHARED_LIBRARY)
+
+# Disabled since codegen won't load :(
+# Build the codegen library
+# include $(CLEAR_VARS)
+# LOCAL_MODULE	        := codegen
+# LOCAL_SRC_FILES         := ./extern/codegen/libs/libil2cpp_codegen.so
+# LOCAL_EXPORT_C_INCLUDES := ./extern/codegen/include/
+# LOCAL_EXPORT_CFLAGS := -Wno-inaccessible-base
+# include $(PREBUILT_SHARED_LIBRARY)
 
 # If you would like to use more shared libraries (such as custom UI, utils, or more) add them here, following the format above.
 # In addition, ensure that you add them to the shared library build below.
@@ -38,9 +49,10 @@ include $(PREBUILT_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 # Include shared libraries
 LOCAL_SHARED_LIBRARIES += modloader
-LOCAL_SHARED_LIBRARIES += beatsaber-hook_2019_0_2_1
+LOCAL_SHARED_LIBRARIES += beatsaber-hook_2019_0_4_3
+#LOCAL_SHARED_LIBRARIES += codegen
 LOCAL_LDLIBS     := -llog
-LOCAL_CFLAGS     := -I'C:/Program Files/Unity/Hub/Editor/2018.3.14f1/Editor/Data/il2cpp/libil2cpp'
+LOCAL_CFLAGS     := -I'C:/Program Files/Unity/Editor/Data/il2cpp/libil2cpp'
 LOCAL_MODULE     := discord-presence
 LOCAL_CPPFLAGS   := -std=c++2a
 LOCAL_C_INCLUDES := ./include ./src

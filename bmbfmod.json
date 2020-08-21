@@ -3,12 +3,10 @@
     "name": "Discord Presence",
     "author": "TheProff#6700",
     "description": [
-        
-        "Integrates with an application by MadMagic to allow you to see your current position in a song and what song you&#39;re playing in discord while playing beat saber."
-        
+        "Integrates with an application by MadMagic to allow you to see your current position in a song and what song you're playing in discord while playing beat saber."
     ],
     "category": "Gameplay",
-    "gameVersion": "1.6.0",
+    "gameVersion": "1.11.0",
     "version": "0.1.0",
     "platform": "Quest",
     "components": [
@@ -22,9 +20,20 @@
             }
         },
         {
+            "type": "HookModLibrary",
+            "installAction": {
+                "installLibraryFile": "libbeatsaber-hook_2019_0_4_3.so"
+            }
+        },
+        {
             "type": "FileCopyMod",
-            "sourceFileName": "libbeatsaber-hook_2019_0_2_1.so",
-            "targetRootedPathAndFileName": "/sdcard/Android/data/com.beatgames.beatsaber/files/libs/libbeatsaber-hook_2019_0_2_1.so"
+            "sourceFileName": "module.json",
+            "targetRootedPathAndFileName": "/sdcard/OQRPC Modules/beat_saber.json"
+        },
+        {
+            "type": "FileCopyMod",
+            "sourceFileName": "config.json",
+            "targetRootedPathAndFileName": "/sdcard/Android/data/com.beatgames.beatsaber/files/mod_cfgs/discord-presence.json"
         }
     ]
 }

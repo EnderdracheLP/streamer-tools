@@ -1,0 +1,20 @@
+{
+    "standardLevelPresence": {
+        "details": "Playing {mapName} ({mapDifficulty})",
+        "state": "By: {mapAuthor} {paused?}",
+        "displayTimeLeft": true
+    },
+    "missionLevelPresence": {
+        "details": "Playing Campaign",
+        "state": "{paused?}",
+        "displayTimeLeft": true
+    },
+    "tutorialPresence": {
+        "details": "Playing Tutorial",
+        "state": "{paused?}"
+    },
+    "menuPresence": {
+        "details": "In Menu",
+        "state": ""
+    }
+}

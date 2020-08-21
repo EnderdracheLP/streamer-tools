@@ -58,5 +58,11 @@
                 "env": {}
             }
         },
+        {
+            "label": "Start logging",
+            "detail": "Records a log to log.txt using adb logcat",
+            "type": "shell",
+            "command": "./startlogging.bat"
+        }
     ]
 }

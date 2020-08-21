@@ -43,3 +43,9 @@ out/
 [Oo]bjs/
 ndkpath.txt
 *.zip
+
+# Codegen
+extern/codegen/
+
+# Adb Logcat files
+log.txt
