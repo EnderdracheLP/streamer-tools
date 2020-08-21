@@ -35,7 +35,7 @@ public:
     bool playingCampaign = false;
     bool playingTutorial = false;
     bool paused = false;
-    int timeLeft = 0.0;
+    int timeLeft = 0;
 
     PresenceManager(const Logger& logger, const ConfigDocument& config);
 };
