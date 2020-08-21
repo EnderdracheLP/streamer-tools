@@ -47,13 +47,13 @@ std::string PresenceManager::constructResponse() {
     std::string details = escape_json(handlePlaceholders(config[configSection.c_str()]["details"].GetString()));
     std::string state = escape_json(handlePlaceholders(config[configSection.c_str()]["state"].GetString()));
     statusLock.unlock();
-    logger.info("Details: %s. State: %s", details.c_str(), state.c_str());
 
+    std::string result = "{\"details\": \"" + details + "\", \"state\": \"" + state + "\", \"largeImageKey\": \"image\", \"smallImageKey\": \"quest\"";
     if((playingCampaign || playingLevel.has_value()) && !paused) {
-        return "{\"details\": \"" + details + "\", \"state\": \"" + state + "\", \"largeImageKey\": \"image\", \"smallImageKey\": \"quest\", \"remaining\": " + std::to_string(timeLeft) + "}";
-    }   else    {
-        return "{\"details\": \"" + details + "\", \"state\": \"" + state + "\", \"largeImageKey\": \"image\", \"smallImageKey\": \"quest\"}";
-    }
+        result += ", \"remaining\": " + std::to_string(timeLeft);
+    }  
+    result += "}";
+    return result;
 }
 
 // Removes quotes and other disallowed characters from JSON
