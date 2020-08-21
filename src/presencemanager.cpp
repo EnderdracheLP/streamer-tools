@@ -30,6 +30,7 @@ void PresenceManager::threadEntrypoint()    {
 }
 
 // Creates the JSON to send back to MadMagic's application
+// Yes, I know I should be using rapidjson, but it was returning 'null' constantly for some reason
 std::string PresenceManager::constructResponse() {
     statusLock.lock(); // Lock the mutex so that stuff doesn't get overwritten while we're reading from it
     std::string configSection;
