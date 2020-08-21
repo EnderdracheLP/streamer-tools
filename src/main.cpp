@@ -53,7 +53,7 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, Il2CppObject* self) {
     selectedLevel.songAuthor = to_utf8(csstrtostr((Il2CppString*) CRASH_UNLESS(il2cpp_utils::GetPropertyValue(level, "songAuthorName"))));
 }
 
-int currentFrame;
+int currentFrame = -1;
 MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppObject* difficultyBeatmap, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, Il2CppString* g, bool h) {
     getLogger().info("Song Started");
     currentFrame = -1;
