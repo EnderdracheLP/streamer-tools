@@ -12,7 +12,6 @@ public:
     std::string levelAuthor;
     std::string songAuthor;
     std::string selectedDifficulty;
-    float timeLeft = -1.0; // Set by the GameSongController update
 };
 
 class PresenceManager    {
