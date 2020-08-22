@@ -138,6 +138,42 @@ MAKE_HOOK_OFFSETLESS(AudioUpdate, void, Il2CppObject* self) {
     presenceManager->statusLock.unlock();
 }
 
+void saveDefaultConfig()  {
+    getLogger().info("Creating config file . . .");
+    ConfigDocument& config = getConfig().config;
+    auto& alloc = config.GetAllocator();
+    // If the config has already been created, don't overwrite it
+    if(config.HasMember("standardLevelPresence")) {
+        getLogger().info("Config file already exists");
+        return;
+    }
+    config.RemoveAllMembers();
+    config.SetObject();
+    // Create the sections of the config file for each type of presence
+    rapidjson::Value levelPresence(rapidjson::kObjectType);
+    levelPresence.AddMember("details", "Playing {mapName} ({mapDifficulty})", alloc);
+    levelPresence.AddMember("state",  "By: {mapAuthor} {paused?}", alloc);
+    config.AddMember("standardLevelPresence", levelPresence, alloc);
+
+    rapidjson::Value missionPresence(rapidjson::kObjectType);
+    missionPresence.AddMember("details", "Playing Campaign", alloc);
+    missionPresence.AddMember("state",  "{paused?}", alloc);
+    config.AddMember("missionLevelPresence", missionPresence, alloc);
+
+    rapidjson::Value tutorialPresence(rapidjson::kObjectType);
+    tutorialPresence.AddMember("details", "Playing Tutorial", alloc);
+    tutorialPresence.AddMember("state",  "{paused?}", alloc);
+    config.AddMember("tutorialPresence", tutorialPresence, alloc);
+
+    rapidjson::Value menuPresence(rapidjson::kObjectType);
+    menuPresence.AddMember("details", "In Menu", alloc);
+    menuPresence.AddMember("state",  "", alloc);
+    config.AddMember("menuPresence", menuPresence, alloc);
+
+    getConfig().Write();
+    getLogger().info("Config file created");
+}
+
 extern "C" void setup(ModInfo& info) {
     info.id = "discord-presence";
     info.version = "0.1.0";
@@ -148,6 +184,8 @@ extern "C" void setup(ModInfo& info) {
 }
 
 extern "C" void load() {
+    saveDefaultConfig(); // Create the default config file
+
     getLogger().debug("Installing hooks...");
     il2cpp_functions::Init();
     // Install our function hooks
