@@ -1,5 +1,6 @@
+#define RAPIDJSON_HAS_STDSTRING 1 // Enable rapidjson's support for std::string
 #include <thread>
-#include<cmath>
+#include <cmath>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -12,6 +13,8 @@
 #include <iomanip>
 
 #include "presencemanager.hpp"
+
+#include "../extern/beatsaber-hook/shared/rapidjson/include/rapidjson/document.h"
 
 #define ADDRESS "0.0.0.0" // Binding to localhost
 #define PORT 3500
@@ -30,9 +33,7 @@ void PresenceManager::threadEntrypoint()    {
 }
 
 // Creates the JSON to send back to MadMagic's application
-// Yes, I know I should be using rapidjson, but it was returning 'null' constantly for some reason
 std::string PresenceManager::constructResponse() {
-    statusLock.lock(); // Lock the mutex so that stuff doesn't get overwritten while we're reading from it
     std::string configSection;
     if(playingTutorial) {
         configSection = "tutorialPresence";
@@ -44,30 +45,30 @@ std::string PresenceManager::constructResponse() {
         configSection = "menuPresence";
     }
 
-    std::string details = escape_json(handlePlaceholders(config[configSection.c_str()]["details"].GetString()));
-    std::string state = escape_json(handlePlaceholders(config[configSection.c_str()]["state"].GetString()));
+    rapidjson::Document doc;
+    auto& alloc = doc.GetAllocator();
+    doc.SetObject();
+
+    statusLock.lock(); // Lock the mutex so that stuff doesn't get overwritten while we're reading from it
+    std::string details = handlePlaceholders(config[configSection.c_str()]["details"].GetString());
+    doc.AddMember("details", details, alloc);
+
+    std::string state = handlePlaceholders(config[configSection.c_str()]["state"].GetString());
+    doc.AddMember("state", state, alloc);
     statusLock.unlock();
 
-    std::string result = "{\"details\": \"" + details + "\", \"state\": \"" + state + "\", \"largeImageKey\": \"image\", \"smallImageKey\": \"quest\"";
     if((playingCampaign || playingLevel.has_value()) && !paused) {
-        result += ", \"remaining\": " + std::to_string(timeLeft);
-    }  
-    result += "}";
-    return result;
-}
-
-// Removes quotes and other disallowed characters from JSON
-std::string PresenceManager::escape_json(const std::string &s) {
-    std::ostringstream o;
-    for (auto c = s.cbegin(); c != s.cend(); c++) {
-        if (*c == '"' || *c == '\\' || ('\x00' <= *c && *c <= '\x1f')) {
-            o << "\\u"
-              << std::hex << std::setw(4) << std::setfill('0') << (int)*c;
-        } else {
-            o << *c;
-        }
+        doc.AddMember("remaining", timeLeft, alloc);
     }
-    return o.str();
+
+    doc.AddMember("largeImageKey", "image", alloc);
+    doc.AddMember("smallImageKey", "quest", alloc);
+
+    // Convert the document into a string
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+    return buffer.GetString();
 }
 
 // Replaces all of the placeholders in config.json
