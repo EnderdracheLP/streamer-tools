@@ -6,7 +6,7 @@
         "Integrates with an application by MadMagic to allow you to see your current position in a song and what song you're playing in discord while playing beat saber."
     ],
     "category": "Gameplay",
-    "gameVersion": "1.11.0",
+    "gameVersion": "1.11.1",
     "version": "0.1.0",
     "platform": "Quest",
     "components": [
@@ -29,11 +29,6 @@
             "type": "FileCopyMod",
             "sourceFileName": "module.json",
             "targetRootedPathAndFileName": "/sdcard/OQRPC Modules/beat_saber.json"
-        },
-        {
-            "type": "FileCopyMod",
-            "sourceFileName": "config.json",
-            "targetRootedPathAndFileName": "/sdcard/Android/data/com.beatgames.beatsaber/files/mod_cfgs/discord-presence.json"
         }
     ]
 }
