@@ -1,13 +1,11 @@
 {
     "standardLevelPresence": {
         "details": "Playing {mapName} ({mapDifficulty})",
-        "state": "By: {mapAuthor} {paused?}",
-        "displayTimeLeft": true
+        "state": "By: {mapAuthor} {paused?}"
     },
     "missionLevelPresence": {
         "details": "Playing Campaign",
-        "state": "{paused?}",
-        "displayTimeLeft": true
+        "state": "{paused?}"
     },
     "tutorialPresence": {
         "details": "Playing Tutorial",
