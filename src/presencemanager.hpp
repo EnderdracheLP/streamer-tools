@@ -26,7 +26,6 @@ private:
     std::string constructResponse();
     std::string handlePlaceholders(std::string str);
     std::string replaceAll(std::string& str, std::string key, std::string replacement);
-    std::string escape_json(const std::string &s);
 public:
     std::mutex statusLock; // Lock to make sure that stuff doesn't get overwritten while being read by the network thread
 
