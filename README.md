@@ -11,8 +11,8 @@ After following the steps above, you can then install the mod in BMBF (download 
 The mod also has a config file, which you can edit if you wish to change the format of your presence. The default config file is attached for you to edit and then upload to BMBF. Editing the config is not necessary to use the mod.
 
 ## Downloads
-[Mod Download](https://cdn.discordapp.com/attachments/744925380267343922/747832791252861058/discord-presence_v0.1.0.zip)  
-[Config File Download](https://cdn.discordapp.com/attachments/744925380267343922/747832780087361576/discord-presence.json)
+[Mod Download](https://cdn.discordapp.com/attachments/744925380267343922/753498236374745158/discord-presence_v0.1.1.zip)  
+[Config File Download](https://cdn.discordapp.com/attachments/744925380267343922/753498231740170330/discord-presence.json)
 
 ## Credits
 
