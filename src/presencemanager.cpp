@@ -14,7 +14,7 @@
 
 #include "presencemanager.hpp"
 
-#include "../extern/beatsaber-hook/shared/rapidjson/include/rapidjson/document.h"
+#include "beatsaber-hook/shared/config/config-utils.hpp"
 
 #define ADDRESS "0.0.0.0" // Binding to localhost
 #define PORT 3500

@@ -1,12 +1,11 @@
-#include "../include/mod_interface.hpp"
+#include "beatsaber-hook/shared/utils/utils.h"
+#include "beatsaber-hook/shared/utils/logging.hpp"
+#include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+#include "beatsaber-hook/shared/utils/il2cpp-functions.hpp"
+#include "beatsaber-hook/shared/utils/typedefs.h"
+#include "beatsaber-hook/shared/config/config-utils.hpp"
 
-#include "../extern/beatsaber-hook/shared/utils/utils.h"
-#include "../extern/beatsaber-hook/shared/utils/logging.hpp"
-#include "../extern/beatsaber-hook/include/modloader.hpp"
-#include "../extern/beatsaber-hook/shared/utils/il2cpp-utils.hpp"
-#include "../extern/beatsaber-hook/shared/utils/il2cpp-functions.hpp"
-#include "../extern/beatsaber-hook/shared/utils/typedefs.h"
-#include "../extern/beatsaber-hook/shared/config/config-utils.hpp"
+#include "modloader/shared/modloader.hpp"
 
 #include <string>
 #include <optional>
@@ -54,7 +53,7 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, Il2CppObject* self) {
 }
 
 int currentFrame = -1;
-MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppObject* difficultyBeatmap, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, Il2CppString* g, bool h) {
+MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, Il2CppString* g, bool h) {
     getLogger().info("Song Started");
     currentFrame = -1;
     int difficulty = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<int>(difficultyBeatmap, "difficulty"));
@@ -63,7 +62,7 @@ MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppObject* difficul
     presenceManager->statusLock.lock();
     presenceManager->playingLevel.emplace(selectedLevel);
     presenceManager->statusLock.unlock();
-    SongStart(self, difficultyBeatmap, b, c, d, e, f, g, h);
+    SongStart(self, gameMode, difficultyBeatmap, b, c, d, e, f, g, h);
 }
 MAKE_HOOK_OFFSETLESS(SongEnd, void, Il2CppObject* self) {
     getLogger().info("Song Ended");
@@ -176,36 +175,31 @@ void saveDefaultConfig()  {
 
 extern "C" void setup(ModInfo& info) {
     info.id = "discord-presence";
-    info.version = "0.1.0";
+    info.version = "0.1.2";
     modInfo = info;
     getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
     getConfig().Load();
+    saveDefaultConfig(); // Create the default config file
+
     getLogger().info("Completed setup!");
 }
 
 extern "C" void load() {
-    saveDefaultConfig(); // Create the default config file
-
     getLogger().debug("Installing hooks...");
     il2cpp_functions::Init();
+
     // Install our function hooks
     INSTALL_HOOK_OFFSETLESS(RefreshContent, il2cpp_utils::FindMethodUnsafe("", "StandardLevelDetailView", "RefreshContent", 0));
-
-    INSTALL_HOOK_OFFSETLESS(SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 8));
+    INSTALL_HOOK_OFFSETLESS(SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 9));
     INSTALL_HOOK_OFFSETLESS(SongEnd, il2cpp_utils::FindMethodUnsafe("", "StandardLevelGameplayManager", "OnDestroy", 0));
-
     INSTALL_HOOK_OFFSETLESS(CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 7));
     INSTALL_HOOK_OFFSETLESS(CampaignLevelEnd, il2cpp_utils::FindMethodUnsafe("", "MissionLevelGameplayManager", "OnDestroy", 0));
-
     INSTALL_HOOK_OFFSETLESS(TutorialStart, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "Awake", 0));
     INSTALL_HOOK_OFFSETLESS(TutorialEnd, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "OnDestroy", 0));
-
     INSTALL_HOOK_OFFSETLESS(GamePause, il2cpp_utils::FindMethodUnsafe("", "PauseController", "Pause", 0));
     INSTALL_HOOK_OFFSETLESS(GameResume, il2cpp_utils::FindMethodUnsafe("", "PauseController", "HandlePauseMenuManagerDidPressContinueButton", 0));
-
     INSTALL_HOOK_OFFSETLESS(AudioUpdate, il2cpp_utils::FindMethodUnsafe("", "AudioTimeSyncController", "Update", 0));
 
     getLogger().debug("Installed all hooks!");
-
     presenceManager = new PresenceManager(getLogger(), getConfig().config);
 }
