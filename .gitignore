@@ -49,3 +49,8 @@ extern/codegen/
 
 # Adb Logcat files
 log.txt
+
+# QPM Stuffs
+qpm.shared.json
+extern/
+Android.mk.backup
