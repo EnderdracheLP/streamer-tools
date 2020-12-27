@@ -14,6 +14,11 @@ public:
     std::string selectedDifficulty;
 };
 
+class MultiplayerLobbyInfo {
+public:
+    int numberOfPlayers;
+};
+
 class PresenceManager    {
 private:
     const Logger& logger;
@@ -33,6 +38,8 @@ public:
     bool playingCampaign = false;
     bool playingTutorial = false;
     bool paused = false;
+    std::optional<MultiplayerLobbyInfo> multiplayerLobby = std::nullopt;
+    
     int timeLeft = 0;
 
     PresenceManager(const Logger& logger, const ConfigDocument& config);

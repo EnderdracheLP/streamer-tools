@@ -40,10 +40,17 @@ std::string PresenceManager::constructResponse() {
     }   else if(playingCampaign) {
         configSection = "missionLevelPresence";
     }   else if(playingLevel.has_value())   {
-        configSection = "standardLevelPresence";
+        if(multiplayerLobby == std::nullopt) {
+            configSection = "standardLevelPresence";
+        }   else    {
+            configSection = "multiplayerLevelPresence";
+        }
+    }   else if(multiplayerLobby != std::nullopt) {
+        configSection = "multiplayerLobbyPresence";
     }   else    {
         configSection = "menuPresence";
     }
+    logger.info("Using " + configSection + " config section.");
 
     rapidjson::Document doc;
     auto& alloc = doc.GetAllocator();
@@ -73,21 +80,31 @@ std::string PresenceManager::constructResponse() {
 
 // Replaces all of the placeholders in config.json
 std::string PresenceManager::handlePlaceholders(std::string str) {
-    replaceAll(str, "{mapName}", playingLevel->name);
-    // Use the Song author instead of the level author for levels that don't have one
-    if(playingLevel->levelAuthor == "") {
-        replaceAll(str, "{mapAuthor}", playingLevel->songAuthor);
-    }   else    {
-        replaceAll(str, "{mapAuthor}", playingLevel->levelAuthor);
+    // If we're playing a level, replace the level placeholders
+    if(playingLevel.has_value()) {
+        replaceAll(str, "{mapName}", playingLevel->name);
+        // Use the Song author instead of the level author for levels that don't have one
+        if(playingLevel->levelAuthor == "") {
+            replaceAll(str, "{mapAuthor}", playingLevel->songAuthor);
+        }   else    {
+            replaceAll(str, "{mapAuthor}", playingLevel->levelAuthor);
+        }
+        
+        replaceAll(str, "{songAuthor}", playingLevel->songAuthor);
+        replaceAll(str, "{mapDifficulty}", playingLevel->selectedDifficulty);
     }
-    
-    replaceAll(str, "{songAuthor}", playingLevel->songAuthor);
+
+    // If we're in a lobby, when can emplace additional info
+    if(multiplayerLobby.has_value()) {
+        replaceAll(str, "{numPlayers}", std::to_string(multiplayerLobby->numberOfPlayers));
+    }
+
     if(paused)  {
         replaceAll(str, "{paused?}", "(Paused)");
     }   else    {
         replaceAll(str, "{paused?}", "");
     }
-    replaceAll(str, "{mapDifficulty}", playingLevel->selectedDifficulty);
+    
 
     return str;
 }

@@ -3,6 +3,10 @@
         "details": "Playing {mapName} ({mapDifficulty})",
         "state": "By: {mapAuthor} {paused?}"
     },
+    "multiplayerLevelPresence": {
+        "details": "Playing multiplayer with {numPlayers} people.",
+        "state": "{mapName} - {mapDifficulty}"
+    },
     "missionLevelPresence": {
         "details": "Playing Campaign",
         "state": "{paused?}"
@@ -10,6 +14,10 @@
     "tutorialPresence": {
         "details": "Playing Tutorial",
         "state": "{paused?}"
+    },
+    "multiplayerLobbyPresence": {
+        "details": "Multiplayer - In Lobby",
+        "state": "with {numPlayers} people"
     },
     "menuPresence": {
         "details": "In Menu",

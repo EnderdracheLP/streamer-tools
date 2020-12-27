@@ -64,8 +64,52 @@ MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode
     presenceManager->statusLock.unlock();
     SongStart(self, gameMode, difficultyBeatmap, b, c, d, e, f, g, h);
 }
+
+// Multiplayer song starting is handled differently
+MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* previewBeatmapLevel, int beatmapDifficulty, Il2CppObject* a, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, bool g) {
+    getLogger().info("Multiplayer Song Started");
+    selectedLevel.selectedDifficulty = difficultyToString(beatmapDifficulty);
+    presenceManager->statusLock.lock();
+    presenceManager->playingLevel.emplace(selectedLevel);
+    presenceManager->statusLock.unlock();
+
+    MultiplayerSongStart(self, gameMode, previewBeatmapLevel, beatmapDifficulty, a, b, c, d, e, f, g);
+}
+
+MAKE_HOOK_OFFSETLESS(MultiplayerJoinLobby, void, Il2CppObject* self)    {
+    MultiplayerJoinLobby(self);
+
+    getLogger().info("Joined multiplayer lobby");
+    Il2CppObject* playersManager = CRASH_UNLESS(il2cpp_utils::GetFieldValue(self, "_playersManager"));
+    Il2CppObject* activePlayers = CRASH_UNLESS(il2cpp_utils::GetFieldValue(playersManager, "_allActivePlayers"));
+    int numActivePlayers = CRASH_UNLESS(il2cpp_utils::GetFieldValue<int>(activePlayers, "_size"));
+
+    // Set the number of players in this lobby
+    MultiplayerLobbyInfo lobbyInfo;
+    lobbyInfo.numberOfPlayers = numActivePlayers;
+    presenceManager->statusLock.lock();
+    presenceManager->multiplayerLobby.emplace(lobbyInfo);
+    presenceManager->statusLock.unlock();
+}
+
+// Reset the lobby back to null when we leave back to the menu
+MAKE_HOOK_OFFSETLESS(MultiplayerLeaveLobby, void, Il2CppObject* self) {
+    presenceManager->statusLock.lock();
+    presenceManager->multiplayerLobby = std::nullopt;
+    presenceManager->statusLock.unlock();
+}
+
 MAKE_HOOK_OFFSETLESS(SongEnd, void, Il2CppObject* self) {
     getLogger().info("Song Ended");
+    presenceManager->statusLock.lock();
+    presenceManager->playingLevel = std::nullopt; // Reset the currently playing song to None
+    presenceManager->paused = false; // If we are pasued, unpause us, since we are returning to the menu
+    presenceManager->statusLock.unlock();
+    SongEnd(self);
+}
+
+MAKE_HOOK_OFFSETLESS(MultiplayerSongEnd, void, Il2CppObject* self) {
+    getLogger().info("Multiplayer Song Ended");
     presenceManager->statusLock.lock();
     presenceManager->playingLevel = std::nullopt; // Reset the currently playing song to None
     presenceManager->paused = false; // If we are pasued, unpause us, since we are returning to the menu
@@ -142,7 +186,7 @@ void saveDefaultConfig()  {
     ConfigDocument& config = getConfig().config;
     auto& alloc = config.GetAllocator();
     // If the config has already been created, don't overwrite it
-    if(config.HasMember("standardLevelPresence")) {
+    if(config.HasMember("multiplayerLevelPresence")) {
         getLogger().info("Config file already exists");
         return;
     }
@@ -154,6 +198,11 @@ void saveDefaultConfig()  {
     levelPresence.AddMember("state",  "By: {mapAuthor} {paused?}", alloc);
     config.AddMember("standardLevelPresence", levelPresence, alloc);
 
+    rapidjson::Value multiLevelPresence(rapidjson::kObjectType);
+    multiLevelPresence.AddMember("details", "Playing multiplayer with {numPlayers} others.", alloc);
+    multiLevelPresence.AddMember("state",  "{mapName} - {mapDifficulty} {paused?}", alloc);
+    config.AddMember("multiplayerLevelPresence", multiLevelPresence, alloc);
+
     rapidjson::Value missionPresence(rapidjson::kObjectType);
     missionPresence.AddMember("details", "Playing Campaign", alloc);
     missionPresence.AddMember("state",  "{paused?}", alloc);
@@ -163,6 +212,11 @@ void saveDefaultConfig()  {
     tutorialPresence.AddMember("details", "Playing Tutorial", alloc);
     tutorialPresence.AddMember("state",  "{paused?}", alloc);
     config.AddMember("tutorialPresence", tutorialPresence, alloc);
+
+    rapidjson::Value multiLobbyPresence(rapidjson::kObjectType);
+    multiLobbyPresence.AddMember("details", "Multiplayer - In Lobby", alloc);
+    multiLobbyPresence.AddMember("state",  "with {numPlayers} others", alloc);
+    config.AddMember("multiplayerLobbyPresence", multiLobbyPresence, alloc);
 
     rapidjson::Value menuPresence(rapidjson::kObjectType);
     menuPresence.AddMember("details", "In Menu", alloc);
@@ -199,6 +253,10 @@ extern "C" void load() {
     INSTALL_HOOK_OFFSETLESS(GamePause, il2cpp_utils::FindMethodUnsafe("", "PauseController", "Pause", 0));
     INSTALL_HOOK_OFFSETLESS(GameResume, il2cpp_utils::FindMethodUnsafe("", "PauseController", "HandlePauseMenuManagerDidPressContinueButton", 0));
     INSTALL_HOOK_OFFSETLESS(AudioUpdate, il2cpp_utils::FindMethodUnsafe("", "AudioTimeSyncController", "Update", 0));
+    INSTALL_HOOK_OFFSETLESS(MultiplayerSongStart, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLevelScenesTransitionSetupDataSO", "Init", 10));
+    INSTALL_HOOK_OFFSETLESS(MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "MultiplayerController", "Start", 0));
+    INSTALL_HOOK_OFFSETLESS(MultiplayerSongEnd, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLocalActivePlayerGameplayManager", "OnDisable", 0));
+    INSTALL_HOOK_OFFSETLESS(MultiplayerLeaveLobby, il2cpp_utils::FindMethodUnsafe("", "MultiplayerController", "OnDestroy", 0));
 
     getLogger().debug("Installed all hooks!");
     presenceManager = new PresenceManager(getLogger(), getConfig().config);
