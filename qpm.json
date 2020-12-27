@@ -11,7 +11,7 @@
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "*",
+      "versionRange": "0.8.4",
       "additionalData": {
         "extraFiles": [
           "src/inline-hook"
@@ -25,6 +25,11 @@
     },
     {
       "id": "libil2cpp",
+      "versionRange": "*",
+      "additionalData": {}
+    },
+    {
+      "id": "codegen",
       "versionRange": "*",
       "additionalData": {}
     }
