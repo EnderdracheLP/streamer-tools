@@ -15,10 +15,10 @@
     {
       "type": "HookMod",
       "installAction": {
-        "installLibraryFile": "libdiscord-presence_0_1_3.so"
+        "installLibraryFile": "libdiscord-presence.so"
       },
       "uninstallAction": {
-        "removeLibraryFile": "libdiscord-presence_0_1_3.so"
+        "removeLibraryFile": "libdiscord-presence.so"
       }
     },
     {
