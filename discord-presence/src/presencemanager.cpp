@@ -15,6 +15,7 @@
 #include "presencemanager.hpp"
 
 #include "beatsaber-hook/shared/config/config-utils.hpp"
+#include "GlobalNamespace/StandardLevelDetailView.hpp"
 
 #define ADDRESS "0.0.0.0" // Binding to localhost
 #define PORT 3500

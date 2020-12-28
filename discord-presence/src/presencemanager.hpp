@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../extern/beatsaber-hook/shared/utils/logging.hpp"
-#include "../extern/beatsaber-hook/shared/config/config-utils.hpp"
+#include "beatsaber-hook/shared/utils/logging.hpp"
+#include "beatsaber-hook/shared/config/config-utils.hpp"
 #include <thread>
 #include <optional>
 #include <mutex>
