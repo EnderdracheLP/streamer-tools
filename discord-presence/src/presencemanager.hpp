@@ -38,6 +38,7 @@ public:
     std::optional<LevelInfo> playingLevel = std::nullopt;
     bool playingCampaign = false;
     bool playingTutorial = false;
+    bool isPractice = false;
     bool paused = false;
     std::optional<MultiplayerLobbyInfo> multiplayerLobby = std::nullopt;
     

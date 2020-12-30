@@ -3,6 +3,10 @@
         "details": "Playing {mapName} ({mapDifficulty})",
         "state": "By: {mapAuthor} {paused?}"
     },
+    "practicePresence": {
+        "details": "Practising {mapName} ({mapDifficulty})",
+        "state": "By: {mapAuthor} {paused?}"
+    },
     "multiplayerLevelPresence": {
         "details": "Playing multiplayer: ({numPlayers}/{maxPlayers})",
         "state": "{mapName} - {mapDifficulty} {paused?}"

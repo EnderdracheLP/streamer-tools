@@ -13,6 +13,7 @@
 #include "GlobalNamespace/MultiplayerPlayersManager.hpp"
 #include "GlobalNamespace/MultiplayerSessionManager.hpp"
 #include "GlobalNamespace/GameServerLobbyFlowCoordinator.hpp"
+#include "GlobalNamespace/PracticeSettings.hpp"
 using namespace GlobalNamespace;
 
 #include "modloader/shared/modloader.hpp"
@@ -63,16 +64,22 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, Il2CppObject* self) {
 }
 
 int currentFrame = -1;
-MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, Il2CppString* g, bool h) {
+MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, PracticeSettings* practiceSettings, Il2CppString* g, bool h) {
     getLogger().info("Song Started");
     currentFrame = -1;
     int difficulty = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<int>(difficultyBeatmap, "difficulty"));
     selectedLevel.selectedDifficulty = difficultyToString(difficulty);
+
     // Set the currently playing level to the selected one, since we are in a song
     presenceManager->statusLock.lock();
     presenceManager->playingLevel.emplace(selectedLevel);
+    presenceManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode
     presenceManager->statusLock.unlock();
-    SongStart(self, gameMode, difficultyBeatmap, b, c, d, e, f, g, h);
+
+    if(presenceManager->isPractice) {
+        getLogger().info("Practice mode is enabled!");
+    }
+    SongStart(self, gameMode, difficultyBeatmap, b, c, d, e, practiceSettings, g, h);
 }
 
 // Multiplayer song starting is handled differently
@@ -82,6 +89,7 @@ MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppStrin
     presenceManager->statusLock.lock();
     presenceManager->playingLevel.emplace(selectedLevel);
     presenceManager->statusLock.unlock();
+
 
     MultiplayerSongStart(self, gameMode, previewBeatmapLevel, beatmapDifficulty, a, b, c, d, e, f, g);
 }
@@ -236,6 +244,11 @@ void saveDefaultConfig()  {
     levelPresence.AddMember("details", "Playing {mapName} ({mapDifficulty})", alloc);
     levelPresence.AddMember("state",  "By: {mapAuthor} {paused?}", alloc);
     config.AddMember("standardLevelPresence", levelPresence, alloc);
+
+    rapidjson::Value practicePresence(rapidjson::kObjectType);
+    practicePresence.AddMember("details", "Practising {mapName} ({mapDifficulty})", alloc);
+    practicePresence.AddMember("state",  "By: {mapAuthor} {paused?}", alloc);
+    config.AddMember("practicePresence", practicePresence, alloc);
 
     rapidjson::Value multiLevelPresence(rapidjson::kObjectType);
     multiLevelPresence.AddMember("details", "Playing multiplayer: ({numPlayers}/{maxPlayers})", alloc);

@@ -42,7 +42,12 @@ std::string PresenceManager::constructResponse() {
         configSection = "missionLevelPresence";
     }   else if(playingLevel.has_value())   {
         if(multiplayerLobby == std::nullopt) {
-            configSection = "standardLevelPresence";
+            // Choose either the practice or standard presence
+            if(isPractice) {
+                configSection = "practicePresence";
+            }   else    {
+                configSection = "standardLevelPresence";
+            }
         }   else    {
             configSection = "multiplayerLevelPresence";
         }
