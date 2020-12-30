@@ -4,7 +4,7 @@
         "state": "By: {mapAuthor} {paused?}"
     },
     "multiplayerLevelPresence": {
-        "details": "Playing multiplayer with {numPlayers} people.",
+        "details": "Playing multiplayer with {numOthers} others.",
         "state": "{mapName} - {mapDifficulty}"
     },
     "missionLevelPresence": {
@@ -17,7 +17,7 @@
     },
     "multiplayerLobbyPresence": {
         "details": "Multiplayer - In Lobby",
-        "state": "with {numPlayers} people"
+        "state": "with {numOthers} others"
     },
     "menuPresence": {
         "details": "In Menu",
