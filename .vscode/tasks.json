@@ -28,7 +28,8 @@
                 "isDefault": true
             },
             "options": {
-                "env": {}
+                "env": {},
+                "cwd": "./discord-presence/"
             }
         },
         {
@@ -41,7 +42,8 @@
             },
             "group": "build",
             "options": {
-                "env": {}
+                "env": {},
+                "cwd": "./discord-presence/"
             }
         },
         {
@@ -55,14 +57,18 @@
             "args": [],
             "group": "build",
             "options": {
-                "env": {}
+                "env": {},
+                "cwd": "./discord-presence/"
             }
         },
         {
             "label": "Start logging",
             "detail": "Records a log to log.txt using adb logcat",
             "type": "shell",
-            "command": "./startlogging.bat"
+            "command": "./startlogging.bat",
+            "options": {
+                "cwd": "./discord-presence/"
+            }
         }
     ]
 }
