@@ -5,6 +5,16 @@
 #include "beatsaber-hook/shared/utils/typedefs.h"
 #include "beatsaber-hook/shared/config/config-utils.hpp"
 
+#include "UnityEngine/Resources.hpp"
+
+#include "System/Action_1.hpp"
+
+#include "GlobalNamespace/IConnectedPlayer.hpp"
+#include "GlobalNamespace/MultiplayerPlayersManager.hpp"
+#include "GlobalNamespace/MultiplayerSessionManager.hpp"
+#include "GlobalNamespace/GameServerLobbyFlowCoordinator.hpp"
+using namespace GlobalNamespace;
+
 #include "modloader/shared/modloader.hpp"
 
 #include <string>
@@ -76,27 +86,56 @@ MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppStrin
     MultiplayerSongStart(self, gameMode, previewBeatmapLevel, beatmapDifficulty, a, b, c, d, e, f, g);
 }
 
-MAKE_HOOK_OFFSETLESS(MultiplayerJoinLobby, void, Il2CppObject* self)    {
-    MultiplayerJoinLobby(self);
-
-    getLogger().info("Joined multiplayer lobby");
-    Il2CppObject* playersManager = CRASH_UNLESS(il2cpp_utils::GetFieldValue(self, "_playersManager"));
-    Il2CppObject* activePlayers = CRASH_UNLESS(il2cpp_utils::GetFieldValue(playersManager, "_allActivePlayers"));
-    int numActivePlayers = CRASH_UNLESS(il2cpp_utils::GetFieldValue<int>(activePlayers, "_size"));
-
-    // Set the number of players in this lobby
-    MultiplayerLobbyInfo lobbyInfo;
-    lobbyInfo.numberOfPlayers = numActivePlayers;
+void onPlayerJoin() {
     presenceManager->statusLock.lock();
-    presenceManager->multiplayerLobby.emplace(lobbyInfo);
+    presenceManager->multiplayerLobby->maxPlayers++;
+    presenceManager->statusLock.unlock();
+}
+
+void onPlayerLeave() {
+    presenceManager->statusLock.lock();
+    presenceManager->multiplayerLobby->maxPlayers--;
     presenceManager->statusLock.unlock();
 }
 
 // Reset the lobby back to null when we leave back to the menu
-MAKE_HOOK_OFFSETLESS(MultiplayerLeaveLobby, void, Il2CppObject* self) {
+void onLobbyDisconnect() {
+    getLogger().info("Left Multiplayer lobby");
     presenceManager->statusLock.lock();
     presenceManager->multiplayerLobby = std::nullopt;
     presenceManager->statusLock.unlock();
+}
+
+MAKE_HOOK_OFFSETLESS(MultiplayerJoinLobby, void, GameServerLobbyFlowCoordinator* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)    {
+    getLogger().info("Joined multiplayer lobby");
+    IMultiplayerSessionManager* sessionManager = self->multiplayerSessionManager;
+
+    int maxPlayers = sessionManager->get_maxPlayerCount();
+    int numActivePlayers = sessionManager->get_connectedPlayerCount();
+
+    // Register player join and leave events
+    sessionManager->add_playerDisconnectedEvent(
+        il2cpp_utils::MakeDelegate<System::Action_1<IConnectedPlayer*>*>(classof(System::Action_1<IConnectedPlayer*>*), static_cast<Il2CppObject*>(nullptr), onPlayerLeave)
+    );
+
+    sessionManager->add_playerConnectedEvent(
+        il2cpp_utils::MakeDelegate<System::Action_1<IConnectedPlayer*>*>(classof(System::Action_1<IConnectedPlayer*>*), static_cast<Il2CppObject*>(nullptr), onPlayerJoin)
+    );
+
+    // Register disconnect from lobby event
+    sessionManager->add_disconnectedEvent(
+        il2cpp_utils::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason>*>(classof(System::Action_1<GlobalNamespace::DisconnectedReason>*), static_cast<Il2CppObject*>(nullptr), onLobbyDisconnect)
+    );
+
+    // Set the number of players in this lobby
+    MultiplayerLobbyInfo lobbyInfo;
+    lobbyInfo.numberOfPlayers = numActivePlayers + 1;
+    lobbyInfo.maxPlayers = maxPlayers;
+    presenceManager->statusLock.lock();
+    presenceManager->multiplayerLobby.emplace(lobbyInfo);
+    presenceManager->statusLock.unlock();
+
+    MultiplayerJoinLobby(self, firstActivation, addedToHierarchy, screenSystemEnabling);
 }
 
 MAKE_HOOK_OFFSETLESS(SongEnd, void, Il2CppObject* self) {
@@ -199,7 +238,7 @@ void saveDefaultConfig()  {
     config.AddMember("standardLevelPresence", levelPresence, alloc);
 
     rapidjson::Value multiLevelPresence(rapidjson::kObjectType);
-    multiLevelPresence.AddMember("details", "Playing multiplayer with {numPlayers} others.", alloc);
+    multiLevelPresence.AddMember("details", "Playing multiplayer: ({numPlayers}/{maxPlayers})", alloc);
     multiLevelPresence.AddMember("state",  "{mapName} - {mapDifficulty} {paused?}", alloc);
     config.AddMember("multiplayerLevelPresence", multiLevelPresence, alloc);
 
@@ -215,7 +254,7 @@ void saveDefaultConfig()  {
 
     rapidjson::Value multiLobbyPresence(rapidjson::kObjectType);
     multiLobbyPresence.AddMember("details", "Multiplayer - In Lobby", alloc);
-    multiLobbyPresence.AddMember("state",  "with {numPlayers} others", alloc);
+    multiLobbyPresence.AddMember("state",  "with ({numPlayers}/{maxPlayers}) players", alloc);
     config.AddMember("multiplayerLobbyPresence", multiLobbyPresence, alloc);
 
     rapidjson::Value menuPresence(rapidjson::kObjectType);
@@ -254,9 +293,8 @@ extern "C" void load() {
     INSTALL_HOOK_OFFSETLESS(GameResume, il2cpp_utils::FindMethodUnsafe("", "PauseController", "HandlePauseMenuManagerDidPressContinueButton", 0));
     INSTALL_HOOK_OFFSETLESS(AudioUpdate, il2cpp_utils::FindMethodUnsafe("", "AudioTimeSyncController", "Update", 0));
     INSTALL_HOOK_OFFSETLESS(MultiplayerSongStart, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLevelScenesTransitionSetupDataSO", "Init", 10));
-    INSTALL_HOOK_OFFSETLESS(MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "MultiplayerController", "Start", 0));
+    INSTALL_HOOK_OFFSETLESS(MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "GameServerLobbyFlowCoordinator", "DidActivate", 3));
     INSTALL_HOOK_OFFSETLESS(MultiplayerSongEnd, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLocalActivePlayerGameplayManager", "OnDisable", 0));
-    INSTALL_HOOK_OFFSETLESS(MultiplayerLeaveLobby, il2cpp_utils::FindMethodUnsafe("", "MultiplayerController", "OnDestroy", 0));
 
     getLogger().debug("Installed all hooks!");
     presenceManager = new PresenceManager(getLogger(), getConfig().config);

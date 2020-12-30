@@ -17,6 +17,7 @@ public:
 class MultiplayerLobbyInfo {
 public:
     int numberOfPlayers;
+    int maxPlayers;
 };
 
 class PresenceManager    {

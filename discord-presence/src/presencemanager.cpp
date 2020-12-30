@@ -98,6 +98,8 @@ std::string PresenceManager::handlePlaceholders(std::string str) {
     // If we're in a lobby, when can emplace additional info
     if(multiplayerLobby.has_value()) {
         replaceAll(str, "{numPlayers}", std::to_string(multiplayerLobby->numberOfPlayers));
+        replaceAll(str, "{numOthers}", std::to_string(multiplayerLobby->numberOfPlayers - 1)); // Subtract 1 for the number of others
+        replaceAll(str, "{maxPlayers}", std::to_string(multiplayerLobby->maxPlayers));
     }
 
     if(paused)  {
