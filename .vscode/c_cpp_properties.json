@@ -3,7 +3,7 @@
     {
       "defines": [
         "MOD_ID=\"discord-presence\"",
-        "VERSION=\"0.1.3\"",
+        "VERSION=\"0.2.0\"",
         "__GNUC__",
         "__aarch64__",
         "ID=\"discord-presence\""
