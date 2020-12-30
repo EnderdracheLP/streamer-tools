@@ -10,7 +10,7 @@
       ],
       "includePath": [
         "${workspaceFolder}/**",
-        "C:/Program Files/Unity/Editor/Data/il2cpp/libil2cpp",
+        "${workspaceFolder}/extern/libil2cpp/il2cpp/libil2cpp",
         "C:/ndk/android-ndk-r21d/**",
         "${workspaceFolder}/shared",
         "${workspaceFolder}/extern"
