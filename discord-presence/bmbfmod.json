@@ -24,7 +24,7 @@
     {
       "type": "FileCopyMod",
       "sourceFileName": "module.json",
-      "targetRootedPathAndFileName": "/sdcard/OQRPC Modules/beat_saber.json"
+      "targetRootedPathAndFileName": "/sdcard/Android/data/com.madmagic.oqrpc/files/OQRPC Modules/com.beatgames.beatsaber.json"
     }
   ]
 }
