@@ -22,6 +22,18 @@
       }
     },
     {
+      "type": "HookModLibrary",
+      "installAction": {
+        "installLibraryFile": "libcodegen_0_5_0.so"
+      }
+    },
+    {
+      "type": "HookModLibrary",
+      "installAction": {
+        "installLibraryFile": "libbeatsaber-hook_1_0_4.so"
+      }
+    },
+    {
       "type": "FileCopyMod",
       "sourceFileName": "module.json",
       "targetRootedPathAndFileName": "/sdcard/Android/data/com.madmagic.oqrpc/files/OQRPC Modules/com.beatgames.beatsaber.json"
