@@ -22,7 +22,7 @@ public:
 
 class PresenceManager    {
 private:
-    const Logger& logger;
+    Logger& logger;
     const ConfigDocument& config;
     std::thread networkThread;
 
@@ -44,5 +44,5 @@ public:
     
     int timeLeft = 0;
 
-    PresenceManager(const Logger& logger, const ConfigDocument& config);
+    PresenceManager(Logger& logger, const ConfigDocument& config);
 };

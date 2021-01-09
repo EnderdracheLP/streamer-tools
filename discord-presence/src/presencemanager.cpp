@@ -1,4 +1,5 @@
 #define RAPIDJSON_HAS_STDSTRING 1 // Enable rapidjson's support for std::string
+#define NO_CODEGEN_USE
 #include <thread>
 #include <cmath>
 #include <arpa/inet.h>
@@ -21,7 +22,7 @@
 #define PORT 3500
 #define CONNECTION_QUEUE_LENGTH 1 // How many connections to store to process
 
-PresenceManager::PresenceManager(const Logger& logger, const ConfigDocument& config) : logger(logger), config(config) {
+PresenceManager::PresenceManager(Logger& logger, const ConfigDocument& config) : logger(logger), config(config) {
     logger.info("Starting network thread . . .");
     networkThread = std::thread(&PresenceManager::runServer, this); // Run the thread
 }
