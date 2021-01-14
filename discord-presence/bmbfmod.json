@@ -4,7 +4,7 @@
   "version": "0.2.1",
   "icon": "cover.png",
   "coverImageFilename": "cover.png",
-  "author": "TheProff#6700",
+  "author": "Lauriethefish#6700",
   "description": [
     "Integrates with an application by MadMagic to allow people to see which song you're playing, how far through you are, etc. on Discord while playing beat saber on quest. See https://github.com/Lauriethefish/Quest-Discord-Presence for install instructions."
   ],
@@ -24,13 +24,13 @@
     {
       "type": "HookModLibrary",
       "installAction": {
-        "installLibraryFile": "libcodegen_0_5_0.so"
+        "installLibraryFile": "libcodegen_0_5_3.so"
       }
     },
     {
       "type": "HookModLibrary",
       "installAction": {
-        "installLibraryFile": "libbeatsaber-hook_1_0_4.so"
+        "installLibraryFile": "libbeatsaber-hook_1_0_9.so"
       }
     },
     {

@@ -32,8 +32,8 @@ static Configuration& getConfig() {
 }
 
 static Logger& getLogger() {
-    static Logger logger(modInfo);
-    return logger;
+    static Logger* logger = new Logger(modInfo);
+    return *logger;
 }
 static PresenceManager* presenceManager = nullptr;
 static LevelInfo selectedLevel;
