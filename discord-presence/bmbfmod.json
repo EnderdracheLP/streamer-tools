@@ -9,7 +9,7 @@
     "Integrates with an application by MadMagic to allow people to see which song you're playing, how far through you are, etc. on Discord while playing beat saber on quest. See https://github.com/Lauriethefish/Quest-Discord-Presence for install instructions."
   ],
   "category": "Gameplay",
-  "gameVersion": "1.13.0",
+  "gameVersion": "1.13.2",
   "platform": "Quest",
   "components": [
     {
@@ -19,18 +19,6 @@
       },
       "uninstallAction": {
         "removeLibraryFile": "libdiscord-presence.so"
-      }
-    },
-    {
-      "type": "HookModLibrary",
-      "installAction": {
-        "installLibraryFile": "libcodegen_0_5_3.so"
-      }
-    },
-    {
-      "type": "HookModLibrary",
-      "installAction": {
-        "installLibraryFile": "libbeatsaber-hook_1_0_9.so"
       }
     },
     {
