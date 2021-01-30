@@ -284,7 +284,7 @@ void saveDefaultConfig()  {
 
 extern "C" void setup(ModInfo& info) {
     info.id = "discord-presence";
-    info.version = "0.2.1";
+    info.version = "0.3.0";
     modInfo = info;
     getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
     getConfig().Load();

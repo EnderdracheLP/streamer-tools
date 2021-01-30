@@ -47,7 +47,7 @@ LOCAL_SHARED_LIBRARIES += beatsaber-hook_1_0_12
 LOCAL_SHARED_LIBRARIES += modloader
 LOCAL_SHARED_LIBRARIES += codegen_0_6_2
 LOCAL_LDLIBS += -llog
-LOCAL_CFLAGS += -I'extern/libil2cpp/il2cpp/libil2cpp' -I'extern/codegen/include' -DID='"discord-presence"' -DVERSION='"0.2.1"' -I'./shared' -I'./extern'
+LOCAL_CFLAGS += -I'extern/libil2cpp/il2cpp/libil2cpp' -I'extern/codegen/include' -DID='"discord-presence"' -DVERSION='"0.3.0"' -I'./shared' -I'./extern'
 LOCAL_CPPFLAGS += -std=c++2a
 LOCAL_C_INCLUDES += ./include ./src
 include $(BUILD_SHARED_LIBRARY)
