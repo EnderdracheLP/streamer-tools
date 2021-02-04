@@ -99,13 +99,13 @@ MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppStrin
 
 void onPlayerJoin() {
     presenceManager->statusLock.lock();
-    presenceManager->multiplayerLobby->maxPlayers++;
+    presenceManager->multiplayerLobby->numberOfPlayers++;
     presenceManager->statusLock.unlock();
 }
 
 void onPlayerLeave() {
     presenceManager->statusLock.lock();
-    presenceManager->multiplayerLobby->maxPlayers--;
+    presenceManager->multiplayerLobby->numberOfPlayers--;
     presenceManager->statusLock.unlock();
 }
 

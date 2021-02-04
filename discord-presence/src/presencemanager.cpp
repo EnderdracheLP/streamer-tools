@@ -59,6 +59,9 @@ std::string PresenceManager::constructResponse() {
     }
     logger.info("Using " + configSection + " config section.");
 
+    bool didStatusTypeChange = configSection != previousSectionUsed;
+    previousSectionUsed = configSection;
+
     rapidjson::Document doc;
     auto& alloc = doc.GetAllocator();
     doc.SetObject();
@@ -71,8 +74,12 @@ std::string PresenceManager::constructResponse() {
     doc.AddMember("state", state, alloc);
     statusLock.unlock();
 
-    if((playingCampaign || playingLevel.has_value()) && !paused) {
-        doc.AddMember("remaining", timeLeft, alloc);
+    if(playingCampaign || playingLevel.has_value()) {
+        if(!paused) {
+            doc.AddMember("remaining", timeLeft, alloc);
+        }
+    }   else if((configSection == "menuPresence" || configSection == "multiplayerLobbyPresence") && !didStatusTypeChange) { // We have to set elapsed to false temporarily to tell the app that we want to reset the time
+        doc.AddMember("elapsed", true, alloc);
     }
 
     doc.AddMember("largeImageKey", "image", alloc);

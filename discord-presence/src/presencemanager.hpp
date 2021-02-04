@@ -20,6 +20,11 @@ public:
     int maxPlayers;
 };
 
+enum TimeMode {
+    REMAINING,
+    LEFT
+};
+
 class PresenceManager    {
 private:
     Logger& logger;
@@ -41,8 +46,9 @@ public:
     bool isPractice = false;
     bool paused = false;
     std::optional<MultiplayerLobbyInfo> multiplayerLobby = std::nullopt;
+    std::string previousSectionUsed = "menuPresence";
     
-    int timeLeft = 0;
+    int timeLeft = 0; // The time when first going into the menu, or going into a multiplayer game. Or the time left if it's a song.
 
     PresenceManager(Logger& logger, const ConfigDocument& config);
 };
