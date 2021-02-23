@@ -1,2 +1,0 @@
-﻿  The system cannot find the path specified.
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.MakeFile.Targets(46,5): error MSB3073: The command ""\build\ndk-build.cmd" NDK_PROJECT_PATH=C:\Users\Lauri\Beat_Saber_Mod_Dev\Mods\discord-presence\discord-presence\ APP_BUILD_SCRIPT=C:\Users\Lauri\Beat_Saber_Mod_Dev\Mods\discord-presence\discord-presence\Android.mk NDK_APPLICATION_MK=C:\Users\Lauri\Beat_Saber_Mod_Dev\Mods\discord-presence\discord-presence\Application.mk" exited with code 3.
