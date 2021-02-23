@@ -228,6 +228,8 @@ MAKE_HOOK_OFFSETLESS(AudioUpdate, void, Il2CppObject* self) {
 
     presenceManager->statusLock.lock();
     presenceManager->timeLeft = (int) (endTime - time);
+    presenceManager->time = (int)time;
+    presenceManager->endTime = (int)endTime;
     presenceManager->statusLock.unlock();
 }
 
@@ -245,9 +247,10 @@ void saveDefaultConfig()  {
     // Create the sections of the config file for each type of presence
     rapidjson::Value levelPresence(rapidjson::kObjectType);
     levelPresence.AddMember("details", "{mapName}", alloc);
-    levelPresence.AddMember("mapDifficulty", "{mapDifficulty})", alloc);
+    levelPresence.AddMember("mapDifficulty", "{mapDifficulty}", alloc);
     levelPresence.AddMember("mapAuthor",  "{mapAuthor}", alloc);
     levelPresence.AddMember("songAuthor", "{songAuthor}", alloc);
+    levelPresence.AddMember("players", "{numPlayers}/{maxPlayers}", alloc);
     levelPresence.AddMember("state", "{paused?}", alloc);
     config.AddMember("standardLevelPresence", levelPresence, alloc);
 
@@ -256,27 +259,44 @@ void saveDefaultConfig()  {
     practicePresence.AddMember("mapDifficulty", "{mapDifficulty}", alloc);
     practicePresence.AddMember("mapAuthor", "{mapAuthor}", alloc);
     practicePresence.AddMember("songAuthor", "{songAuthor}", alloc);
+    practicePresence.AddMember("players", "{numPlayers}/{maxPlayers}", alloc);
     practicePresence.AddMember("state",  "{paused?}", alloc);
     config.AddMember("practicePresence", practicePresence, alloc);
 
     rapidjson::Value multiLevelPresence(rapidjson::kObjectType);
-    multiLevelPresence.AddMember("details", "Playing multiplayer: ({numPlayers}/{maxPlayers})", alloc);
-    multiLevelPresence.AddMember("state",  "{mapName} - {mapDifficulty} {paused?}", alloc);
+    multiLevelPresence.AddMember("details", "{mapName}", alloc);
+    multiLevelPresence.AddMember("mapDifficulty", "{mapDifficulty}", alloc);
+    multiLevelPresence.AddMember("mapAuthor", "{mapAuthor}", alloc);
+    multiLevelPresence.AddMember("songAuthor", "{songAuthor}", alloc);
+    multiLevelPresence.AddMember("players", "{numPlayers}/{maxPlayers}", alloc);
+    multiLevelPresence.AddMember("state",  "{paused?}", alloc);
     config.AddMember("multiplayerLevelPresence", multiLevelPresence, alloc);
 
     rapidjson::Value missionPresence(rapidjson::kObjectType);
     missionPresence.AddMember("details", "Playing Campaign", alloc);
+    missionPresence.AddMember("mapDifficulty", "", alloc);
+    missionPresence.AddMember("mapAuthor", "", alloc);
+    missionPresence.AddMember("songAuthor", "", alloc);
+    missionPresence.AddMember("players", "", alloc);
     missionPresence.AddMember("state",  "{paused?}", alloc);
     config.AddMember("missionLevelPresence", missionPresence, alloc);
 
     rapidjson::Value tutorialPresence(rapidjson::kObjectType);
     tutorialPresence.AddMember("details", "Playing Tutorial", alloc);
+    tutorialPresence.AddMember("mapDifficulty", "", alloc);
+    tutorialPresence.AddMember("mapAuthor", "", alloc);
+    tutorialPresence.AddMember("songAuthor", "", alloc);
+    tutorialPresence.AddMember("players", "", alloc);
     tutorialPresence.AddMember("state",  "{paused?}", alloc);
     config.AddMember("tutorialPresence", tutorialPresence, alloc);
 
     rapidjson::Value multiLobbyPresence(rapidjson::kObjectType);
     multiLobbyPresence.AddMember("details", "Multiplayer - In Lobby", alloc);
-    multiLobbyPresence.AddMember("state",  "with ({numPlayers}/{maxPlayers}) players", alloc);
+    multiLobbyPresence.AddMember("mapDifficulty", "", alloc);
+    multiLobbyPresence.AddMember("mapAuthor", "", alloc);
+    multiLobbyPresence.AddMember("songAuthor", "", alloc);
+    multiLobbyPresence.AddMember("players", "{numPlayers}/{maxPlayers}", alloc);
+    multiLobbyPresence.AddMember("state", "", alloc);
     config.AddMember("multiplayerLobbyPresence", multiLobbyPresence, alloc);
 
     rapidjson::Value menuPresence(rapidjson::kObjectType);
@@ -284,6 +304,7 @@ void saveDefaultConfig()  {
     menuPresence.AddMember("mapDifficulty", "", alloc);
     menuPresence.AddMember("mapAuthor", "", alloc);
     menuPresence.AddMember("songAuthor", "", alloc);
+    menuPresence.AddMember("players", "", alloc);
     menuPresence.AddMember("state",  "", alloc);
     config.AddMember("menuPresence", menuPresence, alloc);
 

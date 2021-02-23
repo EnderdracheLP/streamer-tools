@@ -49,6 +49,8 @@ public:
     std::string previousSectionUsed = "menuPresence";
     
     int timeLeft = 0; // The time when first going into the menu, or going into a multiplayer game. Or the time left if it's a song.
+    int time = 0;
+    int endTime = 0;
 
     PresenceManager(Logger& logger, const ConfigDocument& config);
 };

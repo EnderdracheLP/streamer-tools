@@ -79,6 +79,16 @@ std::string PresenceManager::constructResponse() {
     std::string songAuthor = handlePlaceholders(config[configSection.c_str()]["songAuthor"].GetString());
     doc.AddMember("songAuthor", songAuthor, alloc);
 
+    if ((configSection == "multiplayerLevelPresence" || configSection == "multiplayerLobbyPresence")) {
+        doc.AddMember("multiplayer", true, alloc);
+    }
+    else {
+        doc.AddMember("multiplayer", false, alloc);
+    }
+
+    std::string players = handlePlaceholders(config[configSection.c_str()]["players"].GetString());
+    doc.AddMember("players", players, alloc);
+
     std::string state = handlePlaceholders(config[configSection.c_str()]["state"].GetString());
     doc.AddMember("state", state, alloc);
     statusLock.unlock();
@@ -86,6 +96,8 @@ std::string PresenceManager::constructResponse() {
     if(playingCampaign || playingLevel.has_value()) {
         if(!paused) {
             doc.AddMember("remaining", timeLeft, alloc);
+            doc.AddMember("time", time, alloc);
+            doc.AddMember("endTime", endTime, alloc);
         }
     }   else if((configSection == "menuPresence" || configSection == "multiplayerLobbyPresence") && !didStatusTypeChange) { // We have to set elapsed to false temporarily to tell the app that we want to reset the time
         doc.AddMember("elapsed", true, alloc);
@@ -131,6 +143,11 @@ std::string PresenceManager::handlePlaceholders(std::string str) {
         replaceAll(str, "{numOthers}", std::to_string(multiplayerLobby->numberOfPlayers - 1)); // Subtract 1 for the number of others
         replaceAll(str, "{maxPlayers}", std::to_string(multiplayerLobby->maxPlayers));
     }
+    //else {
+    //    replaceAll(str, "{numPlayers}", "");
+    //    //replaceAll(str, "{numOthers}", "");
+    //    replaceAll(str, "{maxPlayers}", "");
+    //}
 
     if(paused)  {
         replaceAll(str, "{paused?}", "(Paused)");
