@@ -2,9 +2,9 @@
   "sharedDir": "shared",
   "dependenciesDir": "extern",
   "info": {
-    "name": "discord-presence",
-    "id": "discord-presence",
-    "version": "0.3.1",
+    "name": "Stream Tools",
+    "id": "streamer-tools",
+    "version": "0.1.0",
     "url": null,
     "additionalData": {}
   },

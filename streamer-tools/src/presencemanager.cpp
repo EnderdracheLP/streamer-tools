@@ -19,7 +19,7 @@
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
 
 #define ADDRESS "0.0.0.0" // Binding to localhost
-#define PORT 3500
+#define PORT 3501
 #define CONNECTION_QUEUE_LENGTH 1 // How many connections to store to process
 
 PresenceManager::PresenceManager(Logger& logger, const ConfigDocument& config) : logger(logger), config(config) {
@@ -34,7 +34,7 @@ void PresenceManager::threadEntrypoint()    {
     }
 }
 
-// Creates the JSON to send back to MadMagic's application
+// Creates the JSON to send back to the Streamer Tools application
 std::string PresenceManager::constructResponse() {
     std::string configSection;
     if(playingTutorial) {
@@ -70,6 +70,15 @@ std::string PresenceManager::constructResponse() {
     std::string details = handlePlaceholders(config[configSection.c_str()]["details"].GetString());
     doc.AddMember("details", details, alloc);
 
+    std::string mapDifficulty = handlePlaceholders(config[configSection.c_str()]["mapDifficulty"].GetString());
+    doc.AddMember("mapDifficulty", mapDifficulty, alloc);
+
+    std::string mapAuthor = handlePlaceholders(config[configSection.c_str()]["mapAuthor"].GetString());
+    doc.AddMember("mapAuthor", mapAuthor, alloc);
+
+    std::string songAuthor = handlePlaceholders(config[configSection.c_str()]["songAuthor"].GetString());
+    doc.AddMember("songAuthor", songAuthor, alloc);
+
     std::string state = handlePlaceholders(config[configSection.c_str()]["state"].GetString());
     doc.AddMember("state", state, alloc);
     statusLock.unlock();
@@ -99,13 +108,21 @@ std::string PresenceManager::handlePlaceholders(std::string str) {
         replaceAll(str, "{mapName}", playingLevel->name);
         // Use the Song author instead of the level author for levels that don't have one
         if(playingLevel->levelAuthor == "") {
-            replaceAll(str, "{mapAuthor}", playingLevel->songAuthor);
+            replaceAll(str, "{mapAuthor}", "");
         }   else    {
             replaceAll(str, "{mapAuthor}", playingLevel->levelAuthor);
         }
         
-        replaceAll(str, "{songAuthor}", playingLevel->songAuthor);
-        replaceAll(str, "{mapDifficulty}", playingLevel->selectedDifficulty);
+        if (playingLevel->songAuthor == "") {
+            replaceAll(str, "{songAuthor}", "");
+        } else {
+            replaceAll(str, "{songAuthor}", playingLevel->songAuthor);
+        }
+        if (playingLevel->selectedDifficulty == "") {
+            replaceAll(str, "{mapDifficulty}", "");
+        } else {
+            replaceAll(str, "{mapDifficulty}", playingLevel->selectedDifficulty);
+        }
     }
 
     // If we're in a lobby, when can emplace additional info

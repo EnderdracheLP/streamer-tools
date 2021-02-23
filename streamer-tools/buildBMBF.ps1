@@ -7,4 +7,4 @@ if (-not ($PSVersionTable.PSEdition -eq "Core")) {
 }
 
 & $buildScript NDK_PROJECT_PATH=$PSScriptRoot APP_BUILD_SCRIPT=$PSScriptRoot/Android.mk NDK_APPLICATION_MK=$PSScriptRoot/Application.mk
-Compress-Archive -Path "./libs/arm64-v8a/libdiscord-presence.so", "cover.png", "./bmbfmod.json", "module.json" -DestinationPath "./discord-presence_v0.3.1.zip" -Update
+Compress-Archive -Path "./libs/arm64-v8a/libstreamer-tools.so", "cover.png", "./bmbfmod.json" -DestinationPath "./streamer-tools_v0.1.0.zip" -Update

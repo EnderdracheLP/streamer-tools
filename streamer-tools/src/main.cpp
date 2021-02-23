@@ -236,21 +236,27 @@ void saveDefaultConfig()  {
     ConfigDocument& config = getConfig().config;
     auto& alloc = config.GetAllocator();
     // If the config has already been created, don't overwrite it
-    if(config.HasMember("multiplayerLevelPresence")) {
-        getLogger().info("Config file already exists");
-        return;
-    }
+    //if(config.HasMember("multiplayerLevelPresence")) {
+    //    getLogger().info("Config file already exists");
+    //    return;
+    //}
     config.RemoveAllMembers();
     config.SetObject();
     // Create the sections of the config file for each type of presence
     rapidjson::Value levelPresence(rapidjson::kObjectType);
-    levelPresence.AddMember("details", "Playing {mapName} ({mapDifficulty})", alloc);
-    levelPresence.AddMember("state",  "By: {mapAuthor} {paused?}", alloc);
+    levelPresence.AddMember("details", "{mapName}", alloc);
+    levelPresence.AddMember("mapDifficulty", "{mapDifficulty})", alloc);
+    levelPresence.AddMember("mapAuthor",  "{mapAuthor}", alloc);
+    levelPresence.AddMember("songAuthor", "{songAuthor}", alloc);
+    levelPresence.AddMember("state", "{paused?}", alloc);
     config.AddMember("standardLevelPresence", levelPresence, alloc);
 
     rapidjson::Value practicePresence(rapidjson::kObjectType);
-    practicePresence.AddMember("details", "Practising {mapName} ({mapDifficulty})", alloc);
-    practicePresence.AddMember("state",  "By: {mapAuthor} {paused?}", alloc);
+    practicePresence.AddMember("details", "{mapName}", alloc);
+    practicePresence.AddMember("mapDifficulty", "{mapDifficulty}", alloc);
+    practicePresence.AddMember("mapAuthor", "{mapAuthor}", alloc);
+    practicePresence.AddMember("songAuthor", "{songAuthor}", alloc);
+    practicePresence.AddMember("state",  "{paused?}", alloc);
     config.AddMember("practicePresence", practicePresence, alloc);
 
     rapidjson::Value multiLevelPresence(rapidjson::kObjectType);
@@ -275,6 +281,9 @@ void saveDefaultConfig()  {
 
     rapidjson::Value menuPresence(rapidjson::kObjectType);
     menuPresence.AddMember("details", "In Menu", alloc);
+    menuPresence.AddMember("mapDifficulty", "", alloc);
+    menuPresence.AddMember("mapAuthor", "", alloc);
+    menuPresence.AddMember("songAuthor", "", alloc);
     menuPresence.AddMember("state",  "", alloc);
     config.AddMember("menuPresence", menuPresence, alloc);
 
@@ -283,8 +292,8 @@ void saveDefaultConfig()  {
 }
 
 extern "C" void setup(ModInfo& info) {
-    info.id = "discord-presence";
-    info.version = "0.3.1";
+    info.id = "streamer-tools";
+    info.version = "0.1.0";
     modInfo = info;
     getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
     getConfig().Load();

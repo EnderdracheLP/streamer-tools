@@ -1,0 +1,25 @@
+{
+  "id": "streamer-tools",
+  "name": "Streamer Tools",
+  "version": "0.1.0",
+  "icon": "cover.png",
+  "coverImageFilename": "cover.png",
+  "author": "ItzWiresDev#6193, EnderdracheLP#2305",
+  "description": [
+    ""
+  ],
+  "category": "Other",
+  "gameVersion": "1.13.2",
+  "platform": "Quest",
+  "components": [
+    {
+      "type": "HookMod",
+      "installAction": {
+        "installLibraryFile": "libstreamer-tools.so"
+      },
+      "uninstallAction": {
+        "removeLibraryFile": "libstreamer-tools.so"
+      }
+    }
+  ]
+}
