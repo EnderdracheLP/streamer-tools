@@ -9,9 +9,11 @@
 class LevelInfo  {
 public:
     std::string name;
+    std::string nameSub;
     std::string levelAuthor;
     std::string songAuthor;
     std::string selectedDifficulty;
+    std::string id;
 };
 
 class MultiplayerLobbyInfo {

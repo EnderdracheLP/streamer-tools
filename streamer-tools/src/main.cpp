@@ -62,8 +62,10 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, Il2CppObject* self) {
     Il2CppObject* level = CRASH_UNLESS(il2cpp_utils::GetFieldValue(self, "_level"));
     // Check if the level is an instance of BeatmapLevelSO
     selectedLevel.name = to_utf8(csstrtostr((Il2CppString*) CRASH_UNLESS(il2cpp_utils::GetPropertyValue(level, "songName"))));
+    selectedLevel.nameSub = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(level, "songSubName"))));
     selectedLevel.levelAuthor = to_utf8(csstrtostr((Il2CppString*) CRASH_UNLESS(il2cpp_utils::GetPropertyValue(level, "levelAuthorName"))));
     selectedLevel.songAuthor = to_utf8(csstrtostr((Il2CppString*) CRASH_UNLESS(il2cpp_utils::GetPropertyValue(level, "songAuthorName"))));
+    selectedLevel.id = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(level, "levelID"))));
 }
 
 int currentFrame = -1;
@@ -247,63 +249,77 @@ void saveDefaultConfig()  {
     // Create the sections of the config file for each type of presence
     rapidjson::Value levelPresence(rapidjson::kObjectType);
     levelPresence.AddMember("details", "{mapName}", alloc);
+    levelPresence.AddMember("mapSubName", "{mapSubName}", alloc);
     levelPresence.AddMember("mapDifficulty", "{mapDifficulty}", alloc);
     levelPresence.AddMember("mapAuthor",  "{mapAuthor}", alloc);
     levelPresence.AddMember("songAuthor", "{songAuthor}", alloc);
+    levelPresence.AddMember("levelID", "{levelID}", alloc);
     levelPresence.AddMember("players", "{numPlayers}/{maxPlayers}", alloc);
     levelPresence.AddMember("state", "{paused?}", alloc);
     config.AddMember("standardLevelPresence", levelPresence, alloc);
 
     rapidjson::Value practicePresence(rapidjson::kObjectType);
     practicePresence.AddMember("details", "{mapName}", alloc);
+    practicePresence.AddMember("mapSubName", "{mapSubName}", alloc);
     practicePresence.AddMember("mapDifficulty", "{mapDifficulty}", alloc);
     practicePresence.AddMember("mapAuthor", "{mapAuthor}", alloc);
     practicePresence.AddMember("songAuthor", "{songAuthor}", alloc);
+    practicePresence.AddMember("levelID", "{levelID}", alloc);
     practicePresence.AddMember("players", "{numPlayers}/{maxPlayers}", alloc);
     practicePresence.AddMember("state",  "{paused?}", alloc);
     config.AddMember("practicePresence", practicePresence, alloc);
 
     rapidjson::Value multiLevelPresence(rapidjson::kObjectType);
     multiLevelPresence.AddMember("details", "{mapName}", alloc);
+    multiLevelPresence.AddMember("mapSubName", "{mapSubName}", alloc);
     multiLevelPresence.AddMember("mapDifficulty", "{mapDifficulty}", alloc);
     multiLevelPresence.AddMember("mapAuthor", "{mapAuthor}", alloc);
     multiLevelPresence.AddMember("songAuthor", "{songAuthor}", alloc);
+    multiLevelPresence.AddMember("levelID", "{levelID}", alloc);
     multiLevelPresence.AddMember("players", "{numPlayers}/{maxPlayers}", alloc);
     multiLevelPresence.AddMember("state",  "{paused?}", alloc);
     config.AddMember("multiplayerLevelPresence", multiLevelPresence, alloc);
 
     rapidjson::Value missionPresence(rapidjson::kObjectType);
     missionPresence.AddMember("details", "Playing Campaign", alloc);
+    missionPresence.AddMember("mapSubName", "", alloc);
     missionPresence.AddMember("mapDifficulty", "", alloc);
     missionPresence.AddMember("mapAuthor", "", alloc);
     missionPresence.AddMember("songAuthor", "", alloc);
+    missionPresence.AddMember("levelID", "", alloc);
     missionPresence.AddMember("players", "", alloc);
     missionPresence.AddMember("state",  "{paused?}", alloc);
     config.AddMember("missionLevelPresence", missionPresence, alloc);
 
     rapidjson::Value tutorialPresence(rapidjson::kObjectType);
     tutorialPresence.AddMember("details", "Playing Tutorial", alloc);
+    tutorialPresence.AddMember("mapSubName", "", alloc);
     tutorialPresence.AddMember("mapDifficulty", "", alloc);
     tutorialPresence.AddMember("mapAuthor", "", alloc);
     tutorialPresence.AddMember("songAuthor", "", alloc);
+    tutorialPresence.AddMember("levelID", "", alloc);
     tutorialPresence.AddMember("players", "", alloc);
     tutorialPresence.AddMember("state",  "{paused?}", alloc);
     config.AddMember("tutorialPresence", tutorialPresence, alloc);
 
     rapidjson::Value multiLobbyPresence(rapidjson::kObjectType);
     multiLobbyPresence.AddMember("details", "Multiplayer - In Lobby", alloc);
+    multiLobbyPresence.AddMember("mapSubName", "", alloc);
     multiLobbyPresence.AddMember("mapDifficulty", "", alloc);
     multiLobbyPresence.AddMember("mapAuthor", "", alloc);
     multiLobbyPresence.AddMember("songAuthor", "", alloc);
+    multiLobbyPresence.AddMember("levelID", "", alloc);
     multiLobbyPresence.AddMember("players", "{numPlayers}/{maxPlayers}", alloc);
     multiLobbyPresence.AddMember("state", "", alloc);
     config.AddMember("multiplayerLobbyPresence", multiLobbyPresence, alloc);
 
     rapidjson::Value menuPresence(rapidjson::kObjectType);
     menuPresence.AddMember("details", "In Menu", alloc);
+    menuPresence.AddMember("mapSubName", "", alloc);
     menuPresence.AddMember("mapDifficulty", "", alloc);
     menuPresence.AddMember("mapAuthor", "", alloc);
     menuPresence.AddMember("songAuthor", "", alloc);
+    menuPresence.AddMember("levelID", "", alloc);
     menuPresence.AddMember("players", "", alloc);
     menuPresence.AddMember("state",  "", alloc);
     config.AddMember("menuPresence", menuPresence, alloc);

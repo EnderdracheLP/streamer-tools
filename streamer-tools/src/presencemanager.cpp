@@ -70,6 +70,9 @@ std::string PresenceManager::constructResponse() {
     std::string details = handlePlaceholders(config[configSection.c_str()]["details"].GetString());
     doc.AddMember("details", details, alloc);
 
+    std::string mapSubName = handlePlaceholders(config[configSection.c_str()]["mapSubName"].GetString());
+    doc.AddMember("mapSubName", mapSubName, alloc);
+
     std::string mapDifficulty = handlePlaceholders(config[configSection.c_str()]["mapDifficulty"].GetString());
     doc.AddMember("mapDifficulty", mapDifficulty, alloc);
 
@@ -78,6 +81,9 @@ std::string PresenceManager::constructResponse() {
 
     std::string songAuthor = handlePlaceholders(config[configSection.c_str()]["songAuthor"].GetString());
     doc.AddMember("songAuthor", songAuthor, alloc);
+
+    std::string levelID = handlePlaceholders(config[configSection.c_str()]["levelID"].GetString());
+    doc.AddMember("levelID", levelID, alloc);
 
     if ((configSection == "multiplayerLevelPresence" || configSection == "multiplayerLobbyPresence")) {
         doc.AddMember("multiplayer", true, alloc);
@@ -118,7 +124,15 @@ std::string PresenceManager::handlePlaceholders(std::string str) {
     // If we're playing a level, replace the level placeholders
     if(playingLevel.has_value()) {
         replaceAll(str, "{mapName}", playingLevel->name);
-        // Use the Song author instead of the level author for levels that don't have one
+        replaceAll(str, "{levelID}", playingLevel->id);
+        
+        if (playingLevel->nameSub == "") {
+            replaceAll(str, "{mapSubName}", "");
+        }
+        else {
+            replaceAll(str, "{mapSubName}", playingLevel->nameSub);
+        }
+        // Empty String if no mapAuthor
         if(playingLevel->levelAuthor == "") {
             replaceAll(str, "{mapAuthor}", "");
         }   else    {
