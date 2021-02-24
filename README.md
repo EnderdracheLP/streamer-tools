@@ -10,7 +10,7 @@ Makes information available which can then be used by a Streamer-Tools PC applic
 [Mod Download](https://https://github.com/EnderdracheLP/streamer-tools//releases/latest)
 
 ## Credits
-For making the original Quest Discord Presence which this build on.
+For making the original Quest Discord Presence which this is build on.
 * [Lauriethefish](https://github.com/Lauriethefish),
 
 Credits.
