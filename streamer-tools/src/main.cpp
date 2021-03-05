@@ -235,6 +235,7 @@ MAKE_HOOK_OFFSETLESS(AudioUpdate, void, Il2CppObject* self) {
     presenceManager->statusLock.unlock();
 }
 
+// TODO: Replace the config code, and do stuff internally
 void saveDefaultConfig()  {
     getLogger().info("Creating config file . . .");
     ConfigDocument& config = getConfig().config;
