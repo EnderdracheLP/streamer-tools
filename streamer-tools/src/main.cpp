@@ -17,6 +17,7 @@
 #include "GlobalNamespace/MultiplayerSessionManager.hpp"
 #include "GlobalNamespace/GameServerLobbyFlowCoordinator.hpp"
 #include "GlobalNamespace/PracticeSettings.hpp"
+#include "GlobalNamespace/ScoreController.hpp"  // Added for getting Score Information.
 using namespace GlobalNamespace;
 
 #include "modloader/shared/modloader.hpp"
@@ -86,6 +87,32 @@ MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode
     }
     SongStart(self, gameMode, difficultyBeatmap, b, c, d, e, practiceSettings, g, h);
 }
+/* // Code for getting score and other stuff, (Placeholder, needs correct implementation.
+MAKE_HOOK_OFFSETLESS(ScoreController_Start, void, ScoreController* self) {
+    LOG_CALLER;
+    ScoreController_Start(self);
+    self->add_noteWasCutEvent(il2cpp_utils::MakeDelegate<NoteCutDelegate>(
+        classof(NoteCutDelegate), self, +[](GlobalNamespace::ScoreController* self, GlobalNamespace::NoteData* data, GlobalNamespace::NoteCutInfo* info, int unused) {
+            QounterRegistry::BroadcastEvent(QounterRegistry::Event::NoteCut, data, info);
+        }
+    ));
+    self->add_noteWasMissedEvent(il2cpp_utils::MakeDelegate<NoteMissDelegate>(
+        classof(NoteMissDelegate), self, +[](GlobalNamespace::ScoreController* self, GlobalNamespace::NoteData* data, int unused) {
+            QounterRegistry::BroadcastEvent(QounterRegistry::Event::NoteMiss, data);
+        }
+    ));
+    self->add_scoreDidChangeEvent(il2cpp_utils::MakeDelegate<ScoreChangeDelegate>(
+        classof(ScoreChangeDelegate), self, +[](GlobalNamespace::ScoreController* self, int rawScore, int modifiedScore) {
+            QounterRegistry::BroadcastEvent(QounterRegistry::Event::ScoreUpdated, modifiedScore);
+        }
+    ));
+    self->add_immediateMaxPossibleScoreDidChangeEvent(il2cpp_utils::MakeDelegate<ScoreChangeDelegate>(
+        classof(ScoreChangeDelegate), self, +[](GlobalNamespace::ScoreController* self, int rawScore, int modifiedScore) {
+            QounterRegistry::BroadcastEvent(QounterRegistry::Event::MaxScoreUpdated, modifiedScore);
+        }
+    ));
+}
+*/
 
 // Multiplayer song starting is handled differently
 MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* previewBeatmapLevel, int beatmapDifficulty, Il2CppObject* a, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, bool g) {
