@@ -7,7 +7,7 @@ Makes information available which can then be used by a Streamer-Tools PC applic
 - To set up the mod, you need to install the client on your PC. The client and installation instructions are [here](https://github.com/wiresboy-exe/streamToolsDesktop).
 
 ## Downloads
-[Mod Download](https://https://github.com/EnderdracheLP/streamer-tools//releases/latest)
+[Mod Download](https://https://github.com/EnderdracheLP/streamer-tools/releases/latest)
 
 ## Credits
 For making the original Quest Discord Presence which this is build on.
