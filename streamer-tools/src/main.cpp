@@ -11,6 +11,8 @@
 #include "UnityEngine/Resources.hpp"
 
 #include "System/Action_1.hpp"
+#include "System/Action_2.hpp"
+#include "System/Action_3.hpp"
 
 #include "GlobalNamespace/IConnectedPlayer.hpp"
 #include "GlobalNamespace/MultiplayerPlayersManager.hpp"
@@ -87,31 +89,48 @@ MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode
     }
     SongStart(self, gameMode, difficultyBeatmap, b, c, d, e, practiceSettings, g, h);
 }
-/* // Code for getting score and other stuff, (Placeholder, needs correct implementation.
+// TODO: Add getting scores
+/* // Code for getting score and other stuff, (Placeholder, needs correct implementation.)
 MAKE_HOOK_OFFSETLESS(ScoreController_Start, void, ScoreController* self) {
-    LOG_CALLER;
     ScoreController_Start(self);
-    self->add_noteWasCutEvent(il2cpp_utils::MakeDelegate<NoteCutDelegate>(
-        classof(NoteCutDelegate), self, +[](GlobalNamespace::ScoreController* self, GlobalNamespace::NoteData* data, GlobalNamespace::NoteCutInfo* info, int unused) {
-            QounterRegistry::BroadcastEvent(QounterRegistry::Event::NoteCut, data, info);
+    self->add_noteWasCutEvent(il2cpp_utils::MakeDelegate<System::Action_3<NoteData*, NoteCutInfo*, int>*>(
+        classof(System::Action_3<NoteData*, NoteCutInfo*, int>), self, +[](ScoreController* self, NoteData* data, NoteCutInfo* info, int unused) {
+            //QounterRegistry::BroadcastEvent(QounterRegistry::Event::NoteCut, data, info);
         }
     ));
-    self->add_noteWasMissedEvent(il2cpp_utils::MakeDelegate<NoteMissDelegate>(
-        classof(NoteMissDelegate), self, +[](GlobalNamespace::ScoreController* self, GlobalNamespace::NoteData* data, int unused) {
-            QounterRegistry::BroadcastEvent(QounterRegistry::Event::NoteMiss, data);
+    self->add_noteWasMissedEvent(il2cpp_utils::MakeDelegate<System::Action_2<NoteData*, int>*>(
+        classof(System::Action_2<NoteData*, int>*), self, +[](ScoreController* self, NoteData* data, int unused) {
+            //QounterRegistry::BroadcastEvent(QounterRegistry::Event::NoteMiss, data);
         }
     ));
-    self->add_scoreDidChangeEvent(il2cpp_utils::MakeDelegate<ScoreChangeDelegate>(
-        classof(ScoreChangeDelegate), self, +[](GlobalNamespace::ScoreController* self, int rawScore, int modifiedScore) {
-            QounterRegistry::BroadcastEvent(QounterRegistry::Event::ScoreUpdated, modifiedScore);
+    self->add_scoreDidChangeEvent(il2cpp_utils::MakeDelegate<System::Action_2<int, int>*>(
+        classof(System::Action_2<int, int>*), self, +[](ScoreController* self, int rawScore, int modifiedScore) {
+            //QounterRegistry::BroadcastEvent(QounterRegistry::Event::ScoreUpdated, modifiedScore);
         }
     ));
-    self->add_immediateMaxPossibleScoreDidChangeEvent(il2cpp_utils::MakeDelegate<ScoreChangeDelegate>(
-        classof(ScoreChangeDelegate), self, +[](GlobalNamespace::ScoreController* self, int rawScore, int modifiedScore) {
-            QounterRegistry::BroadcastEvent(QounterRegistry::Event::MaxScoreUpdated, modifiedScore);
+    self->add_immediateMaxPossibleScoreDidChangeEvent(il2cpp_utils::MakeDelegate<System::Action_2<int, int>*>(
+        classof(System::Action_2<int, int>*), self, +[](ScoreController* self, int rawScore, int modifiedScore) {
+
+            //QounterRegistry::BroadcastEvent(QounterRegistry::Event::MaxScoreUpdated, modifiedScore);
         }
     ));
 }
+*//*
+    const MethodInfo* addCompletedMethod = CRASH_UNLESS(il2cpp_utils::FindMethodUnsafe(audioClipAsync, "add_completed", 1));
+    auto action = CRASH_UNLESS(il2cpp_utils::MakeDelegate(addCompletedMethod, 0, (Il2CppObject*)this, audioClipCompleted));
+    CRASH_UNLESS(il2cpp_utils::RunMethod(audioClipAsync, addCompletedMethod, action));
+*/
+
+/*
+const std::vector<QounterRegistry::EventHandlerSignature> QounterRegistry::eventHandlerSignatures = {
+    {QounterRegistry::Event::NoteCut, "OnNoteCut", 2},
+    {QounterRegistry::Event::NoteMiss, "OnNoteMiss", 1},
+    {QounterRegistry::Event::ScoreUpdated, "OnScoreUpdated", 1},
+    {QounterRegistry::Event::MaxScoreUpdated, "OnMaxScoreUpdated", 1},
+    {QounterRegistry::Event::SwingRatingFinished, "OnSwingRatingFinished", 2},
+};
+std::unordered_map<std::pair<std::string, std::string>, QounterRegistry::RegistryEntry, pair_hash> QounterRegistry::registry;
+std::vector<std::pair<std::string, std::string>> QounterRegistry::registryInsertionOrder;
 */
 
 // Multiplayer song starting is handled differently
@@ -386,6 +405,7 @@ extern "C" void load() {
     INSTALL_HOOK_OFFSETLESS(logger, MultiplayerSongStart, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLevelScenesTransitionSetupDataSO", "Init", 10));
     INSTALL_HOOK_OFFSETLESS(logger, MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "GameServerLobbyFlowCoordinator", "DidActivate", 3));
     INSTALL_HOOK_OFFSETLESS(logger, MultiplayerSongEnd, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLocalActivePlayerGameplayManager", "OnDisable", 0));
+    INSTALL_HOOK_OFFSETLESS(logger, ScoreController_Start, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "Start", 0));
 
     getLogger().debug("Installed all hooks!");
     presenceManager = new PresenceManager(getLogger(), getConfig().config);
