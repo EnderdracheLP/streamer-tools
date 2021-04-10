@@ -1,0 +1,102 @@
+name: NDK build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master, dev ]
+  pull_request:
+    branches: [ master, dev ]
+
+env:
+     module_id: streamer-tools
+     version: 0.1.0
+     bs_hook: 1_2_6
+     ndkname: android-ndk-r22
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+      name: Checkout
+      with:
+        submodules: true
+        lfs: true
+    - name: Install Powershell
+      run: sudo apt-get install -y powershell
+
+    - name: Cache Android NDK
+      id: cache-ndk
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-ndk
+      with:
+        path: ${GITHUB_WORKSPACE}/${{ env.module_id }}/ndk
+        key: ${{ runner.os }}-${{ env.cache-name }}-${{ env.ndkname }}
+        restore-keys: |
+          ${{ runner.os }}-${{ env.cache-name }}-${{ env.ndkname }}
+    
+    - name: Install Android NDK
+      if: steps.cache-ndk.outputs.cache-hit != 'true'
+      run: |
+        cd ${GITHUB_WORKSPACE}/${{ env.module_id }}/
+        wget -q -O ndk.zip https://dl.google.com/android/repository/${ndkname}-linux-x86_64.zip
+        unzip -q ndk.zip
+        mv ${ndkname} ndk
+      
+    - name: Create ndkpath.txt
+      run: |
+        cd ndk
+        pwd > ${GITHUB_WORKSPACE}/${{ env.module_id }}/ndkpath.txt
+    - name: Get QPM
+      if: steps.cache-qpm.outputs.cache-hit != 'true'
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: main.yml
+        name: QPM-ubuntu-x64
+        path: QPM
+        repo: sc2ad/QuestPackageManager
+      
+    - name: QPM Restore
+      run: |
+        chmod +x ./QPM/QPM
+        ./QPM/QPM restore
+    - name: test
+      run: |
+        ls ./QPM/QPM_Temp
+    - name: Build
+      run: |
+        cd ${GITHUB_WORKSPACE}/${{ env.module_id }}
+        pwsh -Command ./build.ps1
+    - name: Get Library Name
+      id: libname
+      run: |
+        cd ${GITHUB_WORKSPACE}/${{ env.module_id }}/libs/arm64-v8a/
+        pattern="lib${module_id}*.so"
+        files=( $pattern )
+        echo ::set-output name=NAME::"${files[0]}"
+    - name: Package QMOD
+      run: |
+        cd ${GITHUB_WORKSPACE}/${{ env.module_id }}
+        sed -i 's/{VERSION_NUMBER_PLACEHOLDER}/${{ env.version }}-Dev/' mod.json
+        pwsh -Command ./buildQMOD.ps1 --package
+    - name: Upload non-debug artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ steps.libname.outputs.NAME }}
+        path: ./libs/arm64-v8a/${{ steps.libname.outputs.NAME }}
+        if-no-files-found: error
+    - name: Upload debug artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: debug_${{ steps.libname.outputs.NAME }}
+        path: ./obj/local/arm64-v8a/${{ steps.libname.outputs.NAME }}
+        if-no-files-found: error
+    - name: Upload QMOD
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ env.module_id }}.qmod
+        path: ./${{ env.module_id }}.qmod
+        if-no-files-found: warn
