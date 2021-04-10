@@ -3,9 +3,9 @@ name: NDK build
 on:
   workflow_dispatch:
   push:
-    branches: [ master, dev ]
+    branches: [ master, dev, 1.14.0-Update ]
   pull_request:
-    branches: [ master, dev ]
+    branches: [ master, dev, 1.14.0-Update ]
 
 env:
      module_id: streamer-tools
