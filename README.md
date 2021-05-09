@@ -7,8 +7,8 @@ Makes information available which can then be used by a Streamer-Tools PC applic
 - To set up the mod, you need to install the client on your PC. The client and installation instructions are [here](https://github.com/wiresboy-exe/streamToolsDesktop).
 
 ## Downloads
-<button onclick="window.location='https://wiresdev.ga/projects/bs/streamer-tools/download/streamer-tools_v0.1.0.qmod'" style="border: rgb(173, 0, 43) 2px solid;background: rgb(138, 138, 138);padding: 5px 10px;border-radius: 10px;cursor: pointer;">Download .QMOD</button>
-<button onclick="window.location='https://wiresdev.ga/projects/bs/streamer-tools/download/libstreamer-tools.so'" style="border: rgb(173, 0, 43) 2px solid;background: rgb(138, 138, 138);padding: 5px 10px;border-radius: 10px;cursor: pointer;">Download .SO</button>
+<a href="https://wiresdev.ga/projects/bs/streamer-tools/download/streamer-tools_v0.1.0.qmod">Download .QMOD</a>
+<a href="https://wiresdev.ga/projects/bs/streamer-tools/download/libstreamer-tools.so">Download .SO</a>
 
 ## Credits
 For making the original Quest Discord Presence which this is build on.
