@@ -4,13 +4,23 @@ on:
   workflow_dispatch:
   push:
     branches: [ master, dev, 1.14.0-Update ]
+    paths-ignore:
+      - '**.yml'
+      - '!.github/workflows/BuildQSounds.yml'
+      - '**.json'
+      - '!qpm.json'
+      - '**.ps1'
+      - '**.md'
+      - '.gitignore'
   pull_request:
     branches: [ master, dev, 1.14.0-Update ]
 
 env:
      module_id: streamer-tools
-     version: 0.1.0
-     bs_hook: 1_2_6
+     BSVersion: 1.15.0
+     version: 0.1.0-Dev
+     bs_hook: 1_3_5
+     codegen: 0_8_1
      ndkname: android-ndk-r22
     
 jobs:
@@ -32,7 +42,7 @@ jobs:
       env:
         cache-name: cache-ndk
       with:
-        path: ${GITHUB_WORKSPACE}/${{ env.module_id }}/ndk
+        path: ${{ env.module_id }}/ndk
         key: ${{ runner.os }}-${{ env.cache-name }}-${{ env.ndkname }}
         restore-keys: |
           ${{ runner.os }}-${{ env.cache-name }}-${{ env.ndkname }}
@@ -47,7 +57,7 @@ jobs:
       
     - name: Create ndkpath.txt
       run: |
-        cd ndk
+        cd ${GITHUB_WORKSPACE}/${{ env.module_id }}/ndk
         pwd > ${GITHUB_WORKSPACE}/${{ env.module_id }}/ndkpath.txt
     - name: Get QPM
       if: steps.cache-qpm.outputs.cache-hit != 'true'
@@ -56,20 +66,45 @@ jobs:
         github_token: ${{secrets.GITHUB_TOKEN}}
         workflow: main.yml
         name: QPM-ubuntu-x64
-        path: QPM
+        path: ${{ env.module_id }}/QPM
         repo: sc2ad/QuestPackageManager
+
+    - name: QPM Dependencies Cache
+      id: cache-qpm-deps
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-qpm-deps
+      with:
+        path: ${{ env.module_id }}/QPM_Temp
+        key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('qpm.json', '.github/BuildMod.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('qpm.json', '.github/BuildMod.yml') }}
+          ${{ runner.os }}-${{ env.cache-name }}
       
     - name: QPM Restore
       run: |
+        cd ${{ env.module_id }}/
         chmod +x ./QPM/QPM
         ./QPM/QPM restore
-    - name: test
+    - name: Check dependency Folders
       run: |
-        ls ./QPM/QPM_Temp
+        cd ${GITHUB_WORKSPACE}/${{ env.module_id }}
+        echo "Checking extern Folder"
+        ls -lh ${GITHUB_WORKSPACE}/${{ env.module_id }}/extern/
+        echo ""
+        echo "Checking QPM_Temp Folders"
+        ls -lh QPM_Temp/
+        echo ""
+        echo "Listing beatsaber-hook folder"
+        ls QPM_Temp/beatsaber-hook/
+        echo ""
+        echo "Listing all .so files in QPM_Temp"
+        find QPM_Temp -type f -name "*.so"
+
     - name: Build
       run: |
         cd ${GITHUB_WORKSPACE}/${{ env.module_id }}
-        pwsh -Command ./build.ps1
+        pwsh -Command ./build.ps1 --actions
     - name: Get Library Name
       id: libname
       run: |
@@ -86,17 +121,17 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: ${{ steps.libname.outputs.NAME }}
-        path: ./libs/arm64-v8a/${{ steps.libname.outputs.NAME }}
+        path: ./${{ env.module_id }}/libs/arm64-v8a/${{ steps.libname.outputs.NAME }}
         if-no-files-found: error
     - name: Upload debug artifact
       uses: actions/upload-artifact@v2
       with:
         name: debug_${{ steps.libname.outputs.NAME }}
-        path: ./obj/local/arm64-v8a/${{ steps.libname.outputs.NAME }}
+        path: ./${{ env.module_id }}/obj/local/arm64-v8a/${{ steps.libname.outputs.NAME }}
         if-no-files-found: error
     - name: Upload QMOD
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ env.module_id }}.qmod
-        path: ./${{ env.module_id }}.qmod
+        name: ${{ env.module_id }}-(UNZIP-for-QMOD)
+        path: ./${{ env.module_id }}/${{ env.module_id }}.qmod
         if-no-files-found: warn
