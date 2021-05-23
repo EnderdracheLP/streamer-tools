@@ -19,8 +19,8 @@
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
 
 #define ADDRESS "0.0.0.0" // Binding to localhost
-#define PORT 3501
-#define PORT_HTTP 3502
+#define PORT 3502
+#define PORT_HTTP 3503
 #define CONNECTION_QUEUE_LENGTH 1 // How many connections to store to process
 
 STManager::STManager(Logger& logger, const ConfigDocument& config) : logger(logger), config(config) {
