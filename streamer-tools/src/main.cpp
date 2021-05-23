@@ -24,6 +24,8 @@
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
 #include "GlobalNamespace/IDifficultyBeatmap.hpp"
 #include "GlobalNamespace/IBeatmapLevel.hpp"
+#include "GlobalNamespace/MultiplayerSettingsPanelController.hpp"
+#include "GlobalNamespace/ServerCodeView.hpp"
 using namespace GlobalNamespace;
 
 #include "modloader/shared/modloader.hpp"
@@ -87,6 +89,14 @@ MAKE_HOOK_OFFSETLESS(GameEnergyUIPanel_HandleGameEnergyDidChange, void, GameEner
     GameEnergyUIPanel_HandleGameEnergyDidChange(self, energy);
     stManager->statusLock.lock();
     stManager->energy = energy;
+    stManager->statusLock.unlock();
+}
+
+MAKE_HOOK_OFFSETLESS(ServerCodeView_RefreshText, void, ServerCodeView* self, bool refreshText) {
+    ServerCodeView_RefreshText(self, refreshText);
+    stManager->statusLock.lock();
+    stManager->mpGameId = to_utf8(csstrtostr(self->serverCode));
+    stManager->mpGameIdShown = self->codeIsShown;
     stManager->statusLock.unlock();
 }
 
@@ -267,6 +277,7 @@ extern "C" void load() {
     INSTALL_HOOK_OFFSETLESS(logger, MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "GameServerLobbyFlowCoordinator", "DidActivate", 3));
     INSTALL_HOOK_OFFSETLESS(logger, MultiplayerSongEnd, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLocalActivePlayerGameplayManager", "OnDisable", 0));
     INSTALL_HOOK_OFFSETLESS(logger, GameEnergyUIPanel_HandleGameEnergyDidChange, il2cpp_utils::FindMethodUnsafe("", "GameEnergyUIPanel", "HandleGameEnergyDidChange", 1));
+    INSTALL_HOOK_OFFSETLESS(logger, ServerCodeView_RefreshText, il2cpp_utils::FindMethodUnsafe("", "ServerCodeView", "RefreshText", 1));
 
     getLogger().debug("Installed all hooks!");
     stManager = new STManager(getLogger(), getConfig().config);

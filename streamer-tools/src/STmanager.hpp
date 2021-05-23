@@ -46,6 +46,8 @@ public:
 
     int players = 0;
     int maxPlayers = 0;
+    std::string mpGameId = "";
+    bool mpGameIdShown = false;
 
     STManager(Logger& logger, const ConfigDocument& config);
 };

@@ -67,6 +67,8 @@ std::string STManager::constructResponse() {
     doc.AddMember("njs", STManager::njs, alloc);
     doc.AddMember("players", STManager::players, alloc);
     doc.AddMember("maxPlayers", STManager::maxPlayers, alloc);
+    doc.AddMember("mpGameId", STManager::mpGameId, alloc);
+    doc.AddMember("mpGameIdShown", STManager::mpGameIdShown, alloc);
     statusLock.unlock();
 
     // Convert the document into a string
