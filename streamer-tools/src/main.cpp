@@ -153,6 +153,7 @@ MAKE_HOOK_OFFSETLESS(MultiplayerJoinLobby, void, GameServerLobbyFlowCoordinator*
     stManager->statusLock.lock();
     stManager->players = numActivePlayers + 1;
     stManager->maxPlayers = maxPlayers;
+    stManager->type = 5;
     stManager->statusLock.unlock();
 
     MultiplayerJoinLobby(self, firstActivation, addedToHierarchy, screenSystemEnabling);
