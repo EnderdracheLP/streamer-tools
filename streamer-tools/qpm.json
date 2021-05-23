@@ -2,7 +2,7 @@
   "sharedDir": "shared",
   "dependenciesDir": "extern",
   "info": {
-    "name": "Stream Tools",
+    "name": "Streamer Tools",
     "id": "streamer-tools",
     "version": "0.1.0",
     "url": null,
@@ -11,7 +11,7 @@
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "*",
+      "versionRange": "^1.3.3",
       "additionalData": {
         "extraFiles": [
           "src/inline-hook"
@@ -19,18 +19,8 @@
       }
     },
     {
-      "id": "modloader",
-      "versionRange": "*",
-      "additionalData": {}
-    },
-    {
-      "id": "libil2cpp",
-      "versionRange": "*",
-      "additionalData": {}
-    },
-    {
       "id": "codegen",
-      "versionRange": "*",
+      "versionRange": "^0.8.1",
       "additionalData": {}
     }
   ],
