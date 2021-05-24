@@ -7,6 +7,8 @@
 #include "beatsaber-hook/shared/config/config-utils.hpp"
 
 #include "UnityEngine/Resources.hpp"
+#include "UnityEngine/GameObject.hpp"
+#include "UnityEngine/Component.hpp"
 
 #include "System/Action_1.hpp"
 #include "System/Action_2.hpp"
@@ -29,6 +31,7 @@
 #include "GlobalNamespace/ScoreController.hpp"
 #include "GlobalNamespace/NoteController.hpp"
 #include "GlobalNamespace/NoteCutInfo.hpp"
+#include "GlobalNamespace/FPSCounter.hpp"
 using namespace GlobalNamespace;
 
 #include "modloader/shared/modloader.hpp"
@@ -48,6 +51,10 @@ static Logger& getLogger() {
     return *logger;
 }
 static STManager* stManager = nullptr;
+
+bool ModInit = false;
+FPSCounter* FPSC;
+
 
 // Define the current level by finding info from the IBeatmapLevel object
 MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
@@ -70,6 +77,19 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
 MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, PracticeSettings* practiceSettings, Il2CppString* g, bool h) {
     getLogger().info("Song Started");
     int difficulty = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<int>(difficultyBeatmap, "difficulty"));
+    
+    if (ModInit == false) {
+        auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::newcsstr("FPSC"));
+        FPSC = FPSCObject->AddComponent<FPSCounter*>();
+        FPSC->get_gameObject()->SetActive(true);
+        UnityEngine::Object::DontDestroyOnLoad(FPSC);
+        if (FPSC != nullptr) {
+            FPSC->set_enabled(true);
+            FPSC->Update();
+            stManager->fps = FPSC->get_currentFPS();
+        } else getLogger().critical("FPSC is null");
+        ModInit = true;
+    }
 
     // Set the currently playing level to the selected one, since we are in a song
     stManager->statusLock.lock();
@@ -254,6 +274,11 @@ MAKE_HOOK_OFFSETLESS(AudioUpdate, void, Il2CppObject* self) {
 
     float time = CRASH_UNLESS(il2cpp_utils::RunMethodUnsafe<float>(self, "get_songTime"));
     float endTime = CRASH_UNLESS(il2cpp_utils::RunMethodUnsafe<float>(self, "get_songEndTime"));
+    
+    if (FPSC != nullptr) {
+        FPSC->Update();
+        stManager->fps = FPSC->get_currentFPS();
+    } else getLogger().critical("FPSC is null");
 
     stManager->statusLock.lock();
     stManager->time = (int)time;
