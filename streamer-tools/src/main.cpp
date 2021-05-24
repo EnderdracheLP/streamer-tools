@@ -111,7 +111,7 @@ MAKE_HOOK_OFFSETLESS(ScoreController_Update, void, ScoreController* self) {
 MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* previewBeatmapLevel, int beatmapDifficulty, Il2CppObject* a, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, bool g) {
     getLogger().info("Multiplayer Song Started");
     stManager->statusLock.lock();
-    stManager->type = 2;
+    stManager->location = 2;
     stManager->statusLock.unlock();
 
 
@@ -134,7 +134,7 @@ void onPlayerLeave() {
 void onLobbyDisconnect() {
     getLogger().info("Left Multiplayer lobby");
     stManager->statusLock.lock();
-    stManager->type = 0;
+    stManager->location = 0;
     stManager->statusLock.unlock();
 }
 
@@ -163,7 +163,7 @@ MAKE_HOOK_OFFSETLESS(MultiplayerJoinLobby, void, GameServerLobbyFlowCoordinator*
     stManager->statusLock.lock();
     stManager->players = numActivePlayers + 1;
     stManager->maxPlayers = maxPlayers;
-    stManager->type = 5;
+    stManager->location = 5;
     stManager->statusLock.unlock();
 
     MultiplayerJoinLobby(self, firstActivation, addedToHierarchy, screenSystemEnabling);
@@ -173,7 +173,7 @@ MAKE_HOOK_OFFSETLESS(SongEnd, void, Il2CppObject* self) {
     getLogger().info("Song Ended");
     stManager->statusLock.lock();
     stManager->paused = false; // If we are pasued, unpause us, since we are returning to the menu
-    stManager->type = 0;
+    stManager->location = 0;
     stManager->statusLock.unlock();
     SongEnd(self);
 }
@@ -181,7 +181,7 @@ MAKE_HOOK_OFFSETLESS(SongEnd, void, Il2CppObject* self) {
 MAKE_HOOK_OFFSETLESS(MultiplayerSongEnd, void, Il2CppObject* self) {
     getLogger().info("Multiplayer Song Ended");
     stManager->statusLock.lock();
-    stManager->type = 0;
+    stManager->location = 0;
     stManager->paused = false; // If we are pasued, unpause us, since we are returning to the menu
     stManager->statusLock.unlock();
     SongEnd(self);
@@ -190,14 +190,14 @@ MAKE_HOOK_OFFSETLESS(MultiplayerSongEnd, void, Il2CppObject* self) {
 MAKE_HOOK_OFFSETLESS(TutorialStart, void, Il2CppObject* self)   {
     getLogger().info("Tutorial starting");
     stManager->statusLock.lock();
-    stManager->type = 3;
+    stManager->location = 3;
     stManager->statusLock.unlock();
     TutorialStart(self);
 }
 MAKE_HOOK_OFFSETLESS(TutorialEnd, void, Il2CppObject* self)   {
     getLogger().info("Tutorial ending");
     stManager->statusLock.lock();
-    stManager->type = 0;
+    stManager->location = 0;
     stManager->paused = false; // If we are pasued, unpause us, since we are returning to the menu
     stManager->statusLock.unlock();
     TutorialEnd(self);
@@ -206,14 +206,14 @@ MAKE_HOOK_OFFSETLESS(TutorialEnd, void, Il2CppObject* self)   {
 MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void, Il2CppObject* self, Il2CppString* missionId, Il2CppObject* a, Il2CppArray* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, Il2CppString* g)   {
     getLogger().info("Campaign level starting");
     stManager->statusLock.lock();
-    stManager->type = 4;
+    stManager->location = 4;
     stManager->statusLock.unlock();
     CampaignLevelStart(self, missionId, a, b, c, d, e, f, g);
 }
 MAKE_HOOK_OFFSETLESS(CampaignLevelEnd, void, Il2CppObject* self)   {
     getLogger().info("Campaign level ending");
     stManager->statusLock.lock();
-    stManager->type = 0;
+    stManager->location = 0;
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
     stManager->statusLock.unlock();
     CampaignLevelEnd(self);

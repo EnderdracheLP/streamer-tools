@@ -21,7 +21,7 @@ private:
 public:
     std::mutex statusLock; // Lock to make sure that stuff doesn't get overwritten while being read by the network thread
 
-    int type = 0; //0 = Menu, 1 = Solo, 2 = mp song, 3 = tutorial, 4 = campaign, 5 = mp lobby
+    int location = 0; //0 = Menu, 1 = Solo song, 2 = mp song, 3 = tutorial, 4 = campaign, 5 = mp lobby
     bool isPractice = false;
     bool paused = false;
     

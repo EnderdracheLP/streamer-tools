@@ -47,7 +47,7 @@ std::string STManager::constructResponse() {
 
     statusLock.lock(); // Lock the mutex so that stuff doesn't get overwritten while we're reading from it
     
-    doc.AddMember("type", STManager::type, alloc);
+    doc.AddMember("location", STManager::location, alloc);
     doc.AddMember("isPractice", STManager::isPractice, alloc);
     doc.AddMember("paused", STManager::paused, alloc);
     doc.AddMember("time", STManager::time, alloc);
