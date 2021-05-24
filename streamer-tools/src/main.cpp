@@ -289,7 +289,6 @@ MAKE_HOOK_OFFSETLESS(FPSCounter_Update, void, FPSCounter* self) {
     stManager->statusLock.lock();
     stManager->fps = self->get_currentFPS();
     stManager->statusLock.unlock();
-    getLogger().debug("Curent FPS: %d", stManager->fps);
 }
 
 bool FPSObjectCreated = false;
