@@ -289,12 +289,24 @@ MAKE_HOOK_OFFSETLESS(FPSCounter_Update, void, FPSCounter* self) {
     stManager->statusLock.lock();
     stManager->fps = self->get_currentFPS();
     stManager->statusLock.unlock();
+    getLogger().debug("Curent FPS: %d", stManager->fps);
 }
 
+bool FPSObjectCreated = false;
+
 MAKE_HOOK_OFFSETLESS(SceneManager_ActiveSceneChanged, void, UnityEngine::SceneManagement::Scene previousActiveScene, UnityEngine::SceneManagement::Scene nextActiveScene) {
+    
+    if (nextActiveScene.IsValid()) {
+        std::string sceneName = to_utf8(csstrtostr(nextActiveScene.get_name()));
+        std::string shaderWarmup = "ShaderWarmup";
+        if (sceneName == shaderWarmup) {
+            auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::newcsstr("FPSC"));
+            UnityEngine::Object::DontDestroyOnLoad(FPSCObject->AddComponent<FPSCounter*>());
+        }
+        FPSObjectCreated = true;
+    }
+
     SceneManager_ActiveSceneChanged(previousActiveScene, nextActiveScene);
-    auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::newcsstr("FPSC"));
-    UnityEngine::Object::DontDestroyOnLoad(FPSCObject->AddComponent<FPSCounter*>());
 }
 
 extern "C" void setup(ModInfo& info) {
