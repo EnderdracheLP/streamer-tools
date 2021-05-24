@@ -1,0 +1,19 @@
+{
+  "_QPVersion": "0.1.1",
+  "id": "streamer-tools",
+  "name": "Streamer Tools",
+  "version": "{VERSION_NUMBER_PLACEHOLDER}",
+  "author": "ItzWiresDev#6193, EnderdracheLP#2305, ComputerElite#0486, Lauriethefish#6700",
+  "packageId": "com.beatgames.beatsaber",
+  "packageVersion": "{BS_Version}",
+  "description": "Allows applications to get information from the game like, currently played song.",
+  "coverImage": "cover.png",
+  "modFiles": [
+    "libstreamer-tools.so"
+  ],
+  "libraryFiles": [
+    "libbeatsaber-hook_{BS_Hook}.so"
+  ],
+  "dependencies": [],
+  "fileCopies": []
+}
