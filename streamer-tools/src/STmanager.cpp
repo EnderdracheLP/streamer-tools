@@ -287,9 +287,9 @@ bool STManager::MulticastServer() {
 
     //    std::string message = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
     std::string ip = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
-    std::string http = PORT_HTTP;
-    std::string socket = PORT;
-    std::string message = multicastResponse(ip + socket, ip + http);
+    std::string http = ip + std::to_string(PORT_HTTP);
+    std::string socket = ip + std::to_string(PORT);
+    std::string message = multicastResponse(socket, http);
 
     /*
      * Send a message to the multicast group specified by the
