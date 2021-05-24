@@ -30,6 +30,11 @@ public:
 
     int score = 0;
     std::string rank = "";
+    int goodCuts = 0;
+    int badCuts = 0;
+    int missedNotes = 0;
+
+    //int fps = 0;  // Can't get info without showing UI
 
     int combo = 0;
     float energy = 1.0f;

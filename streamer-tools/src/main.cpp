@@ -26,6 +26,9 @@
 #include "GlobalNamespace/IBeatmapLevel.hpp"
 #include "GlobalNamespace/MultiplayerSettingsPanelController.hpp"
 #include "GlobalNamespace/ServerCodeView.hpp"
+#include "GlobalNamespace/ScoreController.hpp"
+#include "GlobalNamespace/NoteController.hpp"
+#include "GlobalNamespace/NoteCutInfo.hpp"
 using namespace GlobalNamespace;
 
 #include "modloader/shared/modloader.hpp"
@@ -67,10 +70,13 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
 MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, PracticeSettings* practiceSettings, Il2CppString* g, bool h) {
     getLogger().info("Song Started");
     int difficulty = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<int>(difficultyBeatmap, "difficulty"));
-    stManager->difficulty = difficulty;
 
     // Set the currently playing level to the selected one, since we are in a song
     stManager->statusLock.lock();
+    stManager->difficulty = difficulty;
+    stManager->goodCuts = 0;
+    stManager->badCuts = 0;
+    stManager->missedNotes = 0;
     stManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode
     stManager->statusLock.unlock();
     SongStart(self, gameMode, difficultyBeatmap, b, c, d, e, f, practiceSettings, g, h);
@@ -112,6 +118,9 @@ MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppStrin
     getLogger().info("Multiplayer Song Started");
     stManager->statusLock.lock();
     stManager->location = 2;
+    stManager->goodCuts = 0;
+    stManager->badCuts = 0;
+    stManager->missedNotes = 0;
     stManager->statusLock.unlock();
 
 
@@ -191,6 +200,9 @@ MAKE_HOOK_OFFSETLESS(TutorialStart, void, Il2CppObject* self)   {
     getLogger().info("Tutorial starting");
     stManager->statusLock.lock();
     stManager->location = 3;
+    stManager->goodCuts = 0;
+    stManager->badCuts = 0;
+    stManager->missedNotes = 0;
     stManager->statusLock.unlock();
     TutorialStart(self);
 }
@@ -207,6 +219,9 @@ MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void, Il2CppObject* self, Il2CppString*
     getLogger().info("Campaign level starting");
     stManager->statusLock.lock();
     stManager->location = 4;
+    stManager->goodCuts = 0;
+    stManager->badCuts = 0;
+    stManager->missedNotes = 0;
     stManager->statusLock.unlock();
     CampaignLevelStart(self, missionId, a, b, c, d, e, f, g);
 }
@@ -246,6 +261,21 @@ MAKE_HOOK_OFFSETLESS(AudioUpdate, void, Il2CppObject* self) {
     stManager->statusLock.unlock();
 }
 
+MAKE_HOOK_OFFSETLESS(ScoreController_HandleNoteWasMissed, void, ScoreController* self, NoteController* note) {
+    ScoreController_HandleNoteWasMissed(self, note);
+    stManager->statusLock.lock();
+    stManager->missedNotes++;
+    stManager->statusLock.unlock();
+}
+
+MAKE_HOOK_OFFSETLESS(ScoreController_HandleNoteWasCut, void, ScoreController* self, NoteController* note, NoteCutInfo* info) {
+    ScoreController_HandleNoteWasCut(self, note, info);
+    stManager->statusLock.lock();
+    if(info->get_allIsOK()) stManager->goodCuts++;
+    else stManager->badCuts++;
+    stManager->statusLock.unlock();
+}
+
 extern "C" void setup(ModInfo& info) {
     info.id = "streamer-tools";
     info.version = "0.1.0";
@@ -278,6 +308,8 @@ extern "C" void load() {
     INSTALL_HOOK_OFFSETLESS(logger, MultiplayerSongEnd, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLocalActivePlayerGameplayManager", "OnDisable", 0));
     INSTALL_HOOK_OFFSETLESS(logger, GameEnergyUIPanel_HandleGameEnergyDidChange, il2cpp_utils::FindMethodUnsafe("", "GameEnergyUIPanel", "HandleGameEnergyDidChange", 1));
     INSTALL_HOOK_OFFSETLESS(logger, ServerCodeView_RefreshText, il2cpp_utils::FindMethodUnsafe("", "ServerCodeView", "RefreshText", 1));
+    INSTALL_HOOK_OFFSETLESS(logger, ScoreController_HandleNoteWasMissed, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "HandleNoteWasMissed", 1));
+    INSTALL_HOOK_OFFSETLESS(logger, ScoreController_HandleNoteWasCut, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "HandleNoteWasCut", 2));
 
     getLogger().debug("Installed all hooks!");
     stManager = new STManager(getLogger(), getConfig().config);
