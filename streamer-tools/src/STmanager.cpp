@@ -13,13 +13,18 @@
 #include <sstream>
 #include <iomanip>
 
+#include <net/if.h>
+#include <sys/ioctl.h>
+
 #include "STmanager.hpp"
 
 #include "beatsaber-hook/shared/config/config-utils.hpp"
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
 
 #define ADDRESS "0.0.0.0" // Binding to localhost
+#define ADDRESS_MULTI "224.0.0.123"
 #define PORT 3502
+#define PORT_MULTI 3505
 #define PORT_HTTP 3501
 #define CONNECTION_QUEUE_LENGTH 1 // How many connections to store to process
 
@@ -27,6 +32,7 @@ STManager::STManager(Logger& logger, const ConfigDocument& config) : logger(logg
     logger.info("Starting network thread . . .");
     networkThread = std::thread(&STManager::runServer, this); // Run the thread
     networkThreadHTTP = std::thread(&STManager::runServerHTTP, this); // Run the thread
+    networkThreadMulticast = std::thread(&STManager::MulticastServer, this); // Run the thread
 }
 
 void STManager::threadEntrypoint()    {
@@ -36,6 +42,9 @@ void STManager::threadEntrypoint()    {
     }
     if (!runServerHTTP()) {
         logger.error("Failed to run HTTP server!");
+    }
+    if (!MulticastServer()) {
+        logger.error("Failed to run Multicast server!");
     }
 }
 
@@ -194,5 +203,85 @@ bool STManager::runServerHTTP() {
     }
 
     close(sockHTTP);
+    return true;
+}
+
+bool STManager::MulticastServer() {
+    struct in_addr        localInterface;
+    struct sockaddr_in    groupSock;
+    int                   datalen;
+    char                  databuf[1024];
+    
+    /*
+    * Create a datagram socket on which to send.
+    */
+    int sd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sd < 0) {
+        logger.error("opening datagram socket");
+        return false;
+    }
+
+    /*
+     * Initialize the group sockaddr structure with a
+     * group address of 225.1.1.1 and port 5555.
+     */
+    memset((char*)&groupSock, 0, sizeof(groupSock));
+    groupSock.sin_family = AF_INET;
+    groupSock.sin_addr.s_addr = inet_addr("225.1.1.1");
+    groupSock.sin_port = htons(5555);
+    logger.info("Initializing Multicast on 225.1.1.1:5555");
+
+    /*
+     * Disable loopback so you do not receive your own datagrams.
+     */
+    {
+        char loopch = 0;
+
+        if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP,
+            (char*)&loopch, sizeof(loopch)) < 0) {
+            logger.error("setting IP_MULTICAST_LOOP:");
+            close(sd);
+            return false;
+        }
+    }
+
+    /*
+     * Set local interface for outbound multicast datagrams.
+     * The IP address specified must be associated with a local,
+     * multicast-capable interface.
+     */
+    localInterface.s_addr = inet_addr(ADDRESS);
+    if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF,
+        (char*)&localInterface,
+        sizeof(localInterface)) < 0) {
+        logger.error("setting local interface");
+        return false;
+    }
+
+        struct ifreq ifr;
+
+        /* I want to get an IPv4 IP address */
+        ifr.ifr_addr.sa_family = AF_INET;
+
+        /* I want IP address attached to "wlan0" */
+        strncpy(ifr.ifr_name, "wlan0", IFNAMSIZ - 1);
+
+        ioctl(sd, SIOCGIFADDR, &ifr);
+
+        std::string response = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
+
+    /*
+     * Send a message to the multicast group specified by the
+     * groupSock sockaddr structure.
+     */
+    //datalen = 10;
+    strcpy(databuf, response.c_str());
+    datalen = response.length();
+    if (sendto(sd, databuf, datalen, 0,
+        (struct sockaddr*)&groupSock,
+        sizeof(groupSock)) < 0)
+    {
+        logger.error("sending datagram message");
+    }
     return true;
 }

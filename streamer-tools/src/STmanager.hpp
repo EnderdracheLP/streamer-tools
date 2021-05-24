@@ -12,11 +12,12 @@ private:
     const ConfigDocument& config;
     std::thread networkThread;
     std::thread networkThreadHTTP;
+    std::thread networkThreadMulticast;
 
     void threadEntrypoint();
     bool runServer();
     bool runServerHTTP();
-    bool createModuleJSON();
+    bool MulticastServer();
     std::string constructResponse();
 public:
     std::mutex statusLock; // Lock to make sure that stuff doesn't get overwritten while being read by the network thread
