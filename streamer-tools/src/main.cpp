@@ -33,6 +33,8 @@
 #include "GlobalNamespace/NoteCutInfo.hpp"
 #include "GlobalNamespace/FPSCounter.hpp"
 #include "GlobalNamespace/GameplayCoreInstaller.hpp"
+
+#include "UnityEngine/SceneManagement/Scene.hpp"
 using namespace GlobalNamespace;
 
 #include "modloader/shared/modloader.hpp"
@@ -289,11 +291,14 @@ MAKE_HOOK_OFFSETLESS(FPSCounter_Update, void, FPSCounter* self) {
     stManager->statusLock.unlock();
 }
 
-MAKE_HOOK_OFFSETLESS(GameplayCoreInstaller_InstallBindings, void, GameplayCoreInstaller* self) {
-    GameplayCoreInstaller_InstallBindings(self);
-
-    auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::newcsstr("FPSC"));
-    UnityEngine::Object::DontDestroyOnLoad(FPSCObject->AddComponent<FPSCounter*>());
+bool FPSCounterCreated = false;
+MAKE_HOOK_OFFSETLESS(SceneManager_ActiveSceneChanged, void, UnityEngine::SceneManagement::Scene previousActiveScene, UnityEngine::SceneManagement::Scene nextActiveScene) {
+    SceneManager_ActiveSceneChanged(previousActiveScene, nextActiveScene);
+    if(!FPSCounterCreated) {
+        auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::newcsstr("FPSC"));
+        UnityEngine::Object::DontDestroyOnLoad(FPSCObject->AddComponent<FPSCounter*>());
+        FPSCounterCreated = true;
+    }
 }
 
 extern "C" void setup(ModInfo& info) {
@@ -331,7 +336,7 @@ extern "C" void load() {
     INSTALL_HOOK_OFFSETLESS(logger, ScoreController_HandleNoteWasMissed, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "HandleNoteWasMissed", 1));
     INSTALL_HOOK_OFFSETLESS(logger, ScoreController_HandleNoteWasCut, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "HandleNoteWasCut", 2));
     INSTALL_HOOK_OFFSETLESS(logger, FPSCounter_Update, il2cpp_utils::FindMethodUnsafe("", "FPSCounter", "Update", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, GameplayCoreInstaller_InstallBindings, il2cpp_utils::FindMethodUnsafe("", "GameplayCoreInstaller", "InstallBindings", 0));
+    INSTALL_HOOK_OFFSETLESS(logger, SceneManager_ActiveSceneChanged, il2cpp_utils::FindMethodUnsafe("UnityEngine.SceneManagement", "SceneManager", "Internal_ActiveSceneChanged", 2));
 
     getLogger().debug("Installed all hooks!");
     stManager = new STManager(getLogger(), getConfig().config);
