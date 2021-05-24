@@ -19,6 +19,7 @@ private:
     bool runServerHTTP();
     bool MulticastServer();
     std::string constructResponse();
+    std::string multicastResponse(std::string socket, std::string http);
 public:
     std::mutex statusLock; // Lock to make sure that stuff doesn't get overwritten while being read by the network thread
 
@@ -35,7 +36,7 @@ public:
     int badCuts = 0;
     int missedNotes = 0;
 
-    int fps = 0;  // Can't get info without showing UI
+    int fps = 0;
 
     int combo = 0;
     float energy = 1.0f;

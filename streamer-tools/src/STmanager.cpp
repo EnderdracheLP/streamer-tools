@@ -22,9 +22,9 @@
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
 
 #define ADDRESS "0.0.0.0" // Binding to localhost
-#define ADDRESS_MULTI "224.0.0.123"
+#define ADDRESS_MULTI "225.1.1.1"  // maybe set it to  "224.0.0.123" in the future
 #define PORT 3502
-#define PORT_MULTI 3505
+#define PORT_MULTI 5555 // Use 3503 in the future orobably
 #define PORT_HTTP 3501
 #define CONNECTION_QUEUE_LENGTH 1 // How many connections to store to process
 
@@ -83,6 +83,23 @@ std::string STManager::constructResponse() {
     doc.AddMember("missedNotes", STManager::missedNotes, alloc);
     doc.AddMember("fps", STManager::fps, alloc);
     statusLock.unlock();
+
+    // Convert the document into a string
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+    return buffer.GetString();
+}
+
+std::string STManager::multicastResponse(std::string socket, std::string http) {
+    rapidjson::Document doc;
+    auto& alloc = doc.GetAllocator();
+    doc.SetObject();
+
+    doc.AddMember("ModID", "streamer-tools", alloc); // TODO: use actual ModID
+    doc.AddMember("ModVersion", "0.1.0", alloc); // TODO: use actual ModVersion
+    doc.AddMember("Socket", socket, alloc);
+    doc.AddMember("HTTP", http, alloc);
 
     // Convert the document into a string
     rapidjson::StringBuffer buffer;
@@ -227,8 +244,8 @@ bool STManager::MulticastServer() {
      */
     memset((char*)&groupSock, 0, sizeof(groupSock));
     groupSock.sin_family = AF_INET;
-    groupSock.sin_addr.s_addr = inet_addr("225.1.1.1");
-    groupSock.sin_port = htons(5555);
+    groupSock.sin_addr.s_addr = inet_addr(ADDRESS_MULTI);
+    groupSock.sin_port = htons(PORT_MULTI);
     logger.info("Initializing Multicast on 225.1.1.1:5555");
 
     /*
@@ -268,15 +285,19 @@ bool STManager::MulticastServer() {
 
         ioctl(sd, SIOCGIFADDR, &ifr);
 
-        std::string response = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
+    //    std::string message = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
+    std::string ip = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
+    std::string http = ip + PORT_HTTP;
+    std::string socket = ip + PORT;
+    std::string message = multicastResponse(socket, http);
 
     /*
      * Send a message to the multicast group specified by the
      * groupSock sockaddr structure.
      */
     //datalen = 10;
-    strcpy(databuf, response.c_str());
-    datalen = response.length();
+    strcpy(databuf, message.c_str());
+    datalen = message.length();
     if (sendto(sd, databuf, datalen, 0,
         (struct sockaddr*)&groupSock,
         sizeof(groupSock)) < 0)
