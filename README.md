@@ -9,13 +9,14 @@ Makes information available which can then be used by a Streamer-Tools PC applic
 ## Downloads
 [Download .QMOD](https://github.com/EnderdracheLP/streamer-tools/releases/latest)
 
-[Download .SO](https://wiresdev.ga/projects/bs/streamer-tools/download/libstreamer-tools.so)
-
 ## Documentation
 ### Retrieving data
 You have 2 methods to get the data which streamer-tools gives you:
+
 a) Make a normal GET request to `http://[Your Quests ip]:3501`
-b) Connect via a WebSocket to `http://[Your Quests ip]:3502`. 4 bytes will be sent which give you the length of the response (as int) and then you can read the rest of the data. The WebSocket will currently close after the data has been read so you have to connect a second time.
+
+b) Connect via a WebSocket to `http://[Your Quests ip]:3502`.
+4 bytes will be sent which give you the length of the response (as int) and then you can read the rest of the data. The WebSocket will currently close after the data has been read so you have to connect a second time.
 
 ### Json format
 Example response:
