@@ -54,6 +54,7 @@ public:
     int difficulty = 0;
     float bpm = 0.0f;
     float njs = 0.0f;
+    std::string coverImageBase64;
 
     int players = 0;
     int maxPlayers = 0;
