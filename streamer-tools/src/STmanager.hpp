@@ -18,6 +18,10 @@ private:
     bool runServer();
     bool runServerHTTP();
     bool MulticastServer();
+
+    void sendRequestHTTP(int client_sock);
+    void sendRequest(int client_sock);
+
     std::string constructResponse();
     std::string multicastResponse(std::string socket, std::string http);
 public:

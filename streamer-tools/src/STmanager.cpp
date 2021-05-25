@@ -24,10 +24,10 @@
 
 #define ADDRESS "0.0.0.0" // Binding to localhost
 #define ADDRESS_MULTI "232.0.53.5"  // Testing setting was "225.1.1.1" and "224.0.0.1" which sends to all hosts on the network
+#define PORT_MULTI 53500
 #define PORT 53501
-#define PORT_MULTI 53500 // Use 3503 in the future probably
 #define PORT_HTTP 53502
-#define CONNECTION_QUEUE_LENGTH 20 // How many connections to store to process
+#define CONNECTION_QUEUE_LENGTH 2 // How many connections to store to process
 
 bool Connected = false;
 
@@ -49,15 +49,17 @@ void STManager::threadEntrypoint()    {
     if (!MulticastServer()) {
         logger.error("Failed to run Multicast server!");
     }
+    else logger.info("Multicast Server finished connection established!");
 }
 
 // Creates the JSON to send back to the Streamer Tools application
 std::string STManager::constructResponse() {
+
+    statusLock.lock(); // Lock the mutex so that stuff doesn't get overwritten while we're reading from it
+
     rapidjson::Document doc;
     auto& alloc = doc.GetAllocator();
     doc.SetObject();
-
-    statusLock.lock(); // Lock the mutex so that stuff doesn't get overwritten while we're reading from it
     
     doc.AddMember("location", STManager::location, alloc);
     doc.AddMember("isPractice", STManager::isPractice, alloc);
@@ -99,9 +101,8 @@ std::string STManager::multicastResponse(std::string socket, std::string http) {
     auto& alloc = doc.GetAllocator();
     doc.SetObject();
 
-
-    doc.AddMember("ModID", STModInfo.id, alloc); // TODO: use actual ModID
-    doc.AddMember("ModVersion", STModInfo.version, alloc); // TODO: use actual ModVersion
+    doc.AddMember("ModID", STModInfo.id, alloc);
+    doc.AddMember("ModVersion", STModInfo.version, alloc);
     doc.AddMember("Socket", socket, alloc);
     doc.AddMember("HTTP", http, alloc);
 
@@ -152,24 +153,50 @@ bool STManager::runServer()   {
         
         Connected = true; // Set this to true here so it no longer sends out after a connection has been established first.
 
-        std::string response = constructResponse();
-        logger.info("Response: %s", response.c_str());
+        // Pass the socket handle over and start a seperate thread for sending back the reply
+        std::thread RequestThread([this, client_sock]() { return STManager::sendRequest(client_sock); }); // Use threads for the response
+        RequestThread.detach(); // Detach the thread from this thread
 
-        int convertedLength = htonl(response.length());
-        if(write(client_sock, &convertedLength, 4) == -1)    { // First send the length of the data
-            logger.error("Error sending length prefix: %s", strerror(errno));
-            close(client_sock); continue;
-        }
-        if(write(client_sock, response.c_str(), response.length()) == -1)    { // Then send the string
-            logger.error("Error sending JSON: %s", strerror(errno));
-            close(client_sock); continue;
-        }
 
-        close(client_sock); // Close the client's socket to avoid leaking resources
+        //std::string response = constructResponse();
+        //logger.info("Response: %s", response.c_str());
+
+        //int convertedLength = htonl(response.length());
+        //if(write(client_sock, &convertedLength, 4) == -1)    { // First send the length of the data
+        //    logger.error("Error sending length prefix: %s", strerror(errno));
+        //    close(client_sock); continue;
+        //}
+        //if(write(client_sock, response.c_str(), response.length()) == -1)    { // Then send the string
+        //    logger.error("Error sending JSON: %s", strerror(errno));
+        //    close(client_sock); continue;
+        //}
+
+        //close(client_sock); // Close the client's socket to avoid leaking resources
+        //std::chrono::milliseconds timespan(50);
+        //std::this_thread::sleep_for(timespan);
     }
     
     close(sock);
     return true;
+}
+
+void STManager::sendRequest(int client_sock) {
+
+    std::string response = constructResponse();
+    logger.info("Response: %s", response.c_str());
+
+    int convertedLength = htonl(response.length());
+    if (write(client_sock, &convertedLength, 4) == -1) { // First send the length of the data
+        logger.error("Error sending length prefix: %s", strerror(errno));
+        close(client_sock); return;
+    }
+    if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
+        logger.error("Error sending JSON: %s", strerror(errno));
+        close(client_sock); return;
+    }
+
+    close(client_sock); // Close the client's socket to avoid leaking resources
+    return;
 }
 
 bool STManager::runServerHTTP() {
@@ -195,6 +222,8 @@ bool STManager::runServerHTTP() {
         return false;
     }
 
+    //std::thread RequestHTTPThread;
+
     logger.info("HTTP: Listening on port %d", PORT_HTTP);
     while (true) {
         if (listen(sockHTTP, CONNECTION_QUEUE_LENGTH) == -1) { // Return if an error occurs listening for a request
@@ -205,30 +234,52 @@ bool STManager::runServerHTTP() {
         socklen_t socklenHTTP = sizeof addrHTTP;
         int client_sock = accept(sockHTTP, (struct sockaddr*)&addrHTTP, &socklenHTTP); // Accept the next request
         if (client_sock == -1) {
-            logger.error("HTTP: Error accepting request");
+            logger.error("HTTP: Error accepting request %s", strerror(errno));
             continue;
         }
 
 
         logger.info("HTTP: Client connected with address: %s", inet_ntoa(addrHTTP.sin_addr));
 
-        Connected = true; // Set this to true here so it no longer sends out after a connection has been established first.
+        Connected = true; // Set this to true here so it no longer sends out after a connection has first been established.
 
-        std::string stats = constructResponse();
-        std::string response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: application/json\nAccess-Control-Allow-Origin: *\n\n" + stats;
-        logger.info("HTTP Response: %s", response.c_str());
+        // Pass the socket handle over and start a seperate thread for sending back the reply
+        std::thread RequestHTTPThread([this, client_sock]() { return STManager::sendRequestHTTP(client_sock); }); // Use threads for the response
 
-        int convertedLength = htonl(response.length());
-        if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
-            logger.error("HTTP: Error sending JSON: %s", strerror(errno));
-            close(client_sock); continue;
-        }
+        RequestHTTPThread.detach(); // Detach the thread from this thread
 
-        close(client_sock); // Close the client's socket to avoid leaking resources
+        //std::string stats = constructResponse();
+        //std::string response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: application/json\nAccess-Control-Allow-Origin: *\n\n" + stats;
+        //logger.info("HTTP Response: %s", response.c_str());
+
+        //int convertedLength = htonl(response.length());
+        //if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
+        //    logger.error("HTTP: Error sending JSON: %s", strerror(errno));
+        //    close(client_sock); continue;
+        //}
+
+        //close(client_sock); // Close the client's socket to avoid leaking resources
+        //std::chrono::milliseconds timespan(50);
+        //std::this_thread::sleep_for(timespan);
     }
-
+    // RequestHTTPThread.join();
     close(sockHTTP);
     return true;
+}
+
+void STManager::sendRequestHTTP(int client_sock) {
+
+    std::string stats = constructResponse();
+    std::string response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: application/json\nAccess-Control-Allow-Origin: *\n\n" + stats;
+    logger.info("HTTP Response: %s", response.c_str());
+
+    int convertedLength = htonl(response.length());
+    if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
+        logger.error("HTTP: Error sending JSON: %s", strerror(errno));
+        close(client_sock); return;
+    }
+    close(client_sock); // Close the client's socket to avoid leaking resources
+    return;
 }
 
 bool STManager::MulticastServer() {
@@ -264,7 +315,7 @@ bool STManager::MulticastServer() {
 
         if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP,
             (char*)&loopch, sizeof(loopch)) < 0) {
-            logger.error("setting IP_MULTICAST_LOOP:");
+            logger.error("setting IP_MULTICAST_LOOP: %s", strerror(errno));
             close(sd);
             return false;
         }
@@ -279,14 +330,13 @@ bool STManager::MulticastServer() {
     if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF,
         (char*)&localInterface,
         sizeof(localInterface)) < 0) {
-        logger.error("setting local interface");
+        logger.error("setting local interface: %s", strerror(errno));
         return false;
     }
 
         struct ifreq ifr;
 
-        while (true) {
-            if (!Connected) {
+        while (!Connected) {
                 std::chrono::milliseconds timespan(30000);
 
                 /* I want to get an IPv4 IP address */
@@ -317,10 +367,9 @@ bool STManager::MulticastServer() {
                     (struct sockaddr*)&groupSock,
                     sizeof(groupSock)) < 0)
                 {
-                    logger.error("Multicast: error sending datagram message");
+                    logger.error("Multicast: error sending datagram message: %s", strerror(errno));
                 }
                 std::this_thread::sleep_for(timespan);
-            }
     }
     return true;
 }
