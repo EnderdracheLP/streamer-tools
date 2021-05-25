@@ -13,6 +13,7 @@
 #include <sstream>
 #include <iomanip>
 
+#include <chrono>
 #include <net/if.h>
 #include <sys/ioctl.h>
 
@@ -22,10 +23,10 @@
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
 
 #define ADDRESS "0.0.0.0" // Binding to localhost
-#define ADDRESS_MULTI "225.1.1.1"  // Testing setting was "225.1.1.1" and "224.0.0.1" which sends to all hosts on the network
-#define PORT 3502
-#define PORT_MULTI 5555 // Use 3503 in the future probably
-#define PORT_HTTP 3501
+#define ADDRESS_MULTI "232.0.53.5"  // Testing setting was "225.1.1.1" and "224.0.0.1" which sends to all hosts on the network
+#define PORT 53501
+#define PORT_MULTI 53500 // Use 3503 in the future probably
+#define PORT_HTTP 53502
 #define CONNECTION_QUEUE_LENGTH 20 // How many connections to store to process
 
 bool Connected = false;
@@ -283,11 +284,11 @@ bool STManager::MulticastServer() {
     }
 
         struct ifreq ifr;
-        int delay = 60000;
 
         while (true) {
-            if (delay >= 600000 || !Connected) {
-                delay = 0;
+            if (!Connected) {
+                std::chrono::milliseconds timespan(30000);
+
                 /* I want to get an IPv4 IP address */
                 ifr.ifr_addr.sa_family = AF_INET;
 
@@ -318,8 +319,8 @@ bool STManager::MulticastServer() {
                 {
                     logger.error("Multicast: error sending datagram message");
                 }
+                std::this_thread::sleep_for(timespan);
             }
-            delay++;
     }
     return true;
 }
