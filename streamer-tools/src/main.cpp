@@ -43,14 +43,15 @@ using namespace GlobalNamespace;
 #include <optional>
 #include "STmanager.hpp"
 
-static ModInfo modInfo;
+// static ModInfo modInfo;
+ModInfo STModInfo;
 static Configuration& getConfig() {
-    static Configuration config(modInfo);
+    static Configuration config(STModInfo);
     return config;
 }
 
 static Logger& getLogger() {
-    static Logger* logger = new Logger(modInfo);
+    static Logger* logger = new Logger(STModInfo);
     return *logger;
 }
 static STManager* stManager = nullptr;
@@ -309,9 +310,9 @@ MAKE_HOOK_OFFSETLESS(SceneManager_ActiveSceneChanged, void, UnityEngine::SceneMa
 }
 
 extern "C" void setup(ModInfo& info) {
-    info.id = "streamer-tools";
-    info.version = "0.1.0";
-    modInfo = info;
+    info.id = ID;
+    info.version = VERSION;
+    STModInfo = info;
     getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
 
     getLogger().info("Completed setup!");

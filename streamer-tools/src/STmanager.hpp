@@ -58,3 +58,5 @@ public:
 
     STManager(Logger& logger, const ConfigDocument& config);
 };
+
+extern ModInfo STModInfo;

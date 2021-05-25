@@ -22,11 +22,13 @@
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
 
 #define ADDRESS "0.0.0.0" // Binding to localhost
-#define ADDRESS_MULTI "225.1.1.1"  // maybe set it to  "224.0.0.123" in the future
+#define ADDRESS_MULTI "225.1.1.1"  // Testing setting was "225.1.1.1" and "224.0.0.1" which sends to all hosts on the network
 #define PORT 3502
-#define PORT_MULTI 5555 // Use 3503 in the future orobably
+#define PORT_MULTI 5555 // Use 3503 in the future probably
 #define PORT_HTTP 3501
-#define CONNECTION_QUEUE_LENGTH 1 // How many connections to store to process
+#define CONNECTION_QUEUE_LENGTH 20 // How many connections to store to process
+
+bool Connected = false;
 
 STManager::STManager(Logger& logger, const ConfigDocument& config) : logger(logger), config(config) {
     logger.info("Starting network thread . . .");
@@ -96,8 +98,9 @@ std::string STManager::multicastResponse(std::string socket, std::string http) {
     auto& alloc = doc.GetAllocator();
     doc.SetObject();
 
-    doc.AddMember("ModID", "streamer-tools", alloc); // TODO: use actual ModID
-    doc.AddMember("ModVersion", "0.1.0", alloc); // TODO: use actual ModVersion
+
+    doc.AddMember("ModID", STModInfo.id, alloc); // TODO: use actual ModID
+    doc.AddMember("ModVersion", STModInfo.version, alloc); // TODO: use actual ModVersion
     doc.AddMember("Socket", socket, alloc);
     doc.AddMember("HTTP", http, alloc);
 
@@ -144,9 +147,10 @@ bool STManager::runServer()   {
             logger.error("Error accepting request");
             continue;
         }        
-
         logger.info("Client connected with address: %s", inet_ntoa(addr.sin_addr));
-    
+        
+        Connected = true; // Set this to true here so it no longer sends out after a connection has been established first.
+
         std::string response = constructResponse();
         logger.info("Response: %s", response.c_str());
 
@@ -204,7 +208,10 @@ bool STManager::runServerHTTP() {
             continue;
         }
 
+
         logger.info("HTTP: Client connected with address: %s", inet_ntoa(addrHTTP.sin_addr));
+
+        Connected = true; // Set this to true here so it no longer sends out after a connection has been established first.
 
         std::string stats = constructResponse();
         std::string response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: application/json\nAccess-Control-Allow-Origin: *\n\n" + stats;
@@ -246,7 +253,7 @@ bool STManager::MulticastServer() {
     groupSock.sin_family = AF_INET;
     groupSock.sin_addr.s_addr = inet_addr(ADDRESS_MULTI);
     groupSock.sin_port = htons(PORT_MULTI);
-    logger.info("Initializing Multicast on 225.1.1.1:5555");
+    logger.info("Initializing Multicast on %s:%d", ADDRESS_MULTI, PORT_MULTI);
 
     /*
      * Disable loopback so you do not receive your own datagrams.
@@ -276,33 +283,43 @@ bool STManager::MulticastServer() {
     }
 
         struct ifreq ifr;
+        int delay = 60000;
 
-        /* I want to get an IPv4 IP address */
-        ifr.ifr_addr.sa_family = AF_INET;
+        while (true) {
+            if (delay >= 600000 || !Connected) {
+                delay = 0;
+                /* I want to get an IPv4 IP address */
+                ifr.ifr_addr.sa_family = AF_INET;
 
-        /* I want IP address attached to "wlan0" */
-        strncpy(ifr.ifr_name, "wlan0", IFNAMSIZ - 1);
+                /* I want IP address attached to "wlan0" */
+                strncpy(ifr.ifr_name, "wlan0", IFNAMSIZ - 1);
 
-        ioctl(sd, SIOCGIFADDR, &ifr);
+                ioctl(sd, SIOCGIFADDR, &ifr);
 
-    //    std::string message = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
-    std::string ip = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
-    std::string http = ip + std::to_string(PORT_HTTP);
-    std::string socket = ip + std::to_string(PORT);
-    std::string message = multicastResponse(socket, http);
+                /*
+                * Create message to be sent
+                */
+                //    std::string message = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
+                std::string ip = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
+                std::string http = ip + ":" + std::to_string(PORT_HTTP);
+                std::string socket = ip + ":" + std::to_string(PORT);
+                std::string message = multicastResponse(socket, http);
 
-    /*
-     * Send a message to the multicast group specified by the
-     * groupSock sockaddr structure.
-     */
-    //datalen = 10;
-    strcpy(databuf, message.c_str());
-    datalen = message.length();
-    if (sendto(sd, databuf, datalen, 0,
-        (struct sockaddr*)&groupSock,
-        sizeof(groupSock)) < 0)
-    {
-        logger.error("sending datagram message");
+                /*
+                 * Send a message to the multicast group specified by the
+                 * groupSock sockaddr structure.
+                 */
+
+                strcpy(databuf, message.c_str());
+                datalen = message.length();
+                if (sendto(sd, databuf, datalen, 0,
+                    (struct sockaddr*)&groupSock,
+                    sizeof(groupSock)) < 0)
+                {
+                    logger.error("Multicast: error sending datagram message");
+                }
+            }
+            delay++;
     }
     return true;
 }
