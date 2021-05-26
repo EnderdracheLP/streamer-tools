@@ -21,7 +21,7 @@ private:
 
     void HandleRequestHTTP(int client_sock);
     void sendRequest(int client_sock);
-    void ReadXBytes(int socket, unsigned int x, char* buffer);
+    void ReadXBytes(int socket, unsigned int x, void* buffer);
 
     std::string constructResponse();
     std::string multicastResponse(std::string socket, std::string http);

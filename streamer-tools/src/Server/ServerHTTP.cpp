@@ -74,21 +74,22 @@ bool STManager::runServerHTTP() {
 
 // This assumes buffer is at least x bytes long,
 // and that the socket is blocking.
-void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
+void STManager::ReadXBytes(int socket, unsigned int x, void* buffer)
 {
     int bytesRead = 0;
     int result;
     while (bytesRead < x)
     {
-        result = read(socket, buffer + bytesRead, x - bytesRead);
+        result = read(socket, (char*)buffer + bytesRead, x - bytesRead);
         if (result < 1)
         {
             logger.error("HTTP: Error receiving request: %s", strerror(errno));
+            break;
         }
 
         bytesRead += result;
         logger.debug("Received bytes: %d", bytesRead);
-        logger.debug("Received message: \n%s", buffer);
+        logger.debug("Received message: \n%s", (char*)buffer);
     }
 }
 
@@ -96,35 +97,37 @@ void STManager::HandleRequestHTTP(int client_sock) {
 
     unsigned int length = 350;
     char* buffer = 0;
+    std::string response;
+    std::string stats;
     //// we assume that sizeof(length) will return 4 here.
     //ReadXBytes(client_sock, sizeof(length), (void*)(&length));
     buffer = new char[length];
-    ReadXBytes(client_sock, length, buffer);
+    ReadXBytes(client_sock, length, (void*)buffer);
 
-    logger.debug(buffer);
+    //logger.debug((char*)buffer);
 
-    std::string resultStr(buffer);
+    std::string resultStr((char*)buffer);
     delete[] buffer;
-    if (resultStr.find("GET / ") != std::string::npos) {
+    if ((resultStr.find("GET / ") != std::string::npos) || (resultStr.find("GET /index") != std::string::npos)) {
         std::string stats = constructResponse();
         std::string response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: application/json\nAccess-Control-Allow-Origin: *\n\n" + stats;
         logger.info("HTTP Response: \n%s", response.c_str());
 
         int convertedLength = htonl(response.length());
         if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
-            logger.error("HTTP: Error sending JSON: \n%s", strerror(errno));
+            logger.error("HTTP: Error sending HTML: \n%s", strerror(errno));
             close(client_sock); return;
         }
     }
-    else if (resultStr.find("GET /cover/ ") != std::string::npos || resultStr.find("GET /cover ") != std::string::npos) {
+    else if ((resultStr.find("GET /cover/ ") != std::string::npos) || (resultStr.find("GET /cover ") != std::string::npos)) {
         // To-Do: Send Playlist cover
         std::string stats = "<!DOCTYPE html> <html> <head> <title> No Cover image for you little guy or girl </title> </head> <body> Do you really think covers are implemented yet??? Also yeet that page it's uGlY </body> </html>";
-        std::string response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: text/html\nAccess-Control-Allow-Origin: *\n\n" + stats;
+        std::string response = "HTTP/1.1 501 Not Implemented\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: text/html\nAccess-Control-Allow-Origin: *\n\n" + stats;
         logger.info("HTTP Response: \n%s", response.c_str());
 
         int convertedLength = htonl(response.length());
         if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
-            logger.error("HTTP: Error sending JSON: \n%s", strerror(errno));
+            logger.error("HTTP: Error sending HTML for /cover: \n%s", strerror(errno));
             close(client_sock); return;
         }
     }
