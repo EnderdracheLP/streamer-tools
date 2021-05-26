@@ -78,7 +78,7 @@ void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
 {
     int bytesRead = 0;
     int result;
-    while (bytesRead < x)
+    while (bytesRead < x)   // TODO: Check if we even need this loop
     {
         result = read(socket, buffer + bytesRead, x - bytesRead);
         if (result < 1)
@@ -90,6 +90,9 @@ void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
         bytesRead += result;
         logger.debug("Received bytes: %d", bytesRead);
         logger.debug("Received message: \n%s", buffer);
+
+        std::string resultStr(buffer);
+        if ((resultStr.find("Connection: close") != std::string::npos)) break;
     }
 }
 
@@ -102,10 +105,11 @@ void STManager::HandleRequestHTTP(int client_sock) {
     //// we assume that sizeof(length) will return 4 here.
     //ReadXBytes(client_sock, sizeof(length), (void*)(&length));
     buffer = new char[length];
-    ReadXBytes(client_sock, length, buffer);
+    std::thread ReadXBytesThread([this, client_sock, length, buffer]() { return STManager::ReadXBytes(client_sock, length, buffer); }); // Use threads to read request
+    //ReadXBytes(client_sock, length, buffer);
 
     //logger.debug((char*)buffer);
-
+    ReadXBytesThread.join();
     std::string resultStr(buffer);
     delete[] buffer;
     if ((resultStr.find("GET / ") != std::string::npos) || (resultStr.find("GET /index") != std::string::npos)) {
