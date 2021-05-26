@@ -182,19 +182,22 @@ bool STManager::runServer()   {
 
 void STManager::sendRequest(int client_sock) {
 
-    std::string response = constructResponse();
-    logger.info("Response: %s", response.c_str());
+    while (client_sock != -1) {
+        std::string response = constructResponse();
+        logger.info("Response: %s", response.c_str());
 
-    int convertedLength = htonl(response.length());
-    if (write(client_sock, &convertedLength, 4) == -1) { // First send the length of the data
-        logger.error("Error sending length prefix: %s", strerror(errno));
-        close(client_sock); return;
+        int convertedLength = htonl(response.length());
+        if (write(client_sock, &convertedLength, 4) == -1) { // First send the length of the data
+            logger.error("Error sending length prefix: %s", strerror(errno));
+            close(client_sock); return;
+        }
+        if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
+            logger.error("Error sending JSON: %s", strerror(errno));
+            close(client_sock); return;
+        }
+        std::chrono::milliseconds timespan(50);
+        std::this_thread::sleep_for(timespan);
     }
-    if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
-        logger.error("Error sending JSON: %s", strerror(errno));
-        close(client_sock); return;
-    }
-
     close(client_sock); // Close the client's socket to avoid leaking resources
     return;
 }
