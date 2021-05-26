@@ -10,19 +10,9 @@
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Component.hpp"
 
-#include "UnityEngine/Sprite.hpp"
-#include "UnityEngine/Texture2D.hpp"
-
 #include "System/Action_1.hpp"
 #include "System/Action_2.hpp"
 #include "System/Action_3.hpp"
-
-#include "System/Func_2.hpp"
-
-#include "System/Threading/Tasks/Task_1.hpp"
-#include "System/Threading/CancellationToken.hpp"
-
-#include "System/Convert.hpp"
 
 #include "GlobalNamespace/IConnectedPlayer.hpp"
 #include "GlobalNamespace/MultiplayerPlayersManager.hpp"
@@ -82,24 +72,6 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
     stManager->bpm = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<float>(level, "beatsPerMinute"));
     bool CustomLevel = stManager->id.find("custom_level_") != std::string::npos;
     stManager->njs = CustomLevel ? self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed() : 0.0f;
-
-    static Unity::Collections::NativeArray_1<uint8_t> rawCover;
-
-    System::Threading::Tasks::Task_1<UnityEngine::Sprite*>*  _coverGetter = reinterpret_cast<GlobalNamespace::IPreviewBeatmapLevel*>(self->level)->GetCoverImageAsync(System::Threading::CancellationToken::get_None());
-    System::Threading::Tasks::Task_1<Array<uint8_t>*>*  _rawCoverGetter = _coverGetter->ContinueWith<Array<uint8_t>*>(il2cpp_utils::MakeFunc<System::Func_2<System::Threading::Tasks::Task_1<UnityEngine::Sprite*>*, Array<uint8_t>*>*>(
-        *[](System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* spriteTask)->Array<uint8_t>*{
-            UnityEngine::Sprite* sprite = spriteTask->get_Result();
-            rawCover = sprite->get_texture()->GetRawTextureData<uint8_t>();
-            return reinterpret_cast<Array<uint8_t>*>(&rawCover);
-        }
-    ));
-
-    auto RawCoverbytesArray = Array<uint8_t*>::NewLength(rawCover.m_Length);
-    memcpy(RawCoverbytesArray->values, rawCover.m_Buffer, rawCover.m_Length);
-
-    stManager->coverImageBase64 = to_utf8(csstrtostr(System::Convert::ToBase64String(reinterpret_cast<Array<uint8_t>*>(RawCoverbytesArray))));
-
-    //*/
     stManager->statusLock.unlock();
 }
 

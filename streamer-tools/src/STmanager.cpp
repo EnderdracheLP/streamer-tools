@@ -79,7 +79,6 @@ std::string STManager::constructResponse() {
     doc.AddMember("difficulty", STManager::difficulty, alloc);
     doc.AddMember("bpm", STManager::bpm, alloc);
     doc.AddMember("njs", STManager::njs, alloc);
-    doc.AddMember("coverImage", STManager::coverImageBase64, alloc); // Only for testing
     doc.AddMember("players", STManager::players, alloc);
     doc.AddMember("maxPlayers", STManager::maxPlayers, alloc);
     doc.AddMember("mpGameId", STManager::mpGameId, alloc);
