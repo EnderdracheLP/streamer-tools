@@ -74,13 +74,13 @@ bool STManager::runServerHTTP() {
 
 // This assumes buffer is at least x bytes long,
 // and that the socket is blocking.
-void STManager::ReadXBytes(int socket, unsigned int x, void* buffer)
+void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
 {
     int bytesRead = 0;
     int result;
     while (bytesRead < x)
     {
-        result = read(socket, (char*)buffer + bytesRead, x - bytesRead);
+        result = read(socket, buffer + bytesRead, x - bytesRead);
         if (result < 1)
         {
             logger.error("HTTP: Error receiving request: %s", strerror(errno));
@@ -89,7 +89,7 @@ void STManager::ReadXBytes(int socket, unsigned int x, void* buffer)
 
         bytesRead += result;
         logger.debug("Received bytes: %d", bytesRead);
-        logger.debug("Received message: \n%s", (char*)buffer);
+        logger.debug("Received message: \n%s", buffer);
     }
 }
 
@@ -98,52 +98,37 @@ void STManager::HandleRequestHTTP(int client_sock) {
     unsigned int length = 350;
     char* buffer = 0;
     std::string response;
-    std::string stats;
+    std::string messageStr;
     //// we assume that sizeof(length) will return 4 here.
     //ReadXBytes(client_sock, sizeof(length), (void*)(&length));
     buffer = new char[length];
-    ReadXBytes(client_sock, length, (void*)buffer);
+    ReadXBytes(client_sock, length, buffer);
 
     //logger.debug((char*)buffer);
 
-    std::string resultStr((char*)buffer);
+    std::string resultStr(buffer);
     delete[] buffer;
     if ((resultStr.find("GET / ") != std::string::npos) || (resultStr.find("GET /index") != std::string::npos)) {
-        std::string stats = constructResponse();
-        std::string response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: application/json\nAccess-Control-Allow-Origin: *\n\n" + stats;
-        logger.info("HTTP Response: \n%s", response.c_str());
-
-        int convertedLength = htonl(response.length());
-        if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
-            logger.error("HTTP: Error sending HTML: \n%s", strerror(errno));
-            close(client_sock); return;
-        }
+        messageStr = constructResponse();
+        response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(messageStr.length()) + "\nContent-Type: application/json\nAccess-Control-Allow-Origin: *\n\n" + messageStr;
     }
     else if ((resultStr.find("GET /cover/ ") != std::string::npos) || (resultStr.find("GET /cover ") != std::string::npos)) {
         // To-Do: Send Playlist cover
-        std::string stats = "<!DOCTYPE html> <html> <head> <title> No Cover image for you little guy or girl </title> </head> <body> Do you really think covers are implemented yet??? Also yeet that page it's uGlY </body> </html>";
-        std::string response = "HTTP/1.1 501 Not Implemented\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: text/html\nAccess-Control-Allow-Origin: *\n\n" + stats;
-        logger.info("HTTP Response: \n%s", response.c_str());
-
-        int convertedLength = htonl(response.length());
-        if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
-            logger.error("HTTP: Error sending HTML for /cover: \n%s", strerror(errno));
-            close(client_sock); return;
-        }
+        messageStr = "<!DOCTYPE html> <html> <head> <title> No Cover image for you little guy or girl </title> </head> <body> Do you really think covers are implemented yet??? Also yeet that page it's uGlY </body> </html>";
+        response = "HTTP/1.1 501 Not Implemented\nContent-Length: " + std::to_string(messageStr.length()) + "\nContent-Type: text/html\nAccess-Control-Allow-Origin: *\n\n" + messageStr;
     }
     else {
         // 404 or invalid
-        std::string messageError = "<!DOCTYPE html> <html> <head> <title>streamer-tools - 404 Not found</title> <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'> <style> body { color: #EEEEEE; background-color: #202225; font-size: 14px; font-family: 'Open Sans'; } </style> </head> <body> <div style=\"font-size: 30px;\">Streamer-tools - 404 Not found</div> <div style=\"color: #888; margin-bottom: 10px; padding-left: 20px;\">The endpoint you were looking for could not be found.</div> <div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " (Oculus Quest) server at ip " + STManager::localIp + ":" + std::to_string(PORT_HTTP) + "</i></div> </body> </html>"; // Yes this is long but page is pretty-ish
-        std::string responseInvalid = "HTTP/1.1 404 Not Found\nContent-Length: " + std::to_string(messageError.length()) + "\nContent-Type: text/html\nAccess-Control-Allow-Origin: *\n\n" + messageError;
-        logger.info("HTTP Not Found Response: %s", responseInvalid.c_str());
-
-        int convertedLengthInvalid = htonl(responseInvalid.length());
-        if (write(client_sock, responseInvalid.c_str(), responseInvalid.length()) == -1) { // Then send the string
-            logger.error("HTTP: Error sending HTTP Response: %s", strerror(errno));
-            close(client_sock); logger.debug("Received message: \n%s", resultStr.c_str()); return;
-        }
-        logger.error("HTTP: Response Status Code: %s", strerror(errno));
+        messageStr = "<!DOCTYPE html> <html> <head> <title>streamer-tools - 404 Not found</title> <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'> <style> body { color: #EEEEEE; background-color: #202225; font-size: 14px; font-family: 'Open Sans'; } </style> </head> <body> <div style=\"font-size: 30px;\">Streamer-tools - 404 Not found</div> <div style=\"color: #888; margin-bottom: 10px; padding-left: 20px;\">The endpoint you were looking for could not be found.</div> <div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " (Oculus Quest) server at ip " + STManager::localIp + ":" + std::to_string(PORT_HTTP) + "</i></div> </body> </html>"; // Yes this is long but page is pretty-ish
+        response = "HTTP/1.1 404 Not Found\nContent-Length: " + std::to_string(messageStr.length()) + "\nContent-Type: text/html\nAccess-Control-Allow-Origin: *\n\n" + messageStr;
     }
+    SendRequest: // Just incase we ever need to use goto SendRequest to skip over code
+    int convertedLength = htonl(response.length());
+    if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
+        logger.error("HTTP: Error sending Response: \n%s", strerror(errno));
+        close(client_sock); return;
+    }
+    logger.info("HTTP Response: \n%s", response.c_str());
     close(client_sock); // Close the client's socket to avoid leaking resources
     return;
 }
