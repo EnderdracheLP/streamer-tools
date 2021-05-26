@@ -56,6 +56,14 @@ static Logger& getLogger() {
 }
 static STManager* stManager = nullptr;
 
+void ResetScores() {
+    stManager->goodCuts = 0;
+    stManager->badCuts = 0;
+    stManager->missedNotes = 0;
+    stManager->combo = 0;
+    stManager->score = 0;
+    stManager->accuracy = 1.0f;
+}
 
 // Define the current level by finding info from the IBeatmapLevel object
 MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
@@ -82,9 +90,8 @@ MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode
     // Set the currently playing level to the selected one, since we are in a song
     stManager->statusLock.lock();
     stManager->difficulty = difficulty;
-    stManager->goodCuts = 0;
-    stManager->badCuts = 0;
-    stManager->missedNotes = 0;
+    stManager->location = 1;
+    ResetScores();
     stManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode
     stManager->statusLock.unlock();
     SongStart(self, gameMode, difficultyBeatmap, b, c, d, e, f, practiceSettings, g, h);
@@ -126,9 +133,7 @@ MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppStrin
     getLogger().info("Multiplayer Song Started");
     stManager->statusLock.lock();
     stManager->location = 2;
-    stManager->goodCuts = 0;
-    stManager->badCuts = 0;
-    stManager->missedNotes = 0;
+    ResetScores();
     stManager->statusLock.unlock();
 
 
@@ -208,9 +213,7 @@ MAKE_HOOK_OFFSETLESS(TutorialStart, void, Il2CppObject* self)   {
     getLogger().info("Tutorial starting");
     stManager->statusLock.lock();
     stManager->location = 3;
-    stManager->goodCuts = 0;
-    stManager->badCuts = 0;
-    stManager->missedNotes = 0;
+    ResetScores();
     stManager->statusLock.unlock();
     TutorialStart(self);
 }
@@ -227,9 +230,7 @@ MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void, Il2CppObject* self, Il2CppString*
     getLogger().info("Campaign level starting");
     stManager->statusLock.lock();
     stManager->location = 4;
-    stManager->goodCuts = 0;
-    stManager->badCuts = 0;
-    stManager->missedNotes = 0;
+    ResetScores();
     stManager->statusLock.unlock();
     CampaignLevelStart(self, missionId, a, b, c, d, e, f, g);
 }
