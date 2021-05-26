@@ -84,23 +84,54 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
     stManager->njs = CustomLevel ? self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed() : 0.0f;
 
     static Unity::Collections::NativeArray_1<uint8_t> rawCover;
-
+    getLogger().debug("coverGetter Task");                      // 
     System::Threading::Tasks::Task_1<UnityEngine::Sprite*>*  _coverGetter = reinterpret_cast<GlobalNamespace::IPreviewBeatmapLevel*>(self->level)->GetCoverImageAsync(System::Threading::CancellationToken::get_None());
-    System::Threading::Tasks::Task_1<Array<uint8_t>*>*  _rawCoverGetter = _coverGetter->ContinueWith<Array<uint8_t>*>(il2cpp_utils::MakeFunc<System::Func_2<System::Threading::Tasks::Task_1<UnityEngine::Sprite*>*, Array<uint8_t>*>*>(
-        *[](System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* spriteTask)->Array<uint8_t>*{
-            UnityEngine::Sprite* sprite = spriteTask->get_Result();
-            rawCover = sprite->get_texture()->GetRawTextureData<uint8_t>();
-            return reinterpret_cast<Array<uint8_t>*>(&rawCover);
-        }
-    ));
+    _coverGetter->Wait();
+    getLogger().debug("coverSprite");
+    UnityEngine::Sprite* coverSprite = _coverGetter->get_Result();
+    getLogger().debug("rawCover");
 
+    UnityEngine::Texture2D* coverTexture = coverSprite->get_texture();
+    getLogger().debug("coverTexture");
+
+    //rawCover = coverSprite->get_texture()->EncodeToPng
+
+    //coverTexture = THROW_UNLESS(il2cpp_utils::RunMethod(coverSprite, "UnityEngine.Networking", "UnityWebRequestMultimedia", "GetAudioClip"));
+    //rawCover = THROW_UNLESS(il2cpp_utils::RunMethod(coverTexture, "SendWebRequest"));
+
+    const MethodInfo* GetRawTextureData = THROW_UNLESS(il2cpp_utils::FindMethodUnsafe("UnityEngine","Texture2D", "GetRawTextureData", 0));
+
+    rawCover = THROW_UNLESS(il2cpp_utils::RunMethod<Unity::Collections::NativeArray_1<uint8_t>>(coverTexture, GetRawTextureData));
+
+    //rawCover = coverSprite->get_texture()->GetRawTextureData<uint8_t>();
+
+    //System::Threading::Tasks::Task_1<Array<uint8_t>*>*  _rawCoverGetter = _coverGetter->ContinueWith<Array<uint8_t>*>(il2cpp_utils::MakeFunc<System::Func_2<System::Threading::Tasks::Task_1<UnityEngine::Sprite*>*, Array<uint8_t>*>*>(
+    //    *[](System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* spriteTask)->Array<uint8_t>*{
+    //        getLogger().debug("spriteTask");
+    //        UnityEngine::Sprite* sprite = spriteTask->get_Result();
+    //        getLogger().debug("rawCover");
+    //        rawCover = sprite->get_texture()->GetRawTextureData<uint8_t>();
+    //        getLogger().debug("reinterpret next");
+    //        return reinterpret_cast<Array<uint8_t>*>(&rawCover);
+    //    }
+    //));
+
+    //_rawCoverGetter->Wait();
+    //rawCover = _rawCoverGetter->get_Result();
+
+    getLogger().debug("RawCoverbytesArray");
     auto RawCoverbytesArray = Array<uint8_t*>::NewLength(rawCover.m_Length);
+    getLogger().debug("memcpy");
     memcpy(RawCoverbytesArray->values, rawCover.m_Buffer, rawCover.m_Length);
 
-    stManager->coverImageBase64 = to_utf8(csstrtostr(System::Convert::ToBase64String(reinterpret_cast<Array<uint8_t>*>(RawCoverbytesArray))));
+    getLogger().debug("coverImageBase64 ToBase64String");
+    if (RawCoverbytesArray) {
+        stManager->coverImageBase64 = to_utf8(csstrtostr(System::Convert::ToBase64String(reinterpret_cast<Array<uint8_t>*>(RawCoverbytesArray))));
+    }
 
     //*/
     stManager->statusLock.unlock();
+    
 }
 
 MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, PracticeSettings* practiceSettings, Il2CppString* g, bool h) {
