@@ -10,13 +10,13 @@ Makes information available which can then be used by a Streamer-Tools PC applic
 [Download .QMOD](https://github.com/EnderdracheLP/streamer-tools/releases/latest)
 
 ## Documentation
-### Getting IP
-The mod will send a Multicast Response out to the network on `232.0.53.5:54500` using the UDP Protocol any application wanting to receive the response have to subscribe to that IP and listen on the port.
+### Getting Mod Info and Connection Information
+The mod will send a Multicast Response out to the network on `232.0.53.5:53500` using the UDP Protocol any application wanting to receive the response have to subscribe to that IP and listen on the port.
 
 Here's a simple NodeJS example for it
 
 ```js
-// This will subscribe all network interfaces to 232.0.53.5:54500
+// This will subscribe all network interfaces to 232.0.53.5:53500
 GetLocalIPs().forEach(ip => {
     SetupMulticast(ip)
 })
@@ -106,7 +106,11 @@ Example response:
     "players": 1,            // Players in current mp lobby
     "maxPlayers": 5,         // max players of current mp lobby
     "mpGameId": "P7GZM",     // GameId of current multiplayer lobby
-    "mpGameIdShown": false   // If the Game Id is shown in game (true) or as ***** (false)
+    "mpGameIdShown": false,  // If the Game Id is shown in game (true) or as ***** (false)
+    "goodCuts": 282,         // How many blocks have been cut right
+    "badCuts": 9,            // How many blocks have been cut wrong
+    "missedNotes": 33,       // How many blocks have been missed
+    "fps": 72                // FPS of the game
 }
 ```
 Currently all values only update and do not reset (What I mean is that after you go out of a mp lobby the game id will still be there)
