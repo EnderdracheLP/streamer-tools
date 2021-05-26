@@ -79,7 +79,6 @@ std::string STManager::constructResponse() {
     doc.AddMember("difficulty", STManager::difficulty, alloc);
     doc.AddMember("bpm", STManager::bpm, alloc);
     doc.AddMember("njs", STManager::njs, alloc);
-    doc.AddMember("coverImage", STManager::coverImageBase64, alloc); // Only for testing
     doc.AddMember("players", STManager::players, alloc);
     doc.AddMember("maxPlayers", STManager::maxPlayers, alloc);
     doc.AddMember("mpGameId", STManager::mpGameId, alloc);
@@ -88,6 +87,7 @@ std::string STManager::constructResponse() {
     doc.AddMember("badCuts", STManager::badCuts, alloc);
     doc.AddMember("missedNotes", STManager::missedNotes, alloc);
     doc.AddMember("fps", STManager::fps, alloc);
+    doc.AddMember("coverImageBase64", STManager::coverImageBase64, alloc);
     statusLock.unlock();
 
     // Convert the document into a string
@@ -106,6 +106,21 @@ std::string STManager::multicastResponse(std::string socket, std::string http) {
     doc.AddMember("ModVersion", STModInfo.version, alloc);
     doc.AddMember("Socket", socket, alloc);
     doc.AddMember("HTTP", http, alloc);
+
+    // Convert the document into a string
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+    return buffer.GetString();
+}
+
+std::string STManager::constructCoverResponse() {
+    rapidjson::Document doc;
+    auto& alloc = doc.GetAllocator();
+    doc.SetObject();
+    statusLock.lock();
+    doc.AddMember("coverImageBase64", STManager::coverImageBase64, alloc);
+    statusLock.unlock();
 
     // Convert the document into a string
     rapidjson::StringBuffer buffer;
@@ -183,19 +198,22 @@ bool STManager::runServer()   {
 
 void STManager::sendRequest(int client_sock) {
 
-    std::string response = constructResponse();
-    logger.info("Response: %s", response.c_str());
+    while (client_sock != -1) {
+        std::string response = constructResponse();
+        //logger.info("Response: %s", response.c_str());
 
-    int convertedLength = htonl(response.length());
-    if (write(client_sock, &convertedLength, 4) == -1) { // First send the length of the data
-        logger.error("Error sending length prefix: %s", strerror(errno));
-        close(client_sock); return;
+        int convertedLength = htonl(response.length());
+        if (write(client_sock, &convertedLength, 4) == -1) { // First send the length of the data
+            //logger.error("Error sending length prefix: %s", strerror(errno));
+            close(client_sock); return;
+        }
+        if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
+            //logger.error("Error sending JSON: %s", strerror(errno));
+            close(client_sock); return;
+        }
+        std::chrono::milliseconds timespan(100);
+        std::this_thread::sleep_for(timespan);
     }
-    if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
-        logger.error("Error sending JSON: %s", strerror(errno));
-        close(client_sock); return;
-    }
-
     close(client_sock); // Close the client's socket to avoid leaking resources
     return;
 }
@@ -245,7 +263,7 @@ bool STManager::runServerHTTP() {
         Connected = true; // Set this to true here so it no longer sends out after a connection has first been established.
 
         // Pass the socket handle over and start a seperate thread for sending back the reply
-        std::thread RequestHTTPThread([this, client_sock]() { return STManager::sendRequestHTTP(client_sock); }); // Use threads for the response
+        std::thread RequestHTTPThread([this, client_sock]() { return STManager::HandleRequestHTTP(client_sock); }); // Use threads for the response
 
         RequestHTTPThread.detach(); // Detach the thread from this thread
 
@@ -268,16 +286,72 @@ bool STManager::runServerHTTP() {
     return true;
 }
 
-void STManager::sendRequestHTTP(int client_sock) {
+// This assumes buffer is at least x bytes long,
+// and that the socket is blocking.
+void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
+{
+    int bytesRead = 0;
+    int result;
+    while (bytesRead < x)
+    {
+        result = read(socket, buffer + bytesRead, x - bytesRead);
+        if (result < 1)
+        {
+            logger.error("HTTP: Error receiving request: %s", strerror(errno));
+        }
 
-    std::string stats = constructResponse();
-    std::string response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: application/json\nAccess-Control-Allow-Origin: *\n\n" + stats;
-    logger.info("HTTP Response: %s", response.c_str());
+        bytesRead += result;
+        //logger.debug("Received bytes: %d", bytesRead);
+        //logger.debug("Received message: \n%s", buffer);
+    }
+}
 
-    int convertedLength = htonl(response.length());
-    if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
-        logger.error("HTTP: Error sending JSON: %s", strerror(errno));
-        close(client_sock); return;
+void STManager::HandleRequestHTTP(int client_sock) {
+
+    unsigned int length = 350;
+    char* buffer = 0;
+    //// we assume that sizeof(length) will return 4 here.
+    //ReadXBytes(client_sock, sizeof(length), (void*)(&length));
+    buffer = new char[length];
+    ReadXBytes(client_sock, length, buffer);
+
+    //logger.debug(buffer);
+
+    std::string resultStr(buffer);
+    delete[] buffer;
+    if (resultStr.find("GET / ") != std::string::npos) {
+        std::string stats = constructResponse();
+        std::string response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: application/json\nAccess-Control-Allow-Origin: *\n\n" + stats;
+        //logger.info("HTTP Response: \n%s", response.c_str());
+
+        int convertedLength = htonl(response.length());
+        if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
+            logger.error("HTTP: Error sending JSON: \n%s", strerror(errno));
+            close(client_sock); return;
+        }
+    } else if(resultStr.find("GET /cover/ ") != std::string::npos || resultStr.find("GET /cover ") != std::string::npos) {
+        // To-Do: Send Playlist cover
+        std::string stats = constructCoverResponse();
+        std::string response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: application/json\nAccess-Control-Allow-Origin: *\n\n" + stats;
+        //logger.info("HTTP Response: \n%s", response.c_str());
+
+        int convertedLength = htonl(response.length());
+        if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
+            logger.error("HTTP: Error sending JSON: \n%s", strerror(errno));
+            close(client_sock); return;
+        }
+    } else {
+        // 404 or invalid
+        std::string messageError = "<!DOCTYPE html> <html> <head> <title>streamer-tools - 404 Not found</title> <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'> <style> body { color: #EEEEEE; background-color: #202225; font-size: 14px; font-family: 'Open Sans'; } </style> </head> <body> <div style=\"font-size: 30px;\">Streamer-tools - 404 Not found</div> <div style=\"color: #888; margin-bottom: 10px; padding-left: 20px;\">The endpoint you were looking for could not be found.</div> <div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " (Oculus Quest) server at ip " + STManager::localIp + ":" + std::to_string(PORT_HTTP) + "</i></div> </body> </html>"; // Yes this is long but page is pretty-ish
+        std::string responseInvalid = "HTTP/1.1 404 Not Found\nContent-Length: " + std::to_string(messageError.length()) + "\nContent-Type: text/html\nAccess-Control-Allow-Origin: *\n\n" + messageError;
+        //logger.info("HTTP Not Found Response: %s", responseInvalid.c_str());
+
+        int convertedLengthInvalid = htonl(responseInvalid.length());
+        if (write(client_sock, responseInvalid.c_str(), responseInvalid.length()) == -1) { // Then send the string
+            logger.error("HTTP: Error sending HTTP Response: %s", strerror(errno));
+            close(client_sock); logger.debug("Received message: \n%s", resultStr.c_str()); return;
+        }
+        //logger.error("HTTP: Response Status Code: %s", strerror(errno));
     }
     close(client_sock); // Close the client's socket to avoid leaking resources
     return;
@@ -352,9 +426,9 @@ bool STManager::MulticastServer() {
                 * Create message to be sent
                 */
                 //    std::string message = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
-                std::string ip = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
-                std::string http = ip + ":" + std::to_string(PORT_HTTP);
-                std::string socket = ip + ":" + std::to_string(PORT);
+                STManager::localIp = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
+                std::string http = STManager::localIp + ":" + std::to_string(PORT_HTTP);
+                std::string socket = STManager::localIp + ":" + std::to_string(PORT);
                 std::string message = multicastResponse(socket, http);
 
                 /*

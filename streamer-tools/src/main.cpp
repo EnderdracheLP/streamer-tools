@@ -9,19 +9,12 @@
 #include "UnityEngine/Resources.hpp"
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Component.hpp"
-
-#include "UnityEngine/Sprite.hpp"
-#include "UnityEngine/Texture2D.hpp"
+#include "Unity/Collections/NativeArray_1.hpp"
 
 #include "System/Action_1.hpp"
 #include "System/Action_2.hpp"
 #include "System/Action_3.hpp"
-
-#include "System/Func_2.hpp"
-
 #include "System/Threading/Tasks/Task_1.hpp"
-#include "System/Threading/CancellationToken.hpp"
-
 #include "System/Convert.hpp"
 
 #include "GlobalNamespace/IConnectedPlayer.hpp"
@@ -45,6 +38,8 @@
 #include "GlobalNamespace/GameplayCoreInstaller.hpp"
 
 #include "UnityEngine/SceneManagement/Scene.hpp"
+#include "UnityEngine/ImageConversion.hpp"
+#include "UnityEngine/Sprite.hpp"
 using namespace GlobalNamespace;
 
 #include "modloader/shared/modloader.hpp"
@@ -66,6 +61,14 @@ static Logger& getLogger() {
 }
 static STManager* stManager = nullptr;
 
+void ResetScores() {
+    stManager->goodCuts = 0;
+    stManager->badCuts = 0;
+    stManager->missedNotes = 0;
+    stManager->combo = 0;
+    stManager->score = 0;
+    stManager->accuracy = 1.0f;
+}
 
 // Define the current level by finding info from the IBeatmapLevel object
 MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
@@ -82,56 +85,24 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
     stManager->bpm = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<float>(level, "beatsPerMinute"));
     bool CustomLevel = stManager->id.find("custom_level_") != std::string::npos;
     stManager->njs = CustomLevel ? self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed() : 0.0f;
+    stManager->statusLock.unlock();
 
-    static Unity::Collections::NativeArray_1<uint8_t> rawCover;
     getLogger().debug("coverGetter Task");                      // 
     System::Threading::Tasks::Task_1<UnityEngine::Sprite*>*  _coverGetter = reinterpret_cast<GlobalNamespace::IPreviewBeatmapLevel*>(self->level)->GetCoverImageAsync(System::Threading::CancellationToken::get_None());
     _coverGetter->Wait();
     getLogger().debug("coverSprite");
     UnityEngine::Sprite* coverSprite = _coverGetter->get_Result();
-    getLogger().debug("rawCover");
+    getLogger().debug("getting texture");
 
     UnityEngine::Texture2D* coverTexture = coverSprite->get_texture();
-    getLogger().debug("coverTexture");
 
-    //rawCover = coverSprite->get_texture()->EncodeToPng
-
-    //coverTexture = THROW_UNLESS(il2cpp_utils::RunMethod(coverSprite, "UnityEngine.Networking", "UnityWebRequestMultimedia", "GetAudioClip"));
-    //rawCover = THROW_UNLESS(il2cpp_utils::RunMethod(coverTexture, "SendWebRequest"));
-
-    const MethodInfo* GetRawTextureData = THROW_UNLESS(il2cpp_utils::FindMethodUnsafe("UnityEngine","Texture2D", "GetRawTextureData", 0));
-
-    rawCover = THROW_UNLESS(il2cpp_utils::RunMethod<Unity::Collections::NativeArray_1<uint8_t>>(coverTexture, GetRawTextureData));
-
-    //rawCover = coverSprite->get_texture()->GetRawTextureData<uint8_t>();
-
-    //System::Threading::Tasks::Task_1<Array<uint8_t>*>*  _rawCoverGetter = _coverGetter->ContinueWith<Array<uint8_t>*>(il2cpp_utils::MakeFunc<System::Func_2<System::Threading::Tasks::Task_1<UnityEngine::Sprite*>*, Array<uint8_t>*>*>(
-    //    *[](System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* spriteTask)->Array<uint8_t>*{
-    //        getLogger().debug("spriteTask");
-    //        UnityEngine::Sprite* sprite = spriteTask->get_Result();
-    //        getLogger().debug("rawCover");
-    //        rawCover = sprite->get_texture()->GetRawTextureData<uint8_t>();
-    //        getLogger().debug("reinterpret next");
-    //        return reinterpret_cast<Array<uint8_t>*>(&rawCover);
-    //    }
-    //));
-
-    //_rawCoverGetter->Wait();
-    //rawCover = _rawCoverGetter->get_Result();
-
-    getLogger().debug("RawCoverbytesArray");
-    auto RawCoverbytesArray = Array<uint8_t*>::NewLength(rawCover.m_Length);
-    getLogger().debug("memcpy");
-    memcpy(RawCoverbytesArray->values, rawCover.m_Buffer, rawCover.m_Length);
+    getLogger().debug("encoding to base64");
+    Array<uint8_t>* RawCoverbytesArray = UnityEngine::ImageConversion::EncodeToPNG(coverTexture);
 
     getLogger().debug("coverImageBase64 ToBase64String");
     if (RawCoverbytesArray) {
-        stManager->coverImageBase64 = to_utf8(csstrtostr(System::Convert::ToBase64String(reinterpret_cast<Array<uint8_t>*>(RawCoverbytesArray))));
+        stManager->coverImageBase64 = to_utf8(csstrtostr(System::Convert::ToBase64String(RawCoverbytesArray)));
     }
-
-    //*/
-    stManager->statusLock.unlock();
-    
 }
 
 MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, PracticeSettings* practiceSettings, Il2CppString* g, bool h) {
@@ -141,9 +112,8 @@ MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode
     // Set the currently playing level to the selected one, since we are in a song
     stManager->statusLock.lock();
     stManager->difficulty = difficulty;
-    stManager->goodCuts = 0;
-    stManager->badCuts = 0;
-    stManager->missedNotes = 0;
+    stManager->location = 1;
+    ResetScores();
     stManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode
     stManager->statusLock.unlock();
     SongStart(self, gameMode, difficultyBeatmap, b, c, d, e, f, practiceSettings, g, h);
@@ -185,9 +155,7 @@ MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppStrin
     getLogger().info("Multiplayer Song Started");
     stManager->statusLock.lock();
     stManager->location = 2;
-    stManager->goodCuts = 0;
-    stManager->badCuts = 0;
-    stManager->missedNotes = 0;
+    ResetScores();
     stManager->statusLock.unlock();
 
 
@@ -267,9 +235,7 @@ MAKE_HOOK_OFFSETLESS(TutorialStart, void, Il2CppObject* self)   {
     getLogger().info("Tutorial starting");
     stManager->statusLock.lock();
     stManager->location = 3;
-    stManager->goodCuts = 0;
-    stManager->badCuts = 0;
-    stManager->missedNotes = 0;
+    ResetScores();
     stManager->statusLock.unlock();
     TutorialStart(self);
 }
@@ -286,9 +252,7 @@ MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void, Il2CppObject* self, Il2CppString*
     getLogger().info("Campaign level starting");
     stManager->statusLock.lock();
     stManager->location = 4;
-    stManager->goodCuts = 0;
-    stManager->badCuts = 0;
-    stManager->missedNotes = 0;
+    ResetScores();
     stManager->statusLock.unlock();
     CampaignLevelStart(self, missionId, a, b, c, d, e, f, g);
 }

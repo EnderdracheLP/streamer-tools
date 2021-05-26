@@ -19,10 +19,12 @@ private:
     bool runServerHTTP();
     bool MulticastServer();
 
-    void sendRequestHTTP(int client_sock);
+    void HandleRequestHTTP(int client_sock);
     void sendRequest(int client_sock);
+    void ReadXBytes(int socket, unsigned int x, char* buffer);
 
     std::string constructResponse();
+    std::string constructCoverResponse();
     std::string multicastResponse(std::string socket, std::string http);
 public:
     std::mutex statusLock; // Lock to make sure that stuff doesn't get overwritten while being read by the network thread
@@ -54,12 +56,14 @@ public:
     int difficulty = 0;
     float bpm = 0.0f;
     float njs = 0.0f;
-    std::string coverImageBase64;
+    std::string coverImageBase64 = "";
 
     int players = 0;
     int maxPlayers = 0;
     std::string mpGameId = "";
     bool mpGameIdShown = false;
+
+    std::string localIp = "127.0.0.1";
 
     STManager(Logger& logger, const ConfigDocument& config);
 };
