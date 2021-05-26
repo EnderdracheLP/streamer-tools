@@ -61,6 +61,8 @@ public:
     std::string mpGameId = "";
     bool mpGameIdShown = false;
 
+    std::string localIp = "127.0.0.1";
+
     STManager(Logger& logger, const ConfigDocument& config);
 };
 

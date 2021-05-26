@@ -303,21 +303,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
 
     std::string resultStr(buffer);
     delete[] buffer;
-    bool invalid = resultStr.find("GET / ") == std::string::npos;
-    if (invalid) {
-        std::string messageError = ("<!DOCTYPE HTML PUBLIC \" -\/\/IETF//DTD HTML 2.0//EN\">\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Not Found</h1>\n<p>The requested URL was not found on this server.</p>\n<hr>\n<address>" + STModInfo.id + "/" + STModInfo.version + " (Oculus Quest) Server at Port " + std::to_string(PORT_HTTP) + "</address>\n</body></html>");
-        std::string responseInvalid = "HTTP/1.1 404 Not Found\nContent-Length: " + std::to_string(messageError.length()) + "\nContent-Type: text/html\nAccess-Control-Allow-Origin: *\n\n" + messageError;
-        logger.info("HTTP Not Found Response: %s", responseInvalid.c_str());
-
-        int convertedLengthInvalid = htonl(responseInvalid.length());
-        if (write(client_sock, responseInvalid.c_str(), responseInvalid.length()) == -1) { // Then send the string
-            logger.error("HTTP: Error sending HTTP Response: %s", strerror(errno));
-            close(client_sock); logger.debug("Received message: \n%s", resultStr.c_str()); return;
-        }
-        logger.error("HTTP: Response Status Code: %s", strerror(errno));
-        close(client_sock); // Close the client's socket to avoid leaking resources
-        return;
-    } else {
+    if (resultStr.find("GET / ") != std::string::npos) {
         std::string stats = constructResponse();
         std::string response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: application/json\nAccess-Control-Allow-Origin: *\n\n" + stats;
         logger.info("HTTP Response: \n%s", response.c_str());
@@ -327,6 +313,29 @@ void STManager::HandleRequestHTTP(int client_sock) {
             logger.error("HTTP: Error sending JSON: \n%s", strerror(errno));
             close(client_sock); return;
         }
+    } else if(resultStr.find("GET /cover/ ") != std::string::npos || resultStr.find("GET /cover ") != std::string::npos) {
+        // To-Do: Send Playlist cover
+        std::string stats = "<!DOCTYPE html> <html> <head> <title> No Cover image for you little guy or girl </title> </head> <body> Do you really think covers are implemented yet??? Also yeet that page it's uGlY </body> </html>";
+        std::string response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: text/html\nAccess-Control-Allow-Origin: *\n\n" + stats;
+        logger.info("HTTP Response: \n%s", response.c_str());
+
+        int convertedLength = htonl(response.length());
+        if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
+            logger.error("HTTP: Error sending JSON: \n%s", strerror(errno));
+            close(client_sock); return;
+        }
+    } else {
+        // 404 or invalid
+        std::string messageError = "<!DOCTYPE html> <html> <head> <title>streamer-tools - 404 Not found</title> <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'> <style> body { color: #EEEEEE; background-color: #202225; font-size: 14px; font-family: 'Open Sans'; } </style> </head> <body> <div style=\"font-size: 30px;\">Streamer-tools - 404 Not found</div> <div style=\"color: #888; margin-bottom: 10px; padding-left: 20px;\">The endpoint you were looking for could not be found.</div> <div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " (Oculus Quest) server at ip " + STManager::localIp + ":" + std::to_string(PORT_HTTP) + "</i></div> </body> </html>"; // Yes this is long but page is pretty-ish
+        std::string responseInvalid = "HTTP/1.1 404 Not Found\nContent-Length: " + std::to_string(messageError.length()) + "\nContent-Type: text/html\nAccess-Control-Allow-Origin: *\n\n" + messageError;
+        logger.info("HTTP Not Found Response: %s", responseInvalid.c_str());
+
+        int convertedLengthInvalid = htonl(responseInvalid.length());
+        if (write(client_sock, responseInvalid.c_str(), responseInvalid.length()) == -1) { // Then send the string
+            logger.error("HTTP: Error sending HTTP Response: %s", strerror(errno));
+            close(client_sock); logger.debug("Received message: \n%s", resultStr.c_str()); return;
+        }
+        logger.error("HTTP: Response Status Code: %s", strerror(errno));
     }
     close(client_sock); // Close the client's socket to avoid leaking resources
     return;
@@ -401,9 +410,9 @@ bool STManager::MulticastServer() {
                 * Create message to be sent
                 */
                 //    std::string message = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
-                std::string ip = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
-                std::string http = ip + ":" + std::to_string(PORT_HTTP);
-                std::string socket = ip + ":" + std::to_string(PORT);
+                STManager::localIp = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
+                std::string http = STManager::localIp + ":" + std::to_string(PORT_HTTP);
+                std::string socket = STManager::localIp + ":" + std::to_string(PORT);
                 std::string message = multicastResponse(socket, http);
 
                 /*
