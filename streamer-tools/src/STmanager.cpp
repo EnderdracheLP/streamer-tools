@@ -195,7 +195,7 @@ void STManager::sendRequest(int client_sock) {
             logger.error("Error sending JSON: %s", strerror(errno));
             close(client_sock); return;
         }
-        std::chrono::milliseconds timespan(50);
+        std::chrono::milliseconds timespan(100);
         std::this_thread::sleep_for(timespan);
     }
     close(client_sock); // Close the client's socket to avoid leaking resources
@@ -247,7 +247,7 @@ bool STManager::runServerHTTP() {
         Connected = true; // Set this to true here so it no longer sends out after a connection has first been established.
 
         // Pass the socket handle over and start a seperate thread for sending back the reply
-        std::thread RequestHTTPThread([this, client_sock]() { return STManager::sendRequestHTTP(client_sock); }); // Use threads for the response
+        std::thread RequestHTTPThread([this, client_sock]() { return STManager::HandleRequestHTTP(client_sock); }); // Use threads for the response
 
         RequestHTTPThread.detach(); // Detach the thread from this thread
 
@@ -270,16 +270,63 @@ bool STManager::runServerHTTP() {
     return true;
 }
 
-void STManager::sendRequestHTTP(int client_sock) {
+// This assumes buffer is at least x bytes long,
+// and that the socket is blocking.
+void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
+{
+    int bytesRead = 0;
+    int result;
+    while (bytesRead < x)
+    {
+        result = read(socket, buffer + bytesRead, x - bytesRead);
+        if (result < 1)
+        {
+            logger.error("HTTP: Error receiving request: %s", strerror(errno));
+        }
 
-    std::string stats = constructResponse();
-    std::string response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: application/json\nAccess-Control-Allow-Origin: *\n\n" + stats;
-    logger.info("HTTP Response: %s", response.c_str());
+        bytesRead += result;
+        logger.debug("Received bytes: %d", bytesRead);
+        logger.debug("Received message: \n%s", buffer);
+    }
+}
 
-    int convertedLength = htonl(response.length());
-    if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
-        logger.error("HTTP: Error sending JSON: %s", strerror(errno));
-        close(client_sock); return;
+void STManager::HandleRequestHTTP(int client_sock) {
+
+    unsigned int length = 350;
+    char* buffer = 0;
+    //// we assume that sizeof(length) will return 4 here.
+    //ReadXBytes(client_sock, sizeof(length), (void*)(&length));
+    buffer = new char[length];
+    ReadXBytes(client_sock, length, buffer);
+
+    logger.debug(buffer);
+
+    std::string resultStr(buffer);
+    delete[] buffer;
+    bool invalid = resultStr.find("GET / ") == std::string::npos;
+    if (invalid) {
+        std::string messageError = ("<!DOCTYPE HTML PUBLIC \" -\/\/IETF//DTD HTML 2.0//EN\">\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Not Found</h1>\n<p>The requested URL was not found on this server.</p>\n<hr>\n<address>" + STModInfo.id + "/" + STModInfo.version + " (Oculus Quest) Server at Port " + std::to_string(PORT_HTTP) + "</address>\n</body></html>");
+        std::string responseInvalid = "HTTP/1.1 404 Not Found\nContent-Length: " + std::to_string(messageError.length()) + "\nContent-Type: text/html\nAccess-Control-Allow-Origin: *\n\n" + messageError;
+        logger.info("HTTP Not Found Response: %s", responseInvalid.c_str());
+
+        int convertedLengthInvalid = htonl(responseInvalid.length());
+        if (write(client_sock, responseInvalid.c_str(), responseInvalid.length()) == -1) { // Then send the string
+            logger.error("HTTP: Error sending HTTP Response: %s", strerror(errno));
+            close(client_sock); logger.debug("Received message: \n%s", resultStr.c_str()); return;
+        }
+        logger.error("HTTP: Response Status Code: %s", strerror(errno));
+        close(client_sock); // Close the client's socket to avoid leaking resources
+        return;
+    } else {
+        std::string stats = constructResponse();
+        std::string response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(stats.length()) + "\nContent-Type: application/json\nAccess-Control-Allow-Origin: *\n\n" + stats;
+        logger.info("HTTP Response: \n%s", response.c_str());
+
+        int convertedLength = htonl(response.length());
+        if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
+            logger.error("HTTP: Error sending JSON: \n%s", strerror(errno));
+            close(client_sock); return;
+        }
     }
     close(client_sock); // Close the client's socket to avoid leaking resources
     return;

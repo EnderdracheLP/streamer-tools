@@ -19,8 +19,9 @@ private:
     bool runServerHTTP();
     bool MulticastServer();
 
-    void sendRequestHTTP(int client_sock);
+    void HandleRequestHTTP(int client_sock);
     void sendRequest(int client_sock);
+    void ReadXBytes(int socket, unsigned int x, char* buffer);
 
     std::string constructResponse();
     std::string multicastResponse(std::string socket, std::string http);
