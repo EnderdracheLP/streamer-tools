@@ -4,6 +4,8 @@
 #include "ServerHeaders.hpp"
 #include "STmanager.hpp"
 
+//LoggerContextObject MulticastLogger;
+
 bool STManager::MulticastServer() {
     struct in_addr        localInterface;
     struct sockaddr_in    groupSock;
@@ -52,7 +54,7 @@ bool STManager::MulticastServer() {
     if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF,
         (char*)&localInterface,
         sizeof(localInterface)) < 0) {
-        logger.error("setting local interface: %s", strerror(errno));
+        logger.error("Multicast: setting local interface: %s", strerror(errno));
         return false;
     }
 

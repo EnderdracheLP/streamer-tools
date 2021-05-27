@@ -44,15 +44,12 @@ using namespace GlobalNamespace;
 
 // static ModInfo modInfo;
 ModInfo STModInfo;
-static Configuration& getConfig() {
-    static Configuration config(STModInfo);
-    return config;
-}
 
-static Logger& getLogger() {
-    static Logger* logger = new Logger(STModInfo);
+Logger& getLogger() {
+    static auto logger = new Logger(STModInfo, LoggerOptions(false, true)); // Set first bool to true to silence logger, second bool defines output to file
     return *logger;
 }
+
 static STManager* stManager = nullptr;
 
 void ResetScores() {
@@ -324,7 +321,28 @@ extern "C" void setup(ModInfo& info) {
     info.id = ID;
     info.version = VERSION;
     STModInfo = info;
+
+#ifndef DEBUG_BUILD
+    // Disable loggers
+    // Here's where you can disable individual context Loggers
+    // @brief Disables all Server Loggers
+    getLogger().DisableContext("Server");
+#ifdef HTTP_LOGGING
+    // @brief Disables HTTP Server Logger
+    getLogger().DisableContext("Server::HTTP");
+#endif
+#ifdef SOCKET_LOGGING
+    // @brief Disables Socket Server Logger
+    getLogger().DisableContext("Server::Socket");
+#endif
+#ifdef MULTICAST_LOGGING
+    // @brief Disables Multicast Server Logger
+    getLogger().DisableContext("Server::Multicast");
+#endif
+#endif
+
     getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
+    getLogger().debug("ModInfo Check: %s|v%s", STModInfo.id.c_str(), STModInfo.version.c_str());
 
     getLogger().info("Completed setup!");
 }
@@ -358,5 +376,6 @@ extern "C" void load() {
     INSTALL_HOOK_OFFSETLESS(logger, SceneManager_ActiveSceneChanged, il2cpp_utils::FindMethodUnsafe("UnityEngine.SceneManagement", "SceneManager", "Internal_ActiveSceneChanged", 2));
 
     getLogger().debug("Installed all hooks!");
-    stManager = new STManager(getLogger(), getConfig().config);
+
+    stManager = new STManager(getLogger());
 }

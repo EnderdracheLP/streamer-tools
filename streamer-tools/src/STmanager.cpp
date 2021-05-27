@@ -2,7 +2,8 @@
 #define NO_CODEGEN_USE
 #include "STmanager.hpp"
 
-STManager::STManager(Logger& logger, const ConfigDocument& config) : logger(logger), config(config) {
+//STManager::STManager(Logger& logger, LoggerContextObject& HTTPLogger, LoggerContextObject& SocketLogger, LoggerContextObject& MulticastLogger) : logger(logger), HTTPLogger(HTTPLogger), SocketLogger(SocketLogger), MulticastLogger(MulticastLogger) {
+STManager::STManager(Logger& logger) : logger(logger) {
     logger.info("Starting network thread . . .");
     networkThread = std::thread(&STManager::runServer, this); // Run the thread
     networkThreadHTTP = std::thread(&STManager::runServerHTTP, this); // Run the thread

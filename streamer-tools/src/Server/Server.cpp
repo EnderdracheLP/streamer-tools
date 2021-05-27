@@ -27,7 +27,7 @@ bool STManager::runServer() {
         return false;
     }
 
-    logger.info("Listening on port %d", PORT);
+    SocketLogger.info("Listening on port %d", PORT);
     while (true) {
         if (listen(sock, CONNECTION_QUEUE_LENGTH) == -1) { // Return if an error occurs listening for a request
             logger.error("Error listening for request");
@@ -50,15 +50,15 @@ bool STManager::runServer() {
 
 
         //std::string response = constructResponse();
-        //logger.info("Response: %s", response.c_str());
+        //SocketLogger.info("Response: %s", response.c_str());
 
         //int convertedLength = htonl(response.length());
         //if(write(client_sock, &convertedLength, 4) == -1)    { // First send the length of the data
-        //    logger.error("Error sending length prefix: %s", strerror(errno));
+        //    SocketLogger.error("Error sending length prefix: %s", strerror(errno));
         //    close(client_sock); continue;
         //}
         //if(write(client_sock, response.c_str(), response.length()) == -1)    { // Then send the string
-        //    logger.error("Error sending JSON: %s", strerror(errno));
+        //    SocketLogger.error("Error sending JSON: %s", strerror(errno));
         //    close(client_sock); continue;
         //}
 
@@ -72,10 +72,9 @@ bool STManager::runServer() {
 }
 
 void STManager::sendRequest(int client_sock) {
-
     while (client_sock != -1) {
         std::string response = constructResponse();
-        logger.info("Response: %s", response.c_str());
+        SocketLogger.info("Response: %s", response.c_str());
 
         int convertedLength = htonl(response.length());
         if (write(client_sock, &convertedLength, 4) == -1) { // First send the length of the data

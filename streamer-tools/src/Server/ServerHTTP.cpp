@@ -3,6 +3,8 @@
 #include "ServerHeaders.hpp"
 #include "STmanager.hpp"
 
+//LoggerContextObject HTTPLogger;
+
 bool STManager::runServerHTTP() {
     // Make our IPv4 endpoint
     sockaddr_in addrHTTP;
@@ -82,13 +84,13 @@ void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
         result = read(socket, buffer + bytesRead, x - bytesRead);
         if (result < 1)
         {
-            logger.error("HTTP: Error receiving request: %s", strerror(errno));
+            HTTPLogger.error("HTTP: Error receiving request: %s", strerror(errno));
             break;
         }
 
         bytesRead += result;
-        logger.debug("Received bytes: %d", bytesRead);
-        logger.debug("Received message: \n%s", buffer);
+        HTTPLogger.debug("Received bytes: %d", bytesRead);
+        HTTPLogger.debug("Received message: \n%s", buffer);
 
         std::string resultStr(buffer);
         if ((resultStr.find("Connection: close") != std::string::npos)) break;
@@ -133,7 +135,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
         Connected = false;
         close(client_sock); return;
     }
-    logger.info("HTTP Response: \n%s", response.c_str());
+    HTTPLogger.info("HTTP Response: \n%s", response.c_str());
     Connected = false;
     close(client_sock); // Close the client's socket to avoid leaking resources
     return;
