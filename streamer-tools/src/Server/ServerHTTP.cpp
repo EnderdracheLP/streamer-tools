@@ -126,6 +126,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
     }
     ROUTE_GET("/cover") {
         // To-Do: Send Playlist cover
+        COVER:
         messageStr =    "<!DOCTYPE html> "\
                         "<html> "\
                         "<head> <title> No Cover image for you little guy or girl </title> </head> "\
@@ -137,6 +138,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
                     "Access-Control-Allow-Origin: *\n\n" + \
                     messageStr;
     }
+    ROUTE_GET("/cover/") goto COVER;
     else {
         // 404 or invalid
 
@@ -150,7 +152,11 @@ void STManager::HandleRequestHTTP(int client_sock) {
                         "<div style=\"color: #888; margin-bottom: 10px; padding-left: 20px;\">The endpoint you were looking for could not be found.</div> "\
                         "<div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " ("+ headsetType +") server at " + STManager::localIp + ":" + std::to_string(PORT_HTTP) + "</i></div> "\
                         "</body> </html>"; // Yes this is long but page is pretty-ish
-        response = "HTTP/1.1 404 Not Found\nContent-Length: " + std::to_string(messageStr.length()) + "\nContent-Type: text/html\nAccess-Control-Allow-Origin: *\n\n" + messageStr;
+        response =  "HTTP/1.1 404 Not Found\n"\
+                    "Content-Length: " + std::to_string(messageStr.length()) + "\n"\
+                    "Content-Type: text/html\n"\
+                    "Access-Control-Allow-Origin: *\n\n" + \
+                    messageStr;
     }
     SendRequest: // Just incase we ever need to use goto SendRequest to skip over code
     int convertedLength = htonl(response.length());
