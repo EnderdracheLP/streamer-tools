@@ -1,26 +1,6 @@
 #define RAPIDJSON_HAS_STDSTRING 1 // Enable rapidjson's support for std::string
 #define NO_CODEGEN_USE
-#include <thread>
-#include <cmath>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <mutex>
-#include <fstream>
-#include <sstream>
-#include <iomanip>
-
-#include <chrono>
-#include <net/if.h>
-#include <sys/ioctl.h>
-
 #include "STmanager.hpp"
-
-#include "beatsaber-hook/shared/config/config-utils.hpp"
-#include "GlobalNamespace/StandardLevelDetailView.hpp"
 
 STManager::STManager(Logger& logger, const ConfigDocument& config) : logger(logger), config(config) {
     logger.info("Starting network thread . . .");

@@ -2,9 +2,6 @@
 
 #include "beatsaber-hook/shared/utils/logging.hpp"
 #include "beatsaber-hook/shared/config/config-utils.hpp"
-#include <thread>
-#include <optional>
-#include <mutex>
 
 class STManager    {
 private:
@@ -64,6 +61,7 @@ public:
     bool mpGameIdShown = false;
 
     std::string localIp = "127.0.0.1";
+    std::string headsetType = "Unknown Android";
 
     STManager(Logger& logger, const ConfigDocument& config);
 };

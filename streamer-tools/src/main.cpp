@@ -9,6 +9,7 @@
 #include "UnityEngine/Resources.hpp"
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Component.hpp"
+#include "UnityEngine/SceneManagement/Scene.hpp"
 
 #include "System/Action_1.hpp"
 #include "System/Action_2.hpp"
@@ -33,14 +34,12 @@
 #include "GlobalNamespace/NoteCutInfo.hpp"
 #include "GlobalNamespace/FPSCounter.hpp"
 #include "GlobalNamespace/GameplayCoreInstaller.hpp"
-
-#include "UnityEngine/SceneManagement/Scene.hpp"
+#include "GlobalNamespace/OVRPlugin.hpp"
+#include "GlobalNamespace/OVRPlugin_SystemHeadset.hpp"
 using namespace GlobalNamespace;
 
 #include "modloader/shared/modloader.hpp"
 
-#include <string>
-#include <optional>
 #include "STmanager.hpp"
 
 // static ModInfo modInfo;
@@ -295,12 +294,23 @@ MAKE_HOOK_OFFSETLESS(FPSCounter_Update, void, FPSCounter* self) {
 
 bool FPSObjectCreated = false;
 
+std::string GetHeadsetType() {
+    GlobalNamespace::OVRPlugin::SystemHeadset HeadsetType = GlobalNamespace::OVRPlugin::GetSystemHeadsetType();
+    std::string result;
+    if (HeadsetType.value == HeadsetType.Oculus_Quest) return result = "Oculus Quest";
+    else if (HeadsetType.value == HeadsetType.Oculus_Quest_2) return result = "Oculus Quest 2";
+    else if (HeadsetType.value == 10) return result = "Oculus Quest 3";
+    else return result = "Unknown " + to_utf8(csstrtostr(GlobalNamespace::OVRPlugin::get_productName()));
+}
+
 MAKE_HOOK_OFFSETLESS(SceneManager_ActiveSceneChanged, void, UnityEngine::SceneManagement::Scene previousActiveScene, UnityEngine::SceneManagement::Scene nextActiveScene) {
     
     if (nextActiveScene.IsValid()) {
         std::string sceneName = to_utf8(csstrtostr(nextActiveScene.get_name()));
         std::string shaderWarmup = "ShaderWarmup";
-        if (sceneName == shaderWarmup) {
+        std::string EmptyTransition = "EmptyTransition";
+        if (sceneName == EmptyTransition) stManager->headsetType = GetHeadsetType();
+        else if (sceneName == shaderWarmup) {
             auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::newcsstr("FPSC"));
             UnityEngine::Object::DontDestroyOnLoad(FPSCObject->AddComponent<FPSCounter*>());
         }
