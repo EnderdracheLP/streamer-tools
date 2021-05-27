@@ -130,9 +130,11 @@ void STManager::HandleRequestHTTP(int client_sock) {
     int convertedLength = htonl(response.length());
     if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
         logger.error("HTTP: Error sending Response: \n%s", strerror(errno));
+        Connected = false;
         close(client_sock); return;
     }
     logger.info("HTTP Response: \n%s", response.c_str());
+    Connected = false;
     close(client_sock); // Close the client's socket to avoid leaking resources
     return;
 }
