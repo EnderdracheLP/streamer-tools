@@ -98,7 +98,6 @@ void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
 }
 
 void STManager::HandleRequestHTTP(int client_sock) {
-
     unsigned int length = 350;
     char* buffer = 0;
     std::string response;
@@ -113,19 +112,44 @@ void STManager::HandleRequestHTTP(int client_sock) {
     ReadXBytesThread.join();
     std::string resultStr(buffer);
     delete[] buffer;
-    if ((resultStr.find("GET / ") != std::string::npos) || (resultStr.find("GET /index") != std::string::npos)) {
+#define ROUTE_START()       if ((resultStr.find("GET / ") != std::string::npos) || (resultStr.find("GET /index") != std::string::npos))
+#define ROUTE(METHOD,URI)    else if ((resultStr.find(METHOD " " URI " ") != std::string::npos))
+#define ROUTE_GET(URI)      ROUTE("GET", URI)
+#define ROUTE_POST(URI)      ROUTE("POST", URI)
+    ROUTE_START() {
         messageStr = constructResponse();
-        response = "HTTP/1.1 200 OK\nContent-Length: " + std::to_string(messageStr.length()) + "\nContent-Type: application/json\nAccess-Control-Allow-Origin: *\n\n" + messageStr;
+        response =  "HTTP/1.1 200 OK\n"\
+                    "Content-Length: " + std::to_string(messageStr.length()) + "\n"\
+                    "Content - Type: application / json\n"\
+                    "Access-Control-Allow-Origin: *\n\n" + \
+                    messageStr;
     }
-    else if ((resultStr.find("GET /cover/ ") != std::string::npos) || (resultStr.find("GET /cover ") != std::string::npos)) {
+    ROUTE_GET("/cover") {
         // To-Do: Send Playlist cover
-        messageStr = "<!DOCTYPE html> <html> <head> <title> No Cover image for you little guy or girl </title> </head> <body> Do you really think covers are implemented yet??? Also yeet that page it's uGlY </body> </html>";
-        response = "HTTP/1.1 501 Not Implemented\nContent-Length: " + std::to_string(messageStr.length()) + "\nContent-Type: text/html\nAccess-Control-Allow-Origin: *\n\n" + messageStr;
+        messageStr =    "<!DOCTYPE html> "\
+                        "<html> "\
+                        "<head> <title> No Cover image for you little guy or girl </title> </head> "\
+                        "<body> Do you really think covers are implemented yet ? ? ? Also yeet that page it's uGlY </body> "\
+                        "</html>";
+        response =  "HTTP/1.1 501 Not Implemented\n"\
+                    "Content-Length: " + std::to_string(messageStr.length()) + "\n"\
+                    "Content-Type: text/html\n"\
+                    "Access-Control-Allow-Origin: *\n\n" + \
+                    messageStr;
     }
     else {
         // 404 or invalid
 
-        messageStr = "<!DOCTYPE html> <html> <head> <title>streamer-tools - 404 Not found</title> <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'> <style> body { color: #EEEEEE; background-color: #202225; font-size: 14px; font-family: 'Open Sans'; } </style> </head> <body> <div style=\"font-size: 30px;\">Streamer-tools - 404 Not found</div> <div style=\"color: #888; margin-bottom: 10px; padding-left: 20px;\">The endpoint you were looking for could not be found.</div> <div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " ("+ headsetType +") server at " + STManager::localIp + ":" + std::to_string(PORT_HTTP) + "</i></div> </body> </html>"; // Yes this is long but page is pretty-ish
+        messageStr =    "<!DOCTYPE html> "\
+                        "<html> "\
+                        "<head> <title>streamer-tools - 404 Not found</title> "\
+                        "<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'> "\
+                        "<style> body { color: #EEEEEE; background-color: #202225; font-size: 14px; font-family: 'Open Sans'; } </style> "\
+                        "</head> "\
+                        "<body> <div style=\"font-size: 30px;\">Streamer-tools - 404 Not found</div> "\
+                        "<div style=\"color: #888; margin-bottom: 10px; padding-left: 20px;\">The endpoint you were looking for could not be found.</div> "\
+                        "<div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " ("+ headsetType +") server at " + STManager::localIp + ":" + std::to_string(PORT_HTTP) + "</i></div> "\
+                        "</body> </html>"; // Yes this is long but page is pretty-ish
         response = "HTTP/1.1 404 Not Found\nContent-Length: " + std::to_string(messageStr.length()) + "\nContent-Type: text/html\nAccess-Control-Allow-Origin: *\n\n" + messageStr;
     }
     SendRequest: // Just incase we ever need to use goto SendRequest to skip over code
