@@ -34,6 +34,7 @@
 #include "GlobalNamespace/NoteCutInfo.hpp"
 #include "GlobalNamespace/FPSCounter.hpp"
 #include "GlobalNamespace/GameplayCoreInstaller.hpp"
+#include "GlobalNamespace/BeatmapDifficulty.hpp"
 #include "GlobalNamespace/OVRPlugin.hpp"
 #include "GlobalNamespace/OVRPlugin_SystemHeadset.hpp"
 using namespace GlobalNamespace;
@@ -76,16 +77,15 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
     stManager->bpm = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<float>(level, "beatsPerMinute"));
     bool CustomLevel = stManager->id.find("custom_level_") != std::string::npos;
     stManager->njs = CustomLevel ? self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed() : 0.0f;
+    stManager->difficulty = self->selectedDifficultyBeatmap->get_difficulty().value;
     stManager->statusLock.unlock();
 }
 
 MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, PracticeSettings* practiceSettings, Il2CppString* g, bool h) {
     getLogger().info("Song Started");
-    int difficulty = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<int>(difficultyBeatmap, "difficulty"));
 
     // Set the currently playing level to the selected one, since we are in a song
     stManager->statusLock.lock();
-    stManager->difficulty = difficulty;
     stManager->location = 1;
     ResetScores();
     stManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode

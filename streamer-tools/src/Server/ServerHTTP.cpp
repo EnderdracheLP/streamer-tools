@@ -138,7 +138,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
                     "Access-Control-Allow-Origin: *\n\n" + \
                     messageStr;
     }
-    ROUTE_GET("/cover/") goto COVER;
+    ROUTE_GET("/cover/") goto COVER; // I know eww goto, but give me a better solution
     else {
         // 404 or invalid
 
