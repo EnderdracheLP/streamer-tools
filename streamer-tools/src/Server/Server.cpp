@@ -27,7 +27,7 @@ bool STManager::runServer() {
         return false;
     }
 
-    SocketLogger.info("Listening on port %d", PORT);
+    logger.info("Listening on port %d", PORT);
     while (true) {
         if (listen(sock, CONNECTION_QUEUE_LENGTH) == -1) { // Return if an error occurs listening for a request
             logger.error("Error listening for request");
@@ -85,7 +85,7 @@ void STManager::sendRequest(int client_sock) {
             logger.error("Error sending JSON: %s", strerror(errno));
             close(client_sock); return;
         }
-        std::chrono::milliseconds timespan(100);
+        std::chrono::milliseconds timespan(50);
         std::this_thread::sleep_for(timespan);
     }
     close(client_sock); // Close the client's socket to avoid leaking resources
