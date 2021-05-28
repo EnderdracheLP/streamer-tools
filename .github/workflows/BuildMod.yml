@@ -8,7 +8,7 @@ on:
       - '**.yml'
       - '!.github/workflows/BuildMod.yml'
       - '**.json'
-      - '!${{ env.module_id }}/qpm.json'
+      - '!streamer-tools/qpm.json'
       - '**.ps1'
       - '**.md'
       - '.gitignore'
