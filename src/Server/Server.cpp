@@ -31,6 +31,7 @@ bool STManager::runServer() {
     while (true) {
         if (listen(sock, CONNECTION_QUEUE_LENGTH) == -1) { // Return if an error occurs listening for a request
             logger.error("Error listening for request");
+            ConnectedSocket = false;
             continue;
         }
 
@@ -38,33 +39,16 @@ bool STManager::runServer() {
         int client_sock = accept(sock, (struct sockaddr*)&addr, &socklen); // Accept the next request
         if (client_sock == -1) {
             logger.error("Error accepting request");
+            ConnectedSocket = false;
             continue;
         }
         logger.info("Client connected with address: %s", inet_ntoa(addr.sin_addr));
 
-        Connected = true; // Set this to true here so it no longer sends out after a connection has been established first.
+        ConnectedSocket = true; // Set this to true here so it no longer sends out after a connection has been established first.
 
         // Pass the socket handle over and start a seperate thread for sending back the reply
         std::thread RequestThread([this, client_sock]() { return STManager::sendRequest(client_sock); }); // Use threads for the response
         RequestThread.detach(); // Detach the thread from this thread
-
-
-        //std::string response = constructResponse();
-        //SocketLogger.info("Response: %s", response.c_str());
-
-        //int convertedLength = htonl(response.length());
-        //if(write(client_sock, &convertedLength, 4) == -1)    { // First send the length of the data
-        //    SocketLogger.error("Error sending length prefix: %s", strerror(errno));
-        //    close(client_sock); continue;
-        //}
-        //if(write(client_sock, response.c_str(), response.length()) == -1)    { // Then send the string
-        //    SocketLogger.error("Error sending JSON: %s", strerror(errno));
-        //    close(client_sock); continue;
-        //}
-
-        //close(client_sock); // Close the client's socket to avoid leaking resources
-        //std::chrono::milliseconds timespan(50);
-        //std::this_thread::sleep_for(timespan);
     }
 
     close(sock);
@@ -79,15 +63,18 @@ void STManager::sendRequest(int client_sock) {
         int convertedLength = htonl(response.length());
         if (write(client_sock, &convertedLength, 4) == -1) { // First send the length of the data
             logger.error("Error sending length prefix: %s", strerror(errno));
+            ConnectedSocket = false;
             close(client_sock); return;
         }
         if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
             logger.error("Error sending JSON: %s", strerror(errno));
+            ConnectedSocket = false;
             close(client_sock); return;
         }
         std::chrono::milliseconds timespan(50);
         std::this_thread::sleep_for(timespan);
     }
     close(client_sock); // Close the client's socket to avoid leaking resources
+    ConnectedSocket = false;
     return;
 }

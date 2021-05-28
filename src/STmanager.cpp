@@ -10,20 +10,6 @@ STManager::STManager(Logger& logger) : logger(logger) {
     networkThreadMulticast = std::thread(&STManager::MulticastServer, this); // Run the thread
 }
 
-void STManager::threadEntrypoint()    {
-    logger.info("Starting server");
-    if(!runServer()) {
-        logger.error("Failed to run server!");
-    }
-    if (!runServerHTTP()) {
-        logger.error("Failed to run HTTP server!");
-    }
-    if (!MulticastServer()) {
-        logger.error("Failed to run Multicast server!");
-    }
-    else logger.info("Multicast Server finished connection established!");
-}
-
 // Creates the JSON to send back to the Streamer Tools application
 std::string STManager::constructResponse() {
 

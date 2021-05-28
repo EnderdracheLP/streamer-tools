@@ -14,7 +14,6 @@ private:
     std::thread networkThreadHTTP;
     std::thread networkThreadMulticast;
 
-    void threadEntrypoint();
     bool runServer();
     bool runServerHTTP();
     bool MulticastServer();
@@ -26,7 +25,9 @@ private:
     std::string constructResponse();
     std::string multicastResponse(std::string socket, std::string http);
 
-    bool Connected = false;
+    bool ConnectedHTTP = false;
+    bool ConnectedSocket = false;
+    bool MulticastRunning = false;
 public:
     std::mutex statusLock; // Lock to make sure that stuff doesn't get overwritten while being read by the network thread
 

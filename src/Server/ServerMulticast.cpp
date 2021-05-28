@@ -7,6 +7,7 @@
 //LoggerContextObject MulticastLogger;
 
 bool STManager::MulticastServer() {
+    MulticastRunning = true;
     struct in_addr        localInterface;
     struct sockaddr_in    groupSock;
     int                   datalen;
@@ -18,6 +19,7 @@ bool STManager::MulticastServer() {
     int sd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sd < 0) {
         logger.error("opening datagram socket");
+        MulticastRunning = false;
         return false;
     }
 
@@ -41,6 +43,7 @@ bool STManager::MulticastServer() {
             (char*)&loopch, sizeof(loopch)) < 0) {
             logger.error("setting IP_MULTICAST_LOOP: %s", strerror(errno));
             close(sd);
+            MulticastRunning = false;
             return false;
         }
     }
@@ -55,45 +58,51 @@ bool STManager::MulticastServer() {
         (char*)&localInterface,
         sizeof(localInterface)) < 0) {
         logger.error("Multicast: setting local interface: %s", strerror(errno));
+        MulticastRunning = false;
         return false;
     }
 
     struct ifreq ifr;
+    while (true) {
+        std::chrono::minutes MulticastSleep(1);
+        while (!ConnectedHTTP && !ConnectedSocket) {
+            std::chrono::seconds timespan(15);
 
-    while (!Connected) {
-        std::chrono::milliseconds timespan(30000);
+            /* I want to get an IPv4 IP address */
+            ifr.ifr_addr.sa_family = AF_INET;
 
-        /* I want to get an IPv4 IP address */
-        ifr.ifr_addr.sa_family = AF_INET;
+            /* I want IP address attached to "wlan0" */
+            strncpy(ifr.ifr_name, "wlan0", IFNAMSIZ - 1);
 
-        /* I want IP address attached to "wlan0" */
-        strncpy(ifr.ifr_name, "wlan0", IFNAMSIZ - 1);
+            ioctl(sd, SIOCGIFADDR, &ifr);
 
-        ioctl(sd, SIOCGIFADDR, &ifr);
+            /*
+            * Create message to be sent
+            */
+            //    std::string message = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
+            STManager::localIp = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
+            std::string http = STManager::localIp + ":" + std::to_string(PORT_HTTP);
+            std::string socket = STManager::localIp + ":" + std::to_string(PORT);
+            std::string message = multicastResponse(socket, http);
 
-        /*
-        * Create message to be sent
-        */
-        //    std::string message = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
-        STManager::localIp = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
-        std::string http = STManager::localIp + ":" + std::to_string(PORT_HTTP);
-        std::string socket = STManager::localIp + ":" + std::to_string(PORT);
-        std::string message = multicastResponse(socket, http);
-
-        /*
-         * Send a message to the multicast group specified by the
-         * groupSock sockaddr structure.
-         */
-
-        strcpy(databuf, message.c_str());
-        datalen = message.length();
-        if (sendto(sd, databuf, datalen, 0,
-            (struct sockaddr*)&groupSock,
-            sizeof(groupSock)) < 0)
-        {
-            logger.error("Multicast: error sending datagram message: %s", strerror(errno));
+            /*
+             * Send a message to the multicast group specified by the
+             * groupSock sockaddr structure.
+             */
+            
+            MulticastLogger.debug("Multicast sent: \n%s", message.c_str());
+            strcpy(databuf, message.c_str());
+            datalen = message.length();
+            if (sendto(sd, databuf, datalen, 0,
+                (struct sockaddr*)&groupSock,
+                sizeof(groupSock)) < 0)
+            {
+                logger.error("Multicast: error sending datagram message: %s", strerror(errno));
+            }
+            std::this_thread::sleep_for(timespan);
         }
-        std::this_thread::sleep_for(timespan);
+        std::this_thread::sleep_for(MulticastSleep);
     }
+    MulticastRunning = false;
     return true;
 }
