@@ -6,9 +6,9 @@ on:
     branches: [ master, dev, 1.14.0-Update ]
     paths-ignore:
       - '**.yml'
-      - '!.github/workflows/BuildQSounds.yml'
+      - '!.github/workflows/BuildMod.yml'
       - '**.json'
-      - '!qpm.json'
+      - '!${{ env.module_id }}/qpm.json'
       - '**.ps1'
       - '**.md'
       - '.gitignore'
