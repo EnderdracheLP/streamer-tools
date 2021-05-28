@@ -76,10 +76,10 @@ jobs:
         cache-name: cache-qpm-deps
       with:
         path: ${{ env.module_id }}/QPM_Temp
-        key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('qpm.json', '.github/BuildMod.yml') }}
+        key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('${{ env.module_id }}/qpm.json', '.github/BuildMod.yml') }}
         restore-keys: |
-          ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('qpm.json', '.github/BuildMod.yml') }}
-          ${{ runner.os }}-${{ env.cache-name }}
+          ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('${{ env.module_id }}/qpm.json', '.github/BuildMod.yml') }}
+          ${{ runner.os }}-${{ env.cache-name }}-
       
     - name: QPM Restore
       run: |
