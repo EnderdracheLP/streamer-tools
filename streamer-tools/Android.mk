@@ -28,9 +28,9 @@ LOCAL_CPP_FEATURES += exceptions
 include $(PREBUILT_SHARED_LIBRARY)
 # Creating prebuilt for dependency: codegen - version: 0.8.1
 include $(CLEAR_VARS)
-LOCAL_MODULE := codegen_0_8_1
+LOCAL_MODULE := codegen_0_9_0
 LOCAL_EXPORT_C_INCLUDES := extern/codegen
-LOCAL_SRC_FILES := extern/libcodegen_0_8_1.so
+LOCAL_SRC_FILES := extern/libcodegen_0_9_0.so
 include $(PREBUILT_SHARED_LIBRARY)
 # Creating prebuilt for dependency: modloader - version: 1.1.0
 include $(CLEAR_VARS)
@@ -45,10 +45,10 @@ LOCAL_SRC_FILES += $(call rwildcard,src/,*.cpp)
 LOCAL_SRC_FILES += $(call rwildcard,extern/beatsaber-hook/src/inline-hook,*.cpp)
 LOCAL_SRC_FILES += $(call rwildcard,extern/beatsaber-hook/src/inline-hook,*.c)
 LOCAL_SHARED_LIBRARIES += beatsaber-hook_1_3_5
-LOCAL_SHARED_LIBRARIES += codegen_0_8_1
+LOCAL_SHARED_LIBRARIES += codegen_0_9_0
 LOCAL_SHARED_LIBRARIES += modloader
 LOCAL_LDLIBS += -llog
-LOCAL_CFLAGS += -I'extern/libil2cpp/il2cpp/libil2cpp' -I'extern/codegen/include' -DID='"streamer-tools"' -DVERSION='"$(VERSION)"' -DDEBUG_BUILD=1 -I'./shared' -I'./extern'
+LOCAL_CFLAGS += -I'extern/libil2cpp/il2cpp/libil2cpp' -I'extern/codegen/include' -DID='"streamer-tools"' -DVERSION='"$(VERSION)"'  -I'./shared' -I'./extern'
 LOCAL_CPPFLAGS += -std=c++2a
 LOCAL_C_INCLUDES += ./include ./src
 include $(BUILD_SHARED_LIBRARY)

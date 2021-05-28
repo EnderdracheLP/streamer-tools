@@ -17,10 +17,10 @@ on:
 
 env:
      module_id: streamer-tools
-     BSVersion: 1.15.0
-     version: 0.1.0-Dev
+     BSVersion: 1.16.0
+     version: 0.1.0-Dev-${{ github.run_number }}
      bs_hook: 1_3_5
-     codegen: 0_8_1
+     codegen: 0_9_0
      ndkname: android-ndk-r22
     
 jobs:

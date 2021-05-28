@@ -3,7 +3,7 @@ if ($args.Count -eq 0 -or $args[0] -eq "--debug") {
 $ModID = "streamer-tools"
 $VERSION = "0.1.0-InDev"
 $BSHook = "1_3_5"
-$codegen_ver = "0_8_1"
+$codegen_ver = "0_9_0"
 }
 
 if ($args[0] -eq "--actions") {
