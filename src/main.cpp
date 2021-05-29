@@ -10,6 +10,13 @@
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Component.hpp"
 #include "UnityEngine/SceneManagement/Scene.hpp"
+
+#include "UnityEngine/ImageConversion.hpp"
+#include "UnityEngine/Sprite.hpp"
+#include "UnityEngine/RenderTexture.hpp"
+#include "UnityEngine/Graphics.hpp"
+#include "UnityEngine/Texture2D.hpp"
+
 #include "Unity/Collections/NativeArray_1.hpp"
 
 #include "System/Action_1.hpp"
@@ -40,10 +47,8 @@
 #include "GlobalNamespace/BeatmapDifficulty.hpp"
 #include "GlobalNamespace/OVRPlugin.hpp"
 #include "GlobalNamespace/OVRPlugin_SystemHeadset.hpp"
-
-#include "UnityEngine/SceneManagement/Scene.hpp"
-#include "UnityEngine/ImageConversion.hpp"
-#include "UnityEngine/Sprite.hpp"
+#include "GlobalNamespace/PreviewBeatmapLevelSO.hpp"
+#include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
 using namespace GlobalNamespace;
 
 #include "modloader/shared/modloader.hpp"
@@ -69,6 +74,20 @@ void ResetScores() {
     stManager->accuracy = 1.0f;
 }
 
+UnityEngine::Texture2D* DuplicateTexture(UnityEngine::Texture2D* source) {
+    using namespace UnityEngine;
+    RenderTexture* renderTex = RenderTexture::GetTemporary(source->get_width(), source->get_height(), 0, UnityEngine::RenderTextureFormat::Default, UnityEngine::RenderTextureReadWrite::Linear);
+    Graphics::Blit(source, renderTex);
+    RenderTexture* previous = RenderTexture::get_active();
+    RenderTexture::set_active(renderTex);
+    Texture2D* readableText = Texture2D::New_ctor(source->get_width(), source->get_height());
+    readableText->ReadPixels(Rect(0, 0, renderTex->get_width(), renderTex->get_height()), 0, 0);
+    readableText->Apply();
+    RenderTexture::set_active(previous);
+    RenderTexture::ReleaseTemporary(renderTex);
+    return readableText;
+}
+
 // Define the current level by finding info from the IBeatmapLevel object
 MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
     RefreshContent(self);
@@ -82,21 +101,31 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
     stManager->songAuthor = to_utf8(csstrtostr((Il2CppString*) CRASH_UNLESS(il2cpp_utils::GetPropertyValue(level, "songAuthorName"))));
     stManager->id = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(level, "levelID"))));
     stManager->bpm = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<float>(level, "beatsPerMinute"));
-    bool CustomLevel = stManager->id.find("custom_level_") != std::string::npos;
-    stManager->njs = CustomLevel ? self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed() : 0.0f;
+    bool CustomLevel = (il2cpp_functions::class_is_assignable_from(classof(CustomPreviewBeatmapLevel*), il2cpp_functions::object_get_class(reinterpret_cast<Il2CppObject*>(self->level))));
+    getLogger().debug("Is CustomLevel: %d", CustomLevel);
+    //bool CustomLevel = stManager->id.find("custom_level_") != std::string::npos;
+    //stManager->njs = CustomLevel ? self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed() : 0.0f;
+    stManager->njs = self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed();
     stManager->difficulty = self->selectedDifficultyBeatmap->get_difficulty().value;
 
                     // 
-    if (CustomLevel) {
         getLogger().debug("coverGetter Task");
-        System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* _coverGetter = reinterpret_cast<GlobalNamespace::IPreviewBeatmapLevel*>(self->level)->GetCoverImageAsync(System::Threading::CancellationToken::get_None());
-        _coverGetter->Wait();
+        //System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* coverSpriteTask = reinterpret_cast<GlobalNamespace::IPreviewBeatmapLevel*>(self->level)->GetCoverImageAsync(System::Threading::CancellationToken::get_None());
+        System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* coverSpriteTask = reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(self->level)->GetCoverImageAsync(System::Threading::CancellationToken::get_None());
+        coverSpriteTask->Wait();
         getLogger().debug("coverSprite");
-        UnityEngine::Sprite* coverSprite = _coverGetter->get_Result();
+        UnityEngine::Sprite* coverSprite = coverSpriteTask->get_Result();
+        //UnityEngine::Sprite* coverSprite = reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(self->level)->coverImage;
         getLogger().debug("getting texture");
 
-        UnityEngine::Texture2D* coverTexture = coverSprite->get_texture();
-
+        UnityEngine::Texture2D* coverTexture;
+        // If it's a OST Song or DLC Song, duplicate the texture and read that
+        if (coverSprite->get_texture()->get_isReadable()){
+            coverTexture = coverSprite->get_texture();
+        }
+        else {
+            coverTexture = DuplicateTexture(coverSprite->get_texture());
+        }
         getLogger().debug("encoding to base64");
         Array<uint8_t>* RawCoverbytesArray = UnityEngine::ImageConversion::EncodeToJPG(coverTexture);
 
@@ -105,7 +134,6 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
             stManager->coverImageBase64 = to_utf8(csstrtostr(System::Convert::ToBase64String(RawCoverbytesArray)));
             //stManager->coverImageBase64 = RawCoverbytesArray;
         }
-    }
     stManager->statusLock.unlock();
 }
 
