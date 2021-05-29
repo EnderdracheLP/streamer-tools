@@ -10,13 +10,76 @@ Makes information available which can then be used by a Streamer-Tools PC applic
 [Download .QMOD](https://github.com/EnderdracheLP/streamer-tools/releases/latest)
 
 ## Documentation
+### Getting Mod Info and Connection Information
+The mod will send a Multicast Response out to the network on `232.0.53.5:53500` using the UDP Protocol any application wanting to receive the response have to subscribe to that IP and listen on the port.
+
+Here's a simple NodeJS example for it
+
+```js
+// This will subscribe all network interfaces to 232.0.53.5:53500
+GetLocalIPs().forEach(ip => {
+    SetupMulticast(ip)
+})
+
+function SetupMulticast(localIP) {
+    var PORT = 53500;
+    var HOST = localIP;
+    var MCASTIP = '232.0.53.5';
+    var dgram = require('dgram');
+    var client = dgram.createSocket('udp4');
+
+    client.on('listening', function () {
+        var address = client.address();
+        client.setBroadcast(true)
+        client.setMulticastTTL(128); 
+        client.addMembership(MCASTIP, HOST);
+        console.log('UDP Client listening on ' + address.address + ":" + address.port);
+    });
+
+    client.on('message', function (message, remote) {   
+        console.log('Recieved multicast: ' + remote.address + ':' + remote.port +' - ' + message);
+        ipInQueue = remote.address;
+    });
+
+    client.bind(PORT, HOST);
+}
+
+function GetLocalIPs() {                    // This will get the IPs of all network interfaces
+	const  { networkInterfaces }  = require('os')
+    const nets = networkInterfaces();
+    const results = [];
+
+    for (const name of Object.keys(nets)) {
+        for (const net of nets[name]) {
+            // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
+            if (net.family === 'IPv4' && !net.internal) {
+                results.push(net.address);
+                console.log("adding " + net.address)
+            }
+        }
+    }
+    return results
+}
+```
+
+This should give a response similar to this
+
+```json
+{
+    "ModID":"streamer-tools",
+    "ModVersion":"0.1.0",
+    "Socket":"192.168.188.30:53501",
+    "HTTP":"192.168.188.30:53502"
+}
+```
+
 ### Retrieving data
 You have 2 methods to get the data which streamer-tools gives you:
 
-a) Make a normal GET request to `http://[Your Quests ip]:3501`
+a) Make a normal GET request to `http://[Your Quests ip]:53502`
 
-b) Connect via a WebSocket to `http://[Your Quests ip]:3502`.
-4 bytes will be sent which give you the length of the response (as int) and then you can read the rest of the data. The WebSocket will currently close after the data has been read so you have to connect a second time.
+b) Connect via a Socket to `[Your Quests ip]:53501`.
+4 bytes will be sent which give you the length of the response (as int) and then you can read the rest of the data. The Socket will currently close sometimes when sending data, so it's best you make your application reconnect automatically.
 
 ### Json format
 Example response:
@@ -43,7 +106,11 @@ Example response:
     "players": 1,            // Players in current mp lobby
     "maxPlayers": 5,         // max players of current mp lobby
     "mpGameId": "P7GZM",     // GameId of current multiplayer lobby
-    "mpGameIdShown": false   // If the Game Id is shown in game (true) or as ***** (false)
+    "mpGameIdShown": false,  // If the Game Id is shown in game (true) or as ***** (false)
+    "goodCuts": 282,         // How many blocks have been cut right
+    "badCuts": 9,            // How many blocks have been cut wrong
+    "missedNotes": 33,       // How many blocks have been missed
+    "fps": 72                // FPS of the game
 }
 ```
 Currently all values only update and do not reset (What I mean is that after you go out of a mp lobby the game id will still be there)

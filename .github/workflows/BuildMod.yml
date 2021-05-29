@@ -6,7 +6,7 @@ on:
     branches: [ master, dev, CoverImageBase64 ]
     paths-ignore:
       - '**.yml'
-      - '!.github/workflows/BuildQSounds.yml'
+      - '!.github/workflows/BuildMod.yml'
       - '**.json'
       - '!qpm.json'
       - '**.ps1'
@@ -17,10 +17,10 @@ on:
 
 env:
      module_id: streamer-tools
-     BSVersion: 1.15.0
-     version: 0.1.0-Dev
+     BSVersion: 1.16.0
+     version: 0.1.0-Dev-${{ github.run_number }}
      bs_hook: 1_3_5
-     codegen: 0_8_1
+     codegen: 0_9_0
      ndkname: android-ndk-r22
     
 jobs:
@@ -42,7 +42,7 @@ jobs:
       env:
         cache-name: cache-ndk
       with:
-        path: ${{ env.module_id }}/ndk
+        path: ndk
         key: ${{ runner.os }}-${{ env.cache-name }}-${{ env.ndkname }}
         restore-keys: |
           ${{ runner.os }}-${{ env.cache-name }}-${{ env.ndkname }}
@@ -50,15 +50,14 @@ jobs:
     - name: Install Android NDK
       if: steps.cache-ndk.outputs.cache-hit != 'true'
       run: |
-        cd ${GITHUB_WORKSPACE}/${{ env.module_id }}/
         wget -q -O ndk.zip https://dl.google.com/android/repository/${ndkname}-linux-x86_64.zip
         unzip -q ndk.zip
         mv ${ndkname} ndk
       
     - name: Create ndkpath.txt
       run: |
-        cd ${GITHUB_WORKSPACE}/${{ env.module_id }}/ndk
-        pwd > ${GITHUB_WORKSPACE}/${{ env.module_id }}/ndkpath.txt
+        cd ndk
+        pwd > ${GITHUB_WORKSPACE}/ndkpath.txt
     - name: Get QPM
       if: steps.cache-qpm.outputs.cache-hit != 'true'
       uses: dawidd6/action-download-artifact@v2
@@ -66,7 +65,7 @@ jobs:
         github_token: ${{secrets.GITHUB_TOKEN}}
         workflow: main.yml
         name: QPM-ubuntu-x64
-        path: ${{ env.module_id }}/QPM
+        path: QPM
         repo: sc2ad/QuestPackageManager
 
     - name: QPM Dependencies Cache
@@ -75,22 +74,20 @@ jobs:
       env:
         cache-name: cache-qpm-deps
       with:
-        path: ${{ env.module_id }}/QPM_Temp
+        path: QPM_Temp
         key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('qpm.json', '.github/BuildMod.yml') }}
         restore-keys: |
-          ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('qpm.json', '.github/BuildMod.yml') }}
+          ${{ runner.os }}-${{ env.cache-name }}-
           ${{ runner.os }}-${{ env.cache-name }}
       
     - name: QPM Restore
       run: |
-        cd ${{ env.module_id }}/
         chmod +x ./QPM/QPM
         ./QPM/QPM restore
     - name: Check dependency Folders
       run: |
-        cd ${GITHUB_WORKSPACE}/${{ env.module_id }}
         echo "Checking extern Folder"
-        ls -lh ${GITHUB_WORKSPACE}/${{ env.module_id }}/extern/
+        ls -lh ${GITHUB_WORKSPACE}/extern/
         echo ""
         echo "Checking QPM_Temp Folders"
         ls -lh QPM_Temp/
@@ -100,38 +97,36 @@ jobs:
         echo ""
         echo "Listing all .so files in QPM_Temp"
         find QPM_Temp -type f -name "*.so"
-
     - name: Build
       run: |
-        cd ${GITHUB_WORKSPACE}/${{ env.module_id }}
+        cd ${GITHUB_WORKSPACE}
         pwsh -Command ./build.ps1 --actions
     - name: Get Library Name
       id: libname
       run: |
-        cd ${GITHUB_WORKSPACE}/${{ env.module_id }}/libs/arm64-v8a/
+        cd ./libs/arm64-v8a/
         pattern="lib${module_id}*.so"
         files=( $pattern )
         echo ::set-output name=NAME::"${files[0]}"
     - name: Package QMOD
       run: |
-        cd ${GITHUB_WORKSPACE}/${{ env.module_id }}
-        sed -i 's/{VERSION_NUMBER_PLACEHOLDER}/${{ env.version }}-Dev/' mod.json
+        cd ${GITHUB_WORKSPACE}
         pwsh -Command ./buildQMOD.ps1 --package
     - name: Upload non-debug artifact
       uses: actions/upload-artifact@v2
       with:
         name: ${{ steps.libname.outputs.NAME }}
-        path: ./${{ env.module_id }}/libs/arm64-v8a/${{ steps.libname.outputs.NAME }}
+        path: ./libs/arm64-v8a/${{ steps.libname.outputs.NAME }}
         if-no-files-found: error
     - name: Upload debug artifact
       uses: actions/upload-artifact@v2
       with:
         name: debug_${{ steps.libname.outputs.NAME }}
-        path: ./${{ env.module_id }}/obj/local/arm64-v8a/${{ steps.libname.outputs.NAME }}
+        path: ./obj/local/arm64-v8a/${{ steps.libname.outputs.NAME }}
         if-no-files-found: error
     - name: Upload QMOD
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ env.module_id }}-(UNZIP-for-QMOD)
-        path: ./${{ env.module_id }}/${{ env.module_id }}.qmod
+        name: ${{ env.module_id }}-(UNZIP-for-QMOD).qmod
+        path: ./${{ env.module_id }}.qmod
         if-no-files-found: warn

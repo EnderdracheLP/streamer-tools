@@ -9,6 +9,7 @@
 #include "UnityEngine/Resources.hpp"
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Component.hpp"
+#include "UnityEngine/SceneManagement/Scene.hpp"
 #include "Unity/Collections/NativeArray_1.hpp"
 
 #include "System/Action_1.hpp"
@@ -36,6 +37,9 @@
 #include "GlobalNamespace/NoteCutInfo.hpp"
 #include "GlobalNamespace/FPSCounter.hpp"
 #include "GlobalNamespace/GameplayCoreInstaller.hpp"
+#include "GlobalNamespace/BeatmapDifficulty.hpp"
+#include "GlobalNamespace/OVRPlugin.hpp"
+#include "GlobalNamespace/OVRPlugin_SystemHeadset.hpp"
 
 #include "UnityEngine/SceneManagement/Scene.hpp"
 #include "UnityEngine/ImageConversion.hpp"
@@ -44,21 +48,16 @@ using namespace GlobalNamespace;
 
 #include "modloader/shared/modloader.hpp"
 
-#include <string>
-#include <optional>
 #include "STmanager.hpp"
 
 // static ModInfo modInfo;
 ModInfo STModInfo;
-static Configuration& getConfig() {
-    static Configuration config(STModInfo);
-    return config;
-}
 
-static Logger& getLogger() {
-    static Logger* logger = new Logger(STModInfo);
+Logger& getLogger() {
+    static auto logger = new Logger(STModInfo, LoggerOptions(false, true)); // Set first bool to true to silence logger, second bool defines output to file
     return *logger;
 }
+
 static STManager* stManager = nullptr;
 
 void ResetScores() {
@@ -85,6 +84,8 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
     stManager->bpm = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<float>(level, "beatsPerMinute"));
     bool CustomLevel = stManager->id.find("custom_level_") != std::string::npos;
     stManager->njs = CustomLevel ? self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed() : 0.0f;
+    stManager->difficulty = self->selectedDifficultyBeatmap->get_difficulty().value;
+    stManager->statusLock.unlock();
     stManager->statusLock.unlock();
 
     getLogger().debug("coverGetter Task");                      // 
@@ -107,11 +108,9 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
 
 MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, PracticeSettings* practiceSettings, Il2CppString* g, bool h) {
     getLogger().info("Song Started");
-    int difficulty = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<int>(difficultyBeatmap, "difficulty"));
 
     // Set the currently playing level to the selected one, since we are in a song
     stManager->statusLock.lock();
-    stManager->difficulty = difficulty;
     stManager->location = 1;
     ResetScores();
     stManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode
@@ -317,12 +316,23 @@ MAKE_HOOK_OFFSETLESS(FPSCounter_Update, void, FPSCounter* self) {
 
 bool FPSObjectCreated = false;
 
+std::string GetHeadsetType() {
+    GlobalNamespace::OVRPlugin::SystemHeadset HeadsetType = GlobalNamespace::OVRPlugin::GetSystemHeadsetType();
+    std::string result;
+    if (HeadsetType.value == HeadsetType.Oculus_Quest) return result = "Oculus Quest";
+    else if (HeadsetType.value == HeadsetType.Oculus_Quest_2) return result = "Oculus Quest 2";
+    else if (HeadsetType.value == 10) return result = "Oculus Quest 3";
+    else return result = "Unknown " + to_utf8(csstrtostr(GlobalNamespace::OVRPlugin::get_productName()));
+}
+
 MAKE_HOOK_OFFSETLESS(SceneManager_ActiveSceneChanged, void, UnityEngine::SceneManagement::Scene previousActiveScene, UnityEngine::SceneManagement::Scene nextActiveScene) {
     
     if (nextActiveScene.IsValid()) {
         std::string sceneName = to_utf8(csstrtostr(nextActiveScene.get_name()));
         std::string shaderWarmup = "ShaderWarmup";
-        if (sceneName == shaderWarmup) {
+        std::string EmptyTransition = "EmptyTransition";
+        if (sceneName == EmptyTransition) stManager->headsetType = GetHeadsetType();
+        else if (sceneName == shaderWarmup) {
             auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::newcsstr("FPSC"));
             UnityEngine::Object::DontDestroyOnLoad(FPSCObject->AddComponent<FPSCounter*>());
         }
@@ -336,6 +346,26 @@ extern "C" void setup(ModInfo& info) {
     info.id = ID;
     info.version = VERSION;
     STModInfo = info;
+
+#ifndef DEBUG_BUILD
+    // Disable loggers
+    // Here's where you can disable individual context Loggers
+    // @brief Disables all Server Loggers
+    getLogger().DisableContext("Server");
+#ifdef HTTP_LOGGING
+    // @brief Disables HTTP Server Logger
+    getLogger().DisableContext("Server::HTTP");
+#endif
+#ifdef SOCKET_LOGGING
+    // @brief Disables Socket Server Logger
+    getLogger().DisableContext("Server::Socket");
+#endif
+#ifdef MULTICAST_LOGGING
+    // @brief Disables Multicast Server Logger
+    getLogger().DisableContext("Server::Multicast");
+#endif
+#endif
+
     getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
 
     getLogger().info("Completed setup!");
@@ -370,5 +400,6 @@ extern "C" void load() {
     INSTALL_HOOK_OFFSETLESS(logger, SceneManager_ActiveSceneChanged, il2cpp_utils::FindMethodUnsafe("UnityEngine.SceneManagement", "SceneManager", "Internal_ActiveSceneChanged", 2));
 
     getLogger().debug("Installed all hooks!");
-    stManager = new STManager(getLogger(), getConfig().config);
+
+    stManager = new STManager(getLogger());
 }

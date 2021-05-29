@@ -2,19 +2,18 @@
 
 #include "beatsaber-hook/shared/utils/logging.hpp"
 #include "beatsaber-hook/shared/config/config-utils.hpp"
-#include <thread>
-#include <optional>
-#include <mutex>
+
+extern ModInfo STModInfo;
+Logger& getLogger();
 
 class STManager    {
 private:
     Logger& logger;
-    const ConfigDocument& config;
+
     std::thread networkThread;
     std::thread networkThreadHTTP;
     std::thread networkThreadMulticast;
 
-    void threadEntrypoint();
     bool runServer();
     bool runServerHTTP();
     bool MulticastServer();
@@ -26,6 +25,10 @@ private:
     std::string constructResponse();
     std::string constructCoverResponse();
     std::string multicastResponse(std::string socket, std::string http);
+
+    bool ConnectedHTTP = false;
+    bool ConnectedSocket = false;
+    bool MulticastRunning = false;
 public:
     std::mutex statusLock; // Lock to make sure that stuff doesn't get overwritten while being read by the network thread
 
@@ -64,8 +67,12 @@ public:
     bool mpGameIdShown = false;
 
     std::string localIp = "127.0.0.1";
+    std::string headsetType = "Unknown Android";
 
-    STManager(Logger& logger, const ConfigDocument& config);
+    LoggerContextObject HTTPLogger = getLogger().WithContext("Server").WithContext("HTTP");
+    LoggerContextObject SocketLogger = getLogger().WithContext("Server").WithContext("Socket");
+    LoggerContextObject MulticastLogger = getLogger().WithContext("Server").WithContext("Multicast");
+
+    //STManager(Logger& logger, LoggerContextObject& HTTPLogger, LoggerContextObject& SocketLogger, LoggerContextObject& MulticastLogger);
+    STManager(Logger& logger);
 };
-
-extern ModInfo STModInfo;

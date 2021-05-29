@@ -29,8 +29,6 @@
 #define PORT_HTTP 53502
 #define CONNECTION_QUEUE_LENGTH 2 // How many connections to store to process
 
-bool Connected = false;
-
 STManager::STManager(Logger& logger, const ConfigDocument& config) : logger(logger), config(config) {
     logger.info("Starting network thread . . .");
     networkThread = std::thread(&STManager::runServer, this); // Run the thread
