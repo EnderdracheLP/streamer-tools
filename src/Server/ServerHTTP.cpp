@@ -133,7 +133,6 @@ void STManager::HandleRequestHTTP(int client_sock) {
     }
     ROUTE_GET("/cover/base64/") goto COVER; // I know eww goto, but give me a better solution
     ROUTE_GET("/cover/base64") {
-        // To-Do: Send Playlist cover
         COVER:
         std::string stats = STManager::coverImageBase64;
         if (stats.empty()) goto NotFound;
