@@ -60,6 +60,7 @@ public:
     float bpm = 0.0f;
     float njs = 0.0f;
     std::string coverImageBase64 = "";
+    std::string coverImageJPG = "";
 
     int players = 0;
     int maxPlayers = 0;

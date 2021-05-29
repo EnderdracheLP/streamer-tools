@@ -125,30 +125,38 @@ void STManager::HandleRequestHTTP(int client_sock) {
     ROUTE_START() {
         messageStr = constructResponse();
         response =  "HTTP/1.1 200 OK\r\n" \
-                    "Content-Length: " + std::to_string(messageStr.length()) + "\n" \
+                    "Content-Length: " + std::to_string(messageStr.length()) + "\r\n" \
                     "Content-Type: application/json\r\n" \
-                    "Access-Control-Allow-Origin: *\r\n\r\n" + \
+                    "Access-Control-Allow-Origin: *\r\n" \
+                    "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
                     messageStr;
     }
-    ROUTE_GET("/cover/") goto COVER; // I know eww goto, but give me a better solution
-    ROUTE_GET("/cover") {
+    ROUTE_GET("/cover/base64/") goto COVER; // I know eww goto, but give me a better solution
+    ROUTE_GET("/cover/base64") {
         // To-Do: Send Playlist cover
         COVER:
         std::string stats = STManager::coverImageBase64;
-        //messageStr =    "<!DOCTYPE html> "\
-        //                "<html> "\
-        //                "<head> <title> No Cover image for you little guy or girl </title> </head> "\
-        //                "<body> Do you really think covers are implemented yet ? ? ? Also yeet that page it's uGlY </body> "\
-        //                "</html>";
-        response =  "HTTP/1.1 200 OK\n"\
+        if (stats.empty()) goto NotFound;
+        response =  "HTTP/1.1 200 OK\r\n"\
                     "Content-Length: " + std::to_string(stats.length()) + "\n"\
-                    "Content-Type: text/plain\n"\
-                    "Access-Control-Allow-Origin: *\n\n" + \
+                    "Content-Type: text/plain\r\n"\
+                    "Access-Control-Allow-Origin: *\r\n" \
+                    "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
                     "data:image/jpg;base64," + stats;
+    }
+    ROUTE_GET("/cover.jpg") {
+        std::string stats = STManager::coverImageJPG;
+        if (stats.empty()) goto NotFound;
+        response =  "HTTP/1.1 200 OK\r\n"\
+                    "Content-Length: " + std::to_string(stats.length()) + "\n"\
+                    "Content-Type: image/jpg\r\n"\
+                    "Access-Control-Allow-Origin: *\r\n" \
+                    "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
+                    stats;
     }
     else {
         // 404 or invalid
-
+        NotFound:
         messageStr =    "<!DOCTYPE html> "\
                         "<html> "\
                         "<head> <title>streamer-tools - 404 Not found</title> "\
@@ -161,8 +169,8 @@ void STManager::HandleRequestHTTP(int client_sock) {
                         "</body> </html>"; // Yes this is long but page is pretty-ish
         response =  "HTTP/1.1 404 Not Found\n"\
                     "Content-Length: " + std::to_string(messageStr.length()) + "\n"\
-                    "Content-Type: text/html\n"\
-                    "Access-Control-Allow-Origin: *\n\n" + \
+                    "Access-Control-Allow-Origin: *\r\n" \
+                    "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
                     messageStr;
     }
     SendRequest: // Just incase we ever need to use goto SendRequest to skip over code
