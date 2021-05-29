@@ -71,7 +71,6 @@ std::string STManager::constructResponse() {
     doc.AddMember("badCuts", STManager::badCuts, alloc);
     doc.AddMember("missedNotes", STManager::missedNotes, alloc);
     doc.AddMember("fps", STManager::fps, alloc);
-    doc.AddMember("coverImageBase64", STManager::coverImageBase64, alloc);
     statusLock.unlock();
 
     // Convert the document into a string

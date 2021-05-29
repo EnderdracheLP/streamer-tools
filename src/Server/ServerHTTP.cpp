@@ -100,24 +100,6 @@ void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
     }
 }
 
-//int sendall(int s, char* buf, int* len)
-//{
-//    int total = 0; // how many bytes we've sent
-//    int bytesleft = *len; // how many we have left to send
-//    int n = 0;
-//    while (total < *len) {
-//        n = send(s, buf + total, bytesleft, 0);
-//        if (n == -1) {
-//            /* print/log error details */
-//            break;
-//        }
-//        total += n;
-//        bytesleft -= n;
-//    }
-//    *len = total; // return number actually sent here
-//    return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
-//}
-
 void STManager::HandleRequestHTTP(int client_sock) {
     unsigned int length = 8192;
     char* buffer = 0;
@@ -152,7 +134,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
     ROUTE_GET("/cover") {
         // To-Do: Send Playlist cover
         COVER:
-        std::string stats = constructCoverResponse();
+        std::string stats = STManager::coverImageBase64;
         //messageStr =    "<!DOCTYPE html> "\
         //                "<html> "\
         //                "<head> <title> No Cover image for you little guy or girl </title> </head> "\
@@ -160,9 +142,9 @@ void STManager::HandleRequestHTTP(int client_sock) {
         //                "</html>";
         response =  "HTTP/1.1 200 OK\n"\
                     "Content-Length: " + std::to_string(stats.length()) + "\n"\
-                    "Content-Type: image/png\n"\
+                    "Content-Type: text/plain\n"\
                     "Access-Control-Allow-Origin: *\n\n" + \
-                    "data:image/png;base64," + stats;
+                    "data:image/jpg;base64," + stats;
     }
     else {
         // 404 or invalid

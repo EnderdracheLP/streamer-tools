@@ -85,25 +85,28 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
     bool CustomLevel = stManager->id.find("custom_level_") != std::string::npos;
     stManager->njs = CustomLevel ? self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed() : 0.0f;
     stManager->difficulty = self->selectedDifficultyBeatmap->get_difficulty().value;
-    stManager->statusLock.unlock();
-    stManager->statusLock.unlock();
 
-    getLogger().debug("coverGetter Task");                      // 
-    System::Threading::Tasks::Task_1<UnityEngine::Sprite*>*  _coverGetter = reinterpret_cast<GlobalNamespace::IPreviewBeatmapLevel*>(self->level)->GetCoverImageAsync(System::Threading::CancellationToken::get_None());
-    _coverGetter->Wait();
-    getLogger().debug("coverSprite");
-    UnityEngine::Sprite* coverSprite = _coverGetter->get_Result();
-    getLogger().debug("getting texture");
+                    // 
+    if (CustomLevel) {
+        getLogger().debug("coverGetter Task");
+        System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* _coverGetter = reinterpret_cast<GlobalNamespace::IPreviewBeatmapLevel*>(self->level)->GetCoverImageAsync(System::Threading::CancellationToken::get_None());
+        _coverGetter->Wait();
+        getLogger().debug("coverSprite");
+        UnityEngine::Sprite* coverSprite = _coverGetter->get_Result();
+        getLogger().debug("getting texture");
 
-    UnityEngine::Texture2D* coverTexture = coverSprite->get_texture();
+        UnityEngine::Texture2D* coverTexture = coverSprite->get_texture();
 
-    getLogger().debug("encoding to base64");
-    Array<uint8_t>* RawCoverbytesArray = UnityEngine::ImageConversion::EncodeToPNG(coverTexture);
+        getLogger().debug("encoding to base64");
+        Array<uint8_t>* RawCoverbytesArray = UnityEngine::ImageConversion::EncodeToJPG(coverTexture);
 
-    getLogger().debug("coverImageBase64 ToBase64String");
-    if (RawCoverbytesArray) {
-        stManager->coverImageBase64 = to_utf8(csstrtostr(System::Convert::ToBase64String(RawCoverbytesArray)));
+        getLogger().debug("coverImageBase64 ToBase64String");
+        if (RawCoverbytesArray) {
+            stManager->coverImageBase64 = to_utf8(csstrtostr(System::Convert::ToBase64String(RawCoverbytesArray)));
+            //stManager->coverImageBase64 = RawCoverbytesArray;
+        }
     }
+    stManager->statusLock.unlock();
 }
 
 MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, PracticeSettings* practiceSettings, Il2CppString* g, bool h) {
