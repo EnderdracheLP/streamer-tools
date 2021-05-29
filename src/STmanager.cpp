@@ -29,25 +29,11 @@
 #define PORT_HTTP 53502
 #define CONNECTION_QUEUE_LENGTH 2 // How many connections to store to process
 
-STManager::STManager(Logger& logger, const ConfigDocument& config) : logger(logger), config(config) {
+STManager::STManager(Logger& logger) : logger(logger) {
     logger.info("Starting network thread . . .");
     networkThread = std::thread(&STManager::runServer, this); // Run the thread
     networkThreadHTTP = std::thread(&STManager::runServerHTTP, this); // Run the thread
     networkThreadMulticast = std::thread(&STManager::MulticastServer, this); // Run the thread
-}
-
-void STManager::threadEntrypoint()    {
-    logger.info("Starting server");
-    if(!runServer()) {
-        logger.error("Failed to run server!");
-    }
-    if (!runServerHTTP()) {
-        logger.error("Failed to run HTTP server!");
-    }
-    if (!MulticastServer()) {
-        logger.error("Failed to run Multicast server!");
-    }
-    else logger.info("Multicast Server finished connection established!");
 }
 
 // Creates the JSON to send back to the Streamer Tools application
