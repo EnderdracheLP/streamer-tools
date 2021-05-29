@@ -127,6 +127,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
     //// we assume that sizeof(length) will return 4 here.
     //ReadXBytes(client_sock, sizeof(length), (void*)(&length));
     buffer = new char[length];
+    // TODO: This shouldn't be a seperate thread
     std::thread ReadXBytesThread([this, client_sock, length, buffer]() { return STManager::ReadXBytes(client_sock, length, buffer); }); // Use threads to read request
     //std::thread ReadXBytesThread([this, client_sock, length, cppBuffer]() { return STManager::ReadXBytes(client_sock, length, cppBuffer); }); // Use threads to read request
     //ReadXBytes(client_sock, length, buffer);
