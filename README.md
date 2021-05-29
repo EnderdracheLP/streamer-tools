@@ -78,8 +78,14 @@ You have 2 methods to get the data which streamer-tools gives you:
 
 a) Make a normal GET request to `http://[Your Quests ip]:53502`
 
+#### HTTP Endpoints
+The HTTP endpoints for retrieving Data are as follows, 
+`http://[Your Quests ip]:53502` will give you the standard json output with all the information.
+`http://[Your Quests ip]:53502/cover.jpg` for the coverImage as jpg file or 
+`http://[Your Quests ip]:53502/cover/base64` for receiving the image encoded in base64 starting with the `data:image/jpg;base64` header.
+
 b) Connect via a Socket to `[Your Quests ip]:53501`.
-4 bytes will be sent which give you the length of the response (as int) and then you can read the rest of the data. The Socket will currently close sometimes when sending data, so it's best you make your application reconnect automatically.
+4 bytes will be sent which give you the length of the response (as int) and then you can read the rest of the data. The Socket can currently only serve one client and send the current status every 50ms, it's not guaranteed that the connection stays open, so it's best you make your application reconnect automatically and check if the socket is already in use.
 
 ### Json format
 Example response:
@@ -113,7 +119,7 @@ Example response:
     "fps": 72                // FPS of the game
 }
 ```
-Currently all values only update and do not reset (What I mean is that after you go out of a mp lobby the game id will still be there)
+**Currently all values only update and do not reset (What I mean is that after you go out of a mp lobby the game id will still be there)**
 
 ## Credits
 For making the original Quest Discord Presence which this is build on.
