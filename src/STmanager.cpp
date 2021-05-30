@@ -88,7 +88,7 @@ std::string STManager::constructConfigResponse() {
     auto& alloc = doc.GetAllocator();
     doc.SetObject();
 
-    doc.AddMember("decimals", getModConfig().DecimalsForNumbers.GetValue(), alloc);
+    //doc.AddMember("decimals", getModConfig().DecimalsForNumbers.GetValue(), alloc);
     doc.AddMember("dontenergy", getModConfig().DontEnergy.GetValue(), alloc);
     doc.AddMember("dontmpcode", getModConfig().DontMpCode.GetValue(), alloc);
     doc.AddMember("alwaysmpcode", getModConfig().AlwaysMpCode.GetValue(), alloc);

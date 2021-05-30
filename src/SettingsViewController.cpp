@@ -40,7 +40,7 @@ void StreamerTools::stSettingViewController::DidActivate(bool firstActivation, b
         QuestUI::BeatSaberUI::CreateText(parent, "Client configuration");
 
         // DecimalsForNumbers
-        QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueIncrementInt(parent, getModConfig().DecimalsForNumbers, 1, 0, 20)->get_gameObject(), "How many decimal places to show");
+        //QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueIncrementInt(parent, getModConfig().DecimalsForNumbers, 1, 0, 20)->get_gameObject(), "How many decimal places to show");
 
         // DontEnergy
         QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueToggle(parent, getModConfig().DontEnergy)->get_gameObject(), "Dont show energy bar");

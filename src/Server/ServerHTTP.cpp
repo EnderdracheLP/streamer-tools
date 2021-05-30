@@ -177,12 +177,12 @@ void STManager::HandleRequestHTTP(int client_sock) {
         LOG_DEBUG_HTTP("json: " + json);
         rapidjson::Document document;
         document.Parse(json);
-        LOG_DEBUG_HTTP("decimals: " + std::to_string(document["decimals"].GetInt()));
+        //LOG_DEBUG_HTTP("decimals: " + std::to_string(document["decimals"].GetInt()));
         LOG_DEBUG_HTTP("dontenergy: " + std::to_string(document["dontenergy"].GetBool()));
         LOG_DEBUG_HTTP("dontmpcode: " + std::to_string(document["dontmpcode"].GetBool()));
         LOG_DEBUG_HTTP("alwaysmpcode: " + std::to_string(document["alwaysmpcode"].GetBool()));
         LOG_DEBUG_HTTP("alwaysupdate: " + std::to_string(document["alwaysupdate"].GetBool()));
-        getModConfig().DecimalsForNumbers.SetValue(document["decimals"].GetInt());
+        //getModConfig().DecimalsForNumbers.SetValue(document["decimals"].GetInt());
         getModConfig().DontEnergy.SetValue(document["dontenergy"].GetBool());
         getModConfig().DontMpCode.SetValue(document["dontmpcode"].GetBool());
         getModConfig().AlwaysMpCode.SetValue(document["alwaysmpcode"].GetBool());
