@@ -1,10 +1,10 @@
-#include "main.hpp"
 #include "modloader/shared/modloader.hpp"
 #include "STmanager.hpp"
-#include "questui/shared/QuestUI.hpp"
-#include "config-utils/shared/config-utils.hpp"
 #include "Config.hpp"
-#include "SettingsController.hpp"
+
+#include "SettingsViewController.hpp"
+
+#include "custom-types/shared/register.hpp"
 
 #include "beatsaber-hook/shared/utils/typedefs.h"
 #include "beatsaber-hook/shared/utils/il2cpp-functions.hpp"
@@ -12,7 +12,7 @@
 #include "beatsaber-hook/shared/utils/logging.hpp"
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
 #include "beatsaber-hook/shared/utils/typedefs.h"
-#include "beatsaber-hook/shared/config/config-utils.hpp"
+//#include "beatsaber-hook/shared/config/config-utils.hpp"
 
 #include "UnityEngine/Resources.hpp"
 #include "UnityEngine/GameObject.hpp"
@@ -384,9 +384,12 @@ extern "C" void setup(ModInfo& info) {
 extern "C" void load() {
     getLogger().debug("Installing hooks...");
     il2cpp_functions::Init();
-
     QuestUI::Init();
-    QuestUI::Register::RegisterModSettingsViewController(STModInfo, DidActivate);
+
+    getModConfig().Init(STModInfo);
+
+    custom_types::Register::RegisterType<StreamerTools::stSettingViewController>();
+    QuestUI::Register::RegisterModSettingsViewController<StreamerTools::stSettingViewController*>(STModInfo);
 
     // Install our function hooks
     Logger& logger = getLogger();

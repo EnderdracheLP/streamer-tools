@@ -1,7 +1,10 @@
 #pragma once
 
 #include "beatsaber-hook/shared/utils/logging.hpp"
-#include "beatsaber-hook/shared/config/config-utils.hpp"
+
+#include "questui/shared/QuestUI.hpp"
+#include "config-utils/shared/config-utils.hpp"
+
 
 extern ModInfo STModInfo;
 Logger& getLogger();

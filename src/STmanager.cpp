@@ -1,30 +1,12 @@
 #define RAPIDJSON_HAS_STDSTRING 1 // Enable rapidjson's support for std::string
 #define NO_CODEGEN_USE
 #include <thread>
-#include <cmath>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <unistd.h>
 #include <mutex>
-#include <fstream>
-#include <sstream>
-#include <iomanip>
-
-#include <chrono>
-#include <net/if.h>
-#include <sys/ioctl.h>
 
 #include "STmanager.hpp"
-
-#include "beatsaber-hook/shared/config/config-utils.hpp"
-#include "GlobalNamespace/StandardLevelDetailView.hpp"
-
 #include "Config.hpp"
-#include "main.hpp"
-#include "config-utils/shared/config-utils.hpp"
+
+#include "GlobalNamespace/StandardLevelDetailView.hpp"
 
 #define ADDRESS "0.0.0.0" // Binding to localhost
 #define ADDRESS_MULTI "232.0.53.5"  // Testing setting was "225.1.1.1" and "224.0.0.1" which sends to all hosts on the network
