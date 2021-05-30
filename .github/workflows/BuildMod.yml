@@ -3,7 +3,7 @@ name: NDK build
 on:
   workflow_dispatch:
   push:
-    branches: [ master, dev, CoverImageBase64 ]
+    branches: [ master, dev, CoverImageBase64, ConfigSyncing ]
     paths-ignore:
       - '**.yml'
       - '!.github/workflows/BuildMod.yml'
@@ -13,7 +13,7 @@ on:
       - '**.md'
       - '.gitignore'
   pull_request:
-    branches: [ master, dev, 1.14.0-Update ]
+    branches: [ master, dev, 1.14.0-Update, ConfigSyncing ]
 
 env:
      module_id: streamer-tools
