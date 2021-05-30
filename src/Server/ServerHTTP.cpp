@@ -79,6 +79,7 @@ void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
 {
     int bytesRead = 0;
     int result;
+    bool loaded = false;
     while (bytesRead < x)   // TODO: Check if we even need this loop
     {
         result = read(socket, buffer + bytesRead, x - bytesRead);
@@ -88,13 +89,14 @@ void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
             ConnectedHTTP = false;
             break;
         }
+        if (bytesRead == result) loaded = true;
 
         bytesRead += result;
         LOG_DEBUG_HTTP("Received bytes: %d", bytesRead);
         LOG_DEBUG_HTTP("Received message: \n%s", buffer);
 
         std::string resultStr(buffer);
-        if ((resultStr.find("Connection: close") != std::string::npos) || (resultStr.find("\r\n") != std::string::npos)) {
+        if (((resultStr.find("\r\n\r\n") != std::string::npos) && (resultStr.find("GET") != std::string::npos)) || loaded) {
             ConnectedHTTP = false; 
             break;
         }
@@ -102,7 +104,7 @@ void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
 }
 
 void STManager::HandleRequestHTTP(int client_sock) {
-    unsigned int length = 8192;
+    unsigned int length = 4096+1;
     char* buffer = 0;
     //std::string cppBuffer;
     std::string response;
@@ -207,14 +209,16 @@ void STManager::HandleRequestHTTP(int client_sock) {
                     "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
                     messageStr;
     }
-    SendRequest: // Just incase we ever need to use goto SendRequest to skip over code
-    int convertedLength = htonl(response.length());
-    if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
-        logger.error("HTTP: Error sending Response: \n%s", strerror(errno));
-        ConnectedHTTP = false;
-        close(client_sock); return;
+    if (!response.empty()) {
+        SendResponse: // Just incase we ever need to use goto SendRequest to skip over code
+        int convertedLength = htonl(response.length());
+        if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
+            logger.error("HTTP: Error sending Response: \n%s", strerror(errno));
+            ConnectedHTTP = false;
+            close(client_sock); return;
+        }
+        LOG_DEBUG_HTTP("HTTP Response: \n%s", response.c_str());
     }
-    LOG_DEBUG_HTTP("HTTP Response: \n%s", response.c_str());
     ConnectedHTTP = false;
     close(client_sock); // Close the client's socket to avoid leaking resources
     return;
