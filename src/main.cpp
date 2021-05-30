@@ -1,3 +1,11 @@
+#include "main.hpp"
+#include "modloader/shared/modloader.hpp"
+#include "STmanager.hpp"
+#include "questui/shared/QuestUI.hpp"
+#include "config-utils/shared/config-utils.hpp"
+#include "Config.hpp"
+#include "SettingsController.hpp"
+
 #include "beatsaber-hook/shared/utils/typedefs.h"
 #include "beatsaber-hook/shared/utils/il2cpp-functions.hpp"
 #include "beatsaber-hook/shared/utils/utils.h"
@@ -30,7 +38,7 @@
 #include "GlobalNamespace/MultiplayerSessionManager.hpp"
 #include "GlobalNamespace/GameServerLobbyFlowCoordinator.hpp"
 #include "GlobalNamespace/PracticeSettings.hpp"
-#include "GlobalNamespace/ScoreController.hpp"  // Added for getting Score Information.
+#include "GlobalNamespace/ScoreController.hpp"
 #include "GlobalNamespace/RelativeScoreAndImmediateRankCounter.hpp"
 #include "GlobalNamespace/ScoreController.hpp"
 #include "GlobalNamespace/GameEnergyUIPanel.hpp"
@@ -51,9 +59,7 @@
 #include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
 using namespace GlobalNamespace;
 
-#include "modloader/shared/modloader.hpp"
-
-#include "STmanager.hpp"
+DEFINE_CONFIG(ModConfig);
 
 // static ModInfo modInfo;
 ModInfo STModInfo;
@@ -378,6 +384,9 @@ extern "C" void setup(ModInfo& info) {
 extern "C" void load() {
     getLogger().debug("Installing hooks...");
     il2cpp_functions::Init();
+
+    QuestUI::Init();
+    QuestUI::Register::RegisterModSettingsViewController(STModInfo, DidActivate);
 
     // Install our function hooks
     Logger& logger = getLogger();

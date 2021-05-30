@@ -153,6 +153,18 @@ void STManager::HandleRequestHTTP(int client_sock) {
                     "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
                     stats;
     }
+    ROUTE_GET("/config/") goto CONFIG; // I know eww goto, but give me a better solution
+    ROUTE_GET("/config") {
+        CONFIG:
+        std::string stats = constructConfigResponse();
+        if (stats.empty()) goto NotFound;
+        response =  "HTTP/1.1 200 OK\r\n"\
+                    "Content-Length: " + std::to_string(stats.length()) + "\n"\
+                    "Content-Type: application/json\r\n"\
+                    "Access-Control-Allow-Origin: *\r\n" \
+                    "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
+                    stats;
+    }
     else {
         // 404 or invalid
         NotFound:

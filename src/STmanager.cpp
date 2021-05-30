@@ -22,6 +22,10 @@
 #include "beatsaber-hook/shared/config/config-utils.hpp"
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
 
+#include "Config.hpp"
+#include "main.hpp"
+#include "config-utils/shared/config-utils.hpp"
+
 #define ADDRESS "0.0.0.0" // Binding to localhost
 #define ADDRESS_MULTI "232.0.53.5"  // Testing setting was "225.1.1.1" and "224.0.0.1" which sends to all hosts on the network
 #define PORT_MULTI 53500
@@ -89,6 +93,24 @@ std::string STManager::multicastResponse(std::string socket, std::string http) {
     doc.AddMember("ModVersion", STModInfo.version, alloc);
     doc.AddMember("Socket", socket, alloc);
     doc.AddMember("HTTP", http, alloc);
+
+    // Convert the document into a string
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+    return buffer.GetString();
+}
+
+std::string STManager::constructConfigResponse() {
+    rapidjson::Document doc;
+    auto& alloc = doc.GetAllocator();
+    doc.SetObject();
+
+    doc.AddMember("decimals", getModConfig().DecimalsForNumbers.GetValue(), alloc);
+    doc.AddMember("dontenergy", getModConfig().DontEnergy.GetValue(), alloc);
+    doc.AddMember("dontmpcode", getModConfig().DontMpCode.GetValue(), alloc);
+    doc.AddMember("alwaysmpcode", getModConfig().AlwaysMpCode.GetValue(), alloc);
+    doc.AddMember("alwaysupdate", getModConfig().AlwaysUpdate.GetValue(), alloc);
 
     // Convert the document into a string
     rapidjson::StringBuffer buffer;

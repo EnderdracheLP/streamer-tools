@@ -24,6 +24,7 @@ private:
 
     std::string constructResponse();
     std::string constructCoverResponse();
+    std::string constructConfigResponse();
     std::string multicastResponse(std::string socket, std::string http);
 
     bool ConnectedHTTP = false;
