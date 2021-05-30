@@ -90,7 +90,7 @@ bool STManager::MulticastServer() {
              * groupSock sockaddr structure.
              */
             
-            MulticastLogger.debug("Multicast sent: \n%s", message.c_str());
+            LOG_DEBUG_MULTICAST("Multicast sent: \n%s", message.c_str());
             strcpy(databuf, message.c_str());
             datalen = message.length();
             if (sendto(sd, databuf, datalen, 0,

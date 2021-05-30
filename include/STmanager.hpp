@@ -5,6 +5,22 @@
 #include "questui/shared/QuestUI.hpp"
 #include "config-utils/shared/config-utils.hpp"
 
+/*  
+    Use macros that are commented in our out for disablig enabling debug loggers
+*/
+#ifdef DEBUG_BUILD
+
+#define LOG_DEBUG_HTTP(...) getLogger().WithContext("Server").WithContext("HTTP").debug(__VA_ARGS__) 
+
+#define LOG_DEBUG_SOCKET(...) 
+#define LOG_DEBUG_MULTICAST(...) 
+//#define LOG_DEBUG_SOCKET(...) getLogger().WithContext("Server").WithContext("Socket").debug(__VA_ARGS__) 
+//#define LOG_DEBUG_MULTICAST(...) getLogger().WithContext("Server").WithContext("Socket").debug(__VA_ARGS__) 
+#elif
+#define LOG_DEBUG_HTTP(...) 
+#define LOG_DEBUG_SOCKET(...) 
+#define LOG_DEBUG_MULTICAST(...) 
+#endif
 
 extern ModInfo STModInfo;
 Logger& getLogger();
@@ -74,9 +90,9 @@ public:
     std::string localIp = "127.0.0.1";
     std::string headsetType = "Unknown Android";
 
-    LoggerContextObject HTTPLogger = getLogger().WithContext("Server").WithContext("HTTP");
-    LoggerContextObject SocketLogger = getLogger().WithContext("Server").WithContext("Socket");
-    LoggerContextObject MulticastLogger = getLogger().WithContext("Server").WithContext("Multicast");
+    //LoggerContextObject HTTPLogger = getLogger().WithContext("Server").WithContext("HTTP");
+    //LoggerContextObject SocketLogger = getLogger().WithContext("Server").WithContext("Socket");
+    //LoggerContextObject MulticastLogger = getLogger().WithContext("Server").WithContext("Multicast") ;
 
     //STManager(Logger& logger, LoggerContextObject& HTTPLogger, LoggerContextObject& SocketLogger, LoggerContextObject& MulticastLogger);
     STManager(Logger& logger);

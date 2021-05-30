@@ -59,6 +59,9 @@
 #include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
 using namespace GlobalNamespace;
 
+//#define DEBUG_BUILD 1
+//#define SOCKET_LOGGING 1
+
 DEFINE_CONFIG(ModConfig);
 
 // static ModInfo modInfo;
@@ -358,24 +361,28 @@ extern "C" void setup(ModInfo& info) {
     info.version = VERSION;
     STModInfo = info;
 
-#ifndef DEBUG_BUILD
-    // Disable loggers
-    // Here's where you can disable individual context Loggers
-    // @brief Disables all Server Loggers
-    getLogger().DisableContext("Server");
-#ifdef HTTP_LOGGING
-    // @brief Disables HTTP Server Logger
-    getLogger().DisableContext("Server::HTTP");
-#endif
-#ifdef SOCKET_LOGGING
-    // @brief Disables Socket Server Logger
-    getLogger().DisableContext("Server::Socket");
-#endif
-#ifdef MULTICAST_LOGGING
-    // @brief Disables Multicast Server Logger
-    getLogger().DisableContext("Server::Multicast");
-#endif
-#endif
+    //#ifdef DEBUG_BUILD
+    //// Disable loggers
+    //// Here's where you can disable individual context Loggers
+    //#ifdef HTTP_LOGGING
+    //// @brief Disables HTTP Server Logger
+    //getLogger().DisableContext("ServerHTTP");
+    //#endif
+    //#ifdef SOCKET_LOGGING
+    //// @brief Disables Socket Server Logger
+    //getLogger().DisableContext("ServerSocket");
+    //#endif
+    //#ifdef MULTICAST_LOGGING
+    //// @brief Disables Multicast Server Logger
+    //getLogger().DisableContext("ServerMulticast");
+    //#endif
+    //#elif
+    //// @brief Disables all Server Loggers
+    //getLogger().DisableContext("ServerMulticast");
+    //getLogger().DisableContext("ServerSocket");
+    //getLogger().DisableContext("ServerHTTP");
+    ////getLogger().DisableContext("Server");
+    //#endif
 
     getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
 

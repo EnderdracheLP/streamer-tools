@@ -84,14 +84,14 @@ void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
         result = read(socket, buffer + bytesRead, x - bytesRead);
         if (result < 1)
         {
-            HTTPLogger.error("HTTP: Error receiving request: %s", strerror(errno));
+            logger.error("HTTP: Error receiving request: %s", strerror(errno));
             ConnectedHTTP = false;
             break;
         }
 
         bytesRead += result;
-        HTTPLogger.debug("Received bytes: %d", bytesRead);
-        HTTPLogger.debug("Received message: \n%s", buffer);
+        LOG_DEBUG_HTTP("Received bytes: %d", bytesRead);
+        LOG_DEBUG_HTTP("Received message: \n%s", buffer);
 
         std::string resultStr(buffer);
         if ((resultStr.find("Connection: close") != std::string::npos) || (resultStr.find("\r\n") != std::string::npos)) {
@@ -119,10 +119,10 @@ void STManager::HandleRequestHTTP(int client_sock) {
     ReadXBytesThread.join();
     std::string resultStr(buffer);
     delete[] buffer;
-#define ROUTE_START()       if ((resultStr.find("GET / ") != std::string::npos) || (resultStr.find("GET /index") != std::string::npos))
-#define ROUTE(METHOD,URI)    else if ((resultStr.find(METHOD " " URI " ") != std::string::npos))
-#define ROUTE_GET(URI)      ROUTE("GET", URI)
-#define ROUTE_POST(URI)      ROUTE("POST", URI)
+    #define ROUTE_START()       if ((resultStr.find("GET / ") != std::string::npos) || (resultStr.find("GET /index") != std::string::npos))
+    #define ROUTE(METHOD,URI)    else if ((resultStr.find(METHOD " " URI " ") != std::string::npos))
+    #define ROUTE_GET(URI)      ROUTE("GET", URI)
+    #define ROUTE_POST(URI)      ROUTE("POST", URI)
     ROUTE_START() {
         messageStr = constructResponse();
         response =  "HTTP/1.1 200 OK\r\n" \
@@ -170,18 +170,18 @@ void STManager::HandleRequestHTTP(int client_sock) {
     ROUTE_POST("/config") {
         PCONFIG:
         size_t start = resultStr.find("{");
-        HTTPLogger.debug("index of {: " + std::to_string(start));
+        LOG_DEBUG_HTTP("index of {: " + std::to_string(start));
         size_t end = resultStr.find("}");
-        HTTPLogger.debug("index of }: " + std::to_string(end));
+        LOG_DEBUG_HTTP("index of }: " + std::to_string(end));
         std::string json = resultStr.substr(start,  end - start + 1);
-        HTTPLogger.debug("json: " + json);
+        LOG_DEBUG_HTTP("json: " + json);
         rapidjson::Document document;
         document.Parse(json);
-        HTTPLogger.debug("decimals: " + std::to_string(document["decimals"].GetInt()));
-        HTTPLogger.debug("dontenergy: " + std::to_string(document["dontenergy"].GetBool()));
-        HTTPLogger.debug("dontmpcode: " + std::to_string(document["dontmpcode"].GetBool()));
-        HTTPLogger.debug("alwaysmpcode: " + std::to_string(document["alwaysmpcode"].GetBool()));
-        HTTPLogger.debug("alwaysupdate: " + std::to_string(document["alwaysupdate"].GetBool()));
+        LOG_DEBUG_HTTP("decimals: " + std::to_string(document["decimals"].GetInt()));
+        LOG_DEBUG_HTTP("dontenergy: " + std::to_string(document["dontenergy"].GetBool()));
+        LOG_DEBUG_HTTP("dontmpcode: " + std::to_string(document["dontmpcode"].GetBool()));
+        LOG_DEBUG_HTTP("alwaysmpcode: " + std::to_string(document["alwaysmpcode"].GetBool()));
+        LOG_DEBUG_HTTP("alwaysupdate: " + std::to_string(document["alwaysupdate"].GetBool()));
         getModConfig().DecimalsForNumbers.SetValue(document["decimals"].GetInt());
         getModConfig().DontEnergy.SetValue(document["dontenergy"].GetBool());
         getModConfig().DontMpCode.SetValue(document["dontmpcode"].GetBool());
@@ -214,7 +214,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
         ConnectedHTTP = false;
         close(client_sock); return;
     }
-    HTTPLogger.info("HTTP Response: \n%s", response.c_str());
+    LOG_DEBUG_HTTP("HTTP Response: \n%s", response.c_str());
     ConnectedHTTP = false;
     close(client_sock); // Close the client's socket to avoid leaking resources
     return;
