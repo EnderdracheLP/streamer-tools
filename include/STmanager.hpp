@@ -16,7 +16,7 @@
 #define LOG_DEBUG_MULTICAST(...) 
 //#define LOG_DEBUG_SOCKET(...) getLogger().WithContext("Server").WithContext("Socket").debug(__VA_ARGS__) 
 //#define LOG_DEBUG_MULTICAST(...) getLogger().WithContext("Server").WithContext("Socket").debug(__VA_ARGS__) 
-#elif
+#else
 #define LOG_DEBUG_HTTP(...) 
 #define LOG_DEBUG_SOCKET(...) 
 #define LOG_DEBUG_MULTICAST(...) 
