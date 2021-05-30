@@ -78,6 +78,7 @@ void ResetScores() {
     stManager->combo = 0;
     stManager->score = 0;
     stManager->accuracy = 1.0f;
+    stManager->energy = 0.5f;
 }
 
 UnityEngine::Texture2D* DuplicateTexture(UnityEngine::Texture2D* source) {

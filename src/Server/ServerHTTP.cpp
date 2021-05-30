@@ -2,6 +2,7 @@
 #define NO_CODEGEN_USE
 #include "ServerHeaders.hpp"
 #include "STmanager.hpp"
+#include "Config.hpp"
 
 //typedef struct { char* name, * value; } header_t;
 //static header_t reqhdr[17] = { {"\0", "\0"} };
@@ -164,6 +165,28 @@ void STManager::HandleRequestHTTP(int client_sock) {
                     "Access-Control-Allow-Origin: *\r\n" \
                     "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
                     stats;
+    }
+    ROUTE_POST("/config/") goto PCONFIG; // I know eww goto, but give me a better solution
+    ROUTE_POST("/config") {
+        PCONFIG:
+        size_t start = resultStr.find("{");
+        HTTPLogger.debug("index of {: " + std::to_string(start));
+        size_t end = resultStr.find("}");
+        HTTPLogger.debug("index of }: " + std::to_string(end));
+        std::string json = resultStr.substr(start,  end - start + 1);
+        HTTPLogger.debug("json: " + json);
+        rapidjson::Document document;
+        document.Parse(json);
+        HTTPLogger.debug("decimals: " + std::to_string(document["decimals"].GetInt()));
+        HTTPLogger.debug("dontenergy: " + std::to_string(document["dontenergy"].GetBool()));
+        HTTPLogger.debug("dontmpcode: " + std::to_string(document["dontmpcode"].GetBool()));
+        HTTPLogger.debug("alwaysmpcode: " + std::to_string(document["alwaysmpcode"].GetBool()));
+        HTTPLogger.debug("alwaysupdate: " + std::to_string(document["alwaysupdate"].GetBool()));
+        getModConfig().DecimalsForNumbers.SetValue(document["decimals"].GetInt());
+        getModConfig().DontEnergy.SetValue(document["dontenergy"].GetBool());
+        getModConfig().DontMpCode.SetValue(document["dontmpcode"].GetBool());
+        getModConfig().AlwaysMpCode.SetValue(document["alwaysmpcode"].GetBool());
+        getModConfig().AlwaysUpdate.SetValue(document["alwaysupdate"].GetBool());
     }
     else {
         // 404 or invalid
