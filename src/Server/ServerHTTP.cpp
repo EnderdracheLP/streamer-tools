@@ -125,6 +125,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
     #define ROUTE(METHOD,URI)    else if ((resultStr.find(METHOD " " URI " ") != std::string::npos))
     #define ROUTE_GET(URI)      ROUTE("GET", URI)
     #define ROUTE_POST(URI)      ROUTE("POST", URI)
+    #define ROUTE_PUT(URI)      ROUTE("PUT", URI)
     ROUTE_START() {
         messageStr = constructResponse();
         response =  "HTTP/1.1 200 OK\r\n" \
@@ -168,8 +169,8 @@ void STManager::HandleRequestHTTP(int client_sock) {
                     "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
                     stats;
     }
-    ROUTE_POST("/config/") goto PCONFIG; // I know eww goto, but give me a better solution
-    ROUTE_POST("/config") {
+    ROUTE_PUT("/config/") goto PCONFIG; // I know eww goto, but give me a better solution
+    ROUTE_PUT("/config") {
         PCONFIG:
         size_t start = resultStr.find("{");
         LOG_DEBUG_HTTP("index of {: " + std::to_string(start));
@@ -189,6 +190,28 @@ void STManager::HandleRequestHTTP(int client_sock) {
         getModConfig().DontMpCode.SetValue(document["dontmpcode"].GetBool());
         getModConfig().AlwaysMpCode.SetValue(document["alwaysmpcode"].GetBool());
         getModConfig().AlwaysUpdate.SetValue(document["alwaysupdate"].GetBool());
+
+        response =  "HTTP/1.1 204 No Content\n"\
+                    "Access-Control-Allow-Origin: *\r\n" \
+                    "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n";
+    }
+    ROUTE_GET("/teapot") {
+        messageStr =    "<!DOCTYPE html> "\
+                        "<html> "\
+                        "<head> <title>streamer-tools - 418 I'm a teapot</title> "\
+                        "<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'> "\
+                        "<style> body { color: #EEEEEE; background-color: #202225; font-size: 14px; font-family: 'Open Sans'; } </style> "\
+                        "</head> "\
+                        "<body> <div style=\"font-size: 30px;\">Streamer-tools - 418 I'm a teapot</div> "\
+                        "<div style=\"color: #888; margin-bottom: 10px; padding-left: 20px;\">The requested entity body is short and stout.</div> "\
+                        "<div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " (" + headsetType + ") server at " + STManager::localIp + ":" + std::to_string(PORT_HTTP) + "</i></div> "\
+                        "</body> </html>"; // Yes this is long but page is pretty-ish
+
+        response =  "HTTP/1.1 418 I'm a teapot\n"\
+                    "Content-Length: " + std::to_string(messageStr.length()) + "\n"\
+                    "Access-Control-Allow-Origin: *\r\n" \
+                    "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
+                    messageStr;
     }
     else {
         // 404 or invalid
