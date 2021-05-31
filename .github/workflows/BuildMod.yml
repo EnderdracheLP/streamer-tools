@@ -17,7 +17,7 @@ on:
 
 env:
      module_id: streamer-tools
-     BSVersion: 1.16.0
+     BSVersion: 1.16.1
      version: 0.1.0-Dev-${{ github.run_number }}
      bs_hook: 1_3_5
      codegen: 0_9_0

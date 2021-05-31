@@ -2,7 +2,7 @@
 if ($args.Count -eq 0) {
 $ModID = "streamer-tools"
 $BSHook = "1_3_5"
-$BS_Version = "1.15.0"
+$BS_Version = "1.16.1"
 echo "Compiling Mod"
 & $PSScriptRoot/build.ps1
 }
