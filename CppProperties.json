@@ -1,0 +1,23 @@
+{
+  "configurations": [
+    {
+      "cppStandard": "c++20",
+      "cStandard": "c11",
+      "defines": [
+        "ID=\"streamer-tools\"",
+        "VERSION=\"0.1.0\""
+      ],
+      "includePath": [
+        "${workspaceRoot}/**",
+        "${workspaceRoot}/shared",
+        "${workspaceRoot}/include",
+        "${workspaceRoot}/extern/**",
+        "${workspaceRoot}/extern/libil2cpp/il2cpp/libil2cpp",
+        "F:/BS-Modding/android-ndk-r22/**"
+      ],
+      "intelliSenseMode": "android-clang-arm64",
+      "name": "Quest"
+    }
+  ],
+  "version": 4
+}

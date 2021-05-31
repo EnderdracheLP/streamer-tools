@@ -65,3 +65,5 @@ log.txt
 qpm.shared.json
 extern/
 Android.mk.backup
+
+!.vs/tasks.vs.json
