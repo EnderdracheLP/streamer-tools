@@ -1,6 +1,7 @@
 # Builds a .qmod file for loading with BMBF or QP
 if ($args.Count -eq 0) {
 $ModID = "streamer-tools"
+$VERSION = "0.1.0"
 $BSHook = "1_3_5"
 $BS_Version = "1.16.1"
 echo "Compiling Mod"
