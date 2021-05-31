@@ -4,7 +4,7 @@ Makes information available which can then be used by a Streamer-Tools PC applic
 
 ## Installation
 - To install the mod, download the mod below, drop it into BMBF then sync to Beat Saber.
-- To get the mod working on your PC you may want to download the official client. The client and installation instructions are [here](https://github.com/wiresboy-exe/streamToolsDesktop).
+- To get the mod working on your PC you may want to download the official client. The client and installation instructions are [here](https://github.com/ComputerElite/streamer-tools-client).
 
 ## Downloads
 [Download .QMOD](https://github.com/EnderdracheLP/streamer-tools/releases/latest)
