@@ -1,10 +1,18 @@
+#include "modloader/shared/modloader.hpp"
+#include "STmanager.hpp"
+#include "Config.hpp"
+
+#include "SettingsViewController.hpp"
+
+#include "custom-types/shared/register.hpp"
+
 #include "beatsaber-hook/shared/utils/typedefs.h"
 #include "beatsaber-hook/shared/utils/il2cpp-functions.hpp"
 #include "beatsaber-hook/shared/utils/utils.h"
 #include "beatsaber-hook/shared/utils/logging.hpp"
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
 #include "beatsaber-hook/shared/utils/typedefs.h"
-#include "beatsaber-hook/shared/config/config-utils.hpp"
+//#include "beatsaber-hook/shared/config/config-utils.hpp"
 
 #include "UnityEngine/Resources.hpp"
 #include "UnityEngine/GameObject.hpp"
@@ -30,7 +38,7 @@
 #include "GlobalNamespace/MultiplayerSessionManager.hpp"
 #include "GlobalNamespace/GameServerLobbyFlowCoordinator.hpp"
 #include "GlobalNamespace/PracticeSettings.hpp"
-#include "GlobalNamespace/ScoreController.hpp"  // Added for getting Score Information.
+#include "GlobalNamespace/ScoreController.hpp"
 #include "GlobalNamespace/RelativeScoreAndImmediateRankCounter.hpp"
 #include "GlobalNamespace/ScoreController.hpp"
 #include "GlobalNamespace/GameEnergyUIPanel.hpp"
@@ -51,9 +59,10 @@
 #include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
 using namespace GlobalNamespace;
 
-#include "modloader/shared/modloader.hpp"
+//#define DEBUG_BUILD 1
+//#define SOCKET_LOGGING 1
 
-#include "STmanager.hpp"
+DEFINE_CONFIG(ModConfig);
 
 // static ModInfo modInfo;
 ModInfo STModInfo;
@@ -72,6 +81,7 @@ void ResetScores() {
     stManager->combo = 0;
     stManager->score = 0;
     stManager->accuracy = 1.0f;
+    stManager->energy = 0.5f;
 }
 
 UnityEngine::Texture2D* DuplicateTexture(UnityEngine::Texture2D* source) {
@@ -351,24 +361,28 @@ extern "C" void setup(ModInfo& info) {
     info.version = VERSION;
     STModInfo = info;
 
-#ifndef DEBUG_BUILD
-    // Disable loggers
-    // Here's where you can disable individual context Loggers
-    // @brief Disables all Server Loggers
-    getLogger().DisableContext("Server");
-#ifdef HTTP_LOGGING
-    // @brief Disables HTTP Server Logger
-    getLogger().DisableContext("Server::HTTP");
-#endif
-#ifdef SOCKET_LOGGING
-    // @brief Disables Socket Server Logger
-    getLogger().DisableContext("Server::Socket");
-#endif
-#ifdef MULTICAST_LOGGING
-    // @brief Disables Multicast Server Logger
-    getLogger().DisableContext("Server::Multicast");
-#endif
-#endif
+    //#ifdef DEBUG_BUILD
+    //// Disable loggers
+    //// Here's where you can disable individual context Loggers
+    //#ifdef HTTP_LOGGING
+    //// @brief Disables HTTP Server Logger
+    //getLogger().DisableContext("ServerHTTP");
+    //#endif
+    //#ifdef SOCKET_LOGGING
+    //// @brief Disables Socket Server Logger
+    //getLogger().DisableContext("ServerSocket");
+    //#endif
+    //#ifdef MULTICAST_LOGGING
+    //// @brief Disables Multicast Server Logger
+    //getLogger().DisableContext("ServerMulticast");
+    //#endif
+    //#elif
+    //// @brief Disables all Server Loggers
+    //getLogger().DisableContext("ServerMulticast");
+    //getLogger().DisableContext("ServerSocket");
+    //getLogger().DisableContext("ServerHTTP");
+    ////getLogger().DisableContext("Server");
+    //#endif
 
     getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
 
@@ -378,6 +392,12 @@ extern "C" void setup(ModInfo& info) {
 extern "C" void load() {
     getLogger().debug("Installing hooks...");
     il2cpp_functions::Init();
+    QuestUI::Init();
+
+    getModConfig().Init(STModInfo);
+
+    custom_types::Register::RegisterType<StreamerTools::stSettingViewController>();
+    QuestUI::Register::RegisterModSettingsViewController<StreamerTools::stSettingViewController*>(STModInfo);
 
     // Install our function hooks
     Logger& logger = getLogger();

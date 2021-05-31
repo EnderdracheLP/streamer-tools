@@ -2,6 +2,7 @@
 #define NO_CODEGEN_USE
 #include "ServerHeaders.hpp"
 #include "STmanager.hpp"
+#include "Config.hpp"
 
 //typedef struct { char* name, * value; } header_t;
 //static header_t reqhdr[17] = { {"\0", "\0"} };
@@ -78,22 +79,24 @@ void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
 {
     int bytesRead = 0;
     int result;
+    bool loaded = false;
     while (bytesRead < x)   // TODO: Check if we even need this loop
     {
         result = read(socket, buffer + bytesRead, x - bytesRead);
         if (result < 1)
         {
-            HTTPLogger.error("HTTP: Error receiving request: %s", strerror(errno));
+            logger.error("HTTP: Error receiving request: %s", strerror(errno));
             ConnectedHTTP = false;
             break;
         }
+        if (bytesRead == result) loaded = true;
 
         bytesRead += result;
-        HTTPLogger.debug("Received bytes: %d", bytesRead);
-        HTTPLogger.debug("Received message: \n%s", buffer);
+        LOG_DEBUG_HTTP("Received bytes: %d", bytesRead);
+        LOG_DEBUG_HTTP("Received message: \n%s", buffer);
 
         std::string resultStr(buffer);
-        if ((resultStr.find("Connection: close") != std::string::npos) || (resultStr.find("\r\n") != std::string::npos)) {
+        if (((resultStr.find("\r\n\r\n") != std::string::npos) && (resultStr.find("GET") != std::string::npos)) || loaded) {
             ConnectedHTTP = false; 
             break;
         }
@@ -101,7 +104,7 @@ void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
 }
 
 void STManager::HandleRequestHTTP(int client_sock) {
-    unsigned int length = 8192;
+    unsigned int length = 4096+1;
     char* buffer = 0;
     //std::string cppBuffer;
     std::string response;
@@ -118,10 +121,10 @@ void STManager::HandleRequestHTTP(int client_sock) {
     ReadXBytesThread.join();
     std::string resultStr(buffer);
     delete[] buffer;
-#define ROUTE_START()       if ((resultStr.find("GET / ") != std::string::npos) || (resultStr.find("GET /index") != std::string::npos))
-#define ROUTE(METHOD,URI)    else if ((resultStr.find(METHOD " " URI " ") != std::string::npos))
-#define ROUTE_GET(URI)      ROUTE("GET", URI)
-#define ROUTE_POST(URI)      ROUTE("POST", URI)
+    #define ROUTE_START()       if ((resultStr.find("GET / ") != std::string::npos) || (resultStr.find("GET /index") != std::string::npos))
+    #define ROUTE(METHOD,URI)    else if ((resultStr.find(METHOD " " URI " ") != std::string::npos))
+    #define ROUTE_GET(URI)      ROUTE("GET", URI)
+    #define ROUTE_POST(URI)      ROUTE("POST", URI)
     ROUTE_START() {
         messageStr = constructResponse();
         response =  "HTTP/1.1 200 OK\r\n" \
@@ -153,6 +156,40 @@ void STManager::HandleRequestHTTP(int client_sock) {
                     "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
                     stats;
     }
+    ROUTE_GET("/config/") goto CONFIG; // I know eww goto, but give me a better solution
+    ROUTE_GET("/config") {
+        CONFIG:
+        std::string stats = constructConfigResponse();
+        if (stats.empty()) goto NotFound;
+        response =  "HTTP/1.1 200 OK\r\n"\
+                    "Content-Length: " + std::to_string(stats.length()) + "\n"\
+                    "Content-Type: application/json\r\n"\
+                    "Access-Control-Allow-Origin: *\r\n" \
+                    "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
+                    stats;
+    }
+    ROUTE_POST("/config/") goto PCONFIG; // I know eww goto, but give me a better solution
+    ROUTE_POST("/config") {
+        PCONFIG:
+        size_t start = resultStr.find("{");
+        LOG_DEBUG_HTTP("index of {: " + std::to_string(start));
+        size_t end = resultStr.find("}");
+        LOG_DEBUG_HTTP("index of }: " + std::to_string(end));
+        std::string json = resultStr.substr(start,  end - start + 1);
+        LOG_DEBUG_HTTP("json: " + json);
+        rapidjson::Document document;
+        document.Parse(json);
+        LOG_DEBUG_HTTP("decimals: " + std::to_string(document["decimals"].GetInt()));
+        LOG_DEBUG_HTTP("dontenergy: " + std::to_string(document["dontenergy"].GetBool()));
+        LOG_DEBUG_HTTP("dontmpcode: " + std::to_string(document["dontmpcode"].GetBool()));
+        LOG_DEBUG_HTTP("alwaysmpcode: " + std::to_string(document["alwaysmpcode"].GetBool()));
+        LOG_DEBUG_HTTP("alwaysupdate: " + std::to_string(document["alwaysupdate"].GetBool()));
+        getModConfig().DecimalsForNumbers.SetValue(document["decimals"].GetInt());
+        getModConfig().DontEnergy.SetValue(document["dontenergy"].GetBool());
+        getModConfig().DontMpCode.SetValue(document["dontmpcode"].GetBool());
+        getModConfig().AlwaysMpCode.SetValue(document["alwaysmpcode"].GetBool());
+        getModConfig().AlwaysUpdate.SetValue(document["alwaysupdate"].GetBool());
+    }
     else {
         // 404 or invalid
         NotFound:
@@ -172,14 +209,16 @@ void STManager::HandleRequestHTTP(int client_sock) {
                     "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
                     messageStr;
     }
-    SendRequest: // Just incase we ever need to use goto SendRequest to skip over code
-    int convertedLength = htonl(response.length());
-    if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
-        logger.error("HTTP: Error sending Response: \n%s", strerror(errno));
-        ConnectedHTTP = false;
-        close(client_sock); return;
+    if (!response.empty()) {
+        SendResponse: // Just incase we ever need to use goto SendRequest to skip over code
+        int convertedLength = htonl(response.length());
+        if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
+            logger.error("HTTP: Error sending Response: \n%s", strerror(errno));
+            ConnectedHTTP = false;
+            close(client_sock); return;
+        }
+        LOG_DEBUG_HTTP("HTTP Response: \n%s", response.c_str());
     }
-    HTTPLogger.info("HTTP Response: \n%s", response.c_str());
     ConnectedHTTP = false;
     close(client_sock); // Close the client's socket to avoid leaking resources
     return;

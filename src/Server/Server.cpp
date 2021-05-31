@@ -58,7 +58,7 @@ bool STManager::runServer() {
 void STManager::sendRequest(int client_sock) {
     while (client_sock != -1) {
         std::string response = constructResponse();
-        SocketLogger.info("Response: %s", response.c_str());
+        LOG_DEBUG_SOCKET("Response: %s", response.c_str());
 
         int convertedLength = htonl(response.length());
         if (write(client_sock, &convertedLength, 4) == -1) { // First send the length of the data

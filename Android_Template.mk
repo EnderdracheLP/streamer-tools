@@ -32,6 +32,18 @@ LOCAL_MODULE := codegen_{CG_VER}
 LOCAL_EXPORT_C_INCLUDES := extern/codegen
 LOCAL_SRC_FILES := extern/libcodegen_{CG_VER}.so
 include $(PREBUILT_SHARED_LIBRARY)
+# Creating prebuilt for dependency: custom types
+include $(CLEAR_VARS)
+LOCAL_MODULE := customtypes
+LOCAL_EXPORT_C_INCLUDES := extern/custom-types
+LOCAL_SRC_FILES := extern/libcustom-types.so
+include $(PREBUILT_SHARED_LIBRARY)
+# Creating prebuilt for dependency: questui
+include $(CLEAR_VARS)
+LOCAL_MODULE := questui
+LOCAL_EXPORT_C_INCLUDES := extern/questui
+LOCAL_SRC_FILES := extern/libquestui.so
+include $(PREBUILT_SHARED_LIBRARY)
 # Creating prebuilt for dependency: modloader - version: 1.1.0
 include $(CLEAR_VARS)
 LOCAL_MODULE := modloader
@@ -46,6 +58,8 @@ LOCAL_SRC_FILES += $(call rwildcard,extern/beatsaber-hook/src/inline-hook,*.cpp)
 LOCAL_SRC_FILES += $(call rwildcard,extern/beatsaber-hook/src/inline-hook,*.c)
 LOCAL_SHARED_LIBRARIES += beatsaber-hook_{BS_Hook}
 LOCAL_SHARED_LIBRARIES += codegen_{CG_VER}
+LOCAL_SHARED_LIBRARIES += questui
+LOCAL_SHARED_LIBRARIES += customtypes
 LOCAL_SHARED_LIBRARIES += modloader
 LOCAL_LDLIBS += -llog
 LOCAL_CFLAGS += -I'extern/libil2cpp/il2cpp/libil2cpp' -I'extern/codegen/include' -DID='"streamer-tools"' -DVERSION='"$(VERSION)"' {DEBUG_PARAMS} -I'./shared' -I'./extern'
