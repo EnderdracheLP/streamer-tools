@@ -161,10 +161,12 @@ MAKE_HOOK_OFFSETLESS(GameEnergyUIPanel_HandleGameEnergyDidChange, void, GameEner
 
 MAKE_HOOK_OFFSETLESS(ServerCodeView_RefreshText, void, ServerCodeView* self, bool refreshText) {
     ServerCodeView_RefreshText(self, refreshText);
-    stManager->statusLock.lock();
-    stManager->mpGameId = to_utf8(csstrtostr(self->serverCode));
-    stManager->mpGameIdShown = self->codeIsShown;
-    stManager->statusLock.unlock();
+    if (self->serverCode) {
+        stManager->statusLock.lock();
+        stManager->mpGameId = to_utf8(csstrtostr(self->serverCode));
+        stManager->mpGameIdShown = self->codeIsShown;
+        stManager->statusLock.unlock();
+    }
 }
 
 MAKE_HOOK_OFFSETLESS(ScoreController_Update, void, ScoreController* self) {
@@ -324,7 +326,7 @@ MAKE_HOOK_OFFSETLESS(FPSCounter_Update, void, FPSCounter* self) {
     FPSCounter_Update(self);
     
     stManager->statusLock.lock();
-    stManager->fps = self->get_currentFPS();
+    stManager->fps = self->currentFPS;
     stManager->statusLock.unlock();
 }
 

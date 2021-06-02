@@ -1,11 +1,16 @@
 {
   "configurations": [
     {
+      "compilers": { "cpp": { "path": "F:/BS-Modding/android-ndk-r22" } },
+      //"compilerSwitches": "-Wall -std=c++2a -llog -std=gnu17 -std=gnu++2a -fexceptions -frtti",
+      "compilerSwitches": "/Wall /std:c++2a /llog /std:gnu17 /std:gnu++2a /fexceptions /frtti",
       "cppStandard": "c++20",
       "cStandard": "c11",
       "defines": [
         "ID=\"streamer-tools\"",
-        "VERSION=\"0.1.0\""
+        "VERSION=\"0.1.0\"",
+        "__GNUC__",
+        "__aarch64__"
       ],
       "includePath": [
         "${workspaceRoot}/**",
@@ -13,10 +18,14 @@
         "${workspaceRoot}/include",
         "${workspaceRoot}/extern/**",
         "${workspaceRoot}/extern/libil2cpp/il2cpp/libil2cpp",
-        "F:/BS-Modding/android-ndk-r22/**"
+        "${workspaceRoot}/../android-ndk-r22/**"
       ],
+      "inheritEnvironments": [ "clang-arm64" ],
       "intelliSenseMode": "android-clang-arm64",
-      "name": "Quest"
+      "name": "Quest",
+      "undefines": [
+        "_MSC_INTTYPES_H_"
+      ]
     }
   ],
   "version": 4
