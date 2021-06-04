@@ -28,8 +28,11 @@ using namespace UnityEngine::UI;
 using namespace UnityEngine::Events;
 using namespace HMUI;
 
-
+#ifndef REGISTER_FUNCTION
+DEFINE_TYPE(StreamerTools, stSettingViewController);
+#else
 DEFINE_TYPE(StreamerTools::stSettingViewController);
+#endif
 
 void StreamerTools::stSettingViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     if(firstActivation) {

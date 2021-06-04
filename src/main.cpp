@@ -398,7 +398,11 @@ extern "C" void load() {
 
     getModConfig().Init(STModInfo);
 
+    #ifndef REGISTER_FUNCTION
+    custom_types::Register::AutoRegister();
+    #else
     custom_types::Register::RegisterType<StreamerTools::stSettingViewController>();
+    #endif
     QuestUI::Register::RegisterModSettingsViewController<StreamerTools::stSettingViewController*>(STModInfo);
 
     // Install our function hooks
