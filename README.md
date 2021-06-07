@@ -123,7 +123,7 @@ Example response:
 **Currently many values only update and do not reset (What I mean is that after you go out of a mp lobby the game id will still be there)**
 
 ## Credits
-For making the original Quest Discord Presence which this is build on.
+For making the original Quest Discord Presence which this is built on.
 * [Lauriethefish](https://github.com/Lauriethefish)
 
 Credits.
