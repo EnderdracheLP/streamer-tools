@@ -6,15 +6,18 @@
 
 bool STManager::runServer() {
     // Make our IPv4 endpoint
-    sockaddr_in addr;
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(PORT);
-    addr.sin_addr.s_addr = inet_addr(ADDRESS);
+    sockaddr_in6 addr;
+    addr.sin6_family = AF_INET6;
+    addr.sin6_port = htons(PORT);
+    addr.sin6_addr = in6addr_any;
+    int v6OnlyEnabled = 0;
+    char numeric_addr[INET6_ADDRSTRLEN];
 
-    int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); // Create the socket
+    int sock = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP); // Create the socket
     // Prevents the socket taking a while to close from causing a crash
     int iSetOption = 1;
     setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&iSetOption, sizeof(iSetOption));
+    setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &v6OnlyEnabled, sizeof(v6OnlyEnabled)); // Disable v6 Only to allow v4 connections
     if (sock == -1) {
         logger.error("Error creating socket: %s", strerror(errno));
         return false;
@@ -42,7 +45,12 @@ bool STManager::runServer() {
             ConnectedSocket = false;
             continue;
         }
-        logger.info("Client connected with address: %s", inet_ntoa(addr.sin_addr));
+        std::string ClientIP(inet_ntop(AF_INET6, (struct sockaddr*)&addr.sin6_addr, numeric_addr, sizeof numeric_addr));
+        // If ClientIP starts with ffff it's an IPv4
+        if (ClientIP.starts_with("::ffff:")) {
+            ClientIP = ClientIP.substr(7, ClientIP.length());
+        }
+        logger.info("HTTP: Client connected with address: %s", ClientIP.c_str());
 
         ConnectedSocket = true; // Set this to true here so it no longer sends out after a connection has been established first.
 

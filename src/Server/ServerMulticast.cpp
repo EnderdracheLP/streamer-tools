@@ -3,6 +3,8 @@
 
 #include "ServerHeaders.hpp"
 #include "STmanager.hpp"
+#include <ifaddrs.h>
+#include <netdb.h>
 
 //LoggerContextObject MulticastLogger;
 
@@ -24,8 +26,7 @@ bool STManager::MulticastServer() {
     }
 
     /*
-     * Initialize the group sockaddr structure with a
-     * group address of 225.1.1.1 and port 5555.
+     * Initialize the group sockaddr structure
      */
     memset((char*)&groupSock, 0, sizeof(groupSock));
     groupSock.sin_family = AF_INET;
@@ -53,7 +54,7 @@ bool STManager::MulticastServer() {
      * The IP address specified must be associated with a local,
      * multicast-capable interface.
      */
-    localInterface.s_addr = inet_addr(ADDRESS);
+    localInterface.s_addr = inet_addr("0.0.0.0");
     if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF,
         (char*)&localInterface,
         sizeof(localInterface)) < 0) {
@@ -63,27 +64,64 @@ bool STManager::MulticastServer() {
     }
 
     struct ifreq ifr;
+
+    struct ifaddrs* ifap, * ifa;
+    struct sockaddr_in6* sa;
+    char addrIPv6[INET6_ADDRSTRLEN];
+
+    std::string addressIPv6Check;
+    std::string addressIPv6;
+
+    if (getifaddrs(&ifap) == -1) {
+        logger.error("getifaddrs");
+    }
+
+    for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET6) {
+            sa = (struct sockaddr_in6*)ifa->ifa_addr;
+            getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in6), addrIPv6,
+                sizeof(addrIPv6), NULL, 0, NI_NUMERICHOST);
+            //logger.debug("Interface: %s\tAddress: %s\n", ifa->ifa_name, addrIPv6);
+            // This will get the first IPv6 address on the wlan0 interface that is not link-local
+            if (strcmp(ifa->ifa_name, "wlan0") == 0) {
+                addressIPv6Check = addrIPv6;
+                if (!addressIPv6Check.starts_with("fe80") && !addressIPv6Check.empty()) {
+                    addressIPv6 = addressIPv6Check;
+                    break;
+                }
+            }
+        }
+    }
+
+    freeifaddrs(ifap);
+
+    /* I want to get an IPv4 IP address */
+    ifr.ifr_addr.sa_family = AF_INET;
+
+    /* I want IP address attached to "wlan0" */
+    strncpy(ifr.ifr_name, "wlan0", IFNAMSIZ - 1);
+
+    ioctl(sd, SIOCGIFADDR, &ifr);
+
+    char numeric_addr_v4[INET_ADDRSTRLEN];
+
+    STManager::localIP = inet_ntop(AF_INET, &((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr, numeric_addr_v4, sizeof numeric_addr_v4);
+    STManager::localIPv6 = addressIPv6;
+
     while (true) {
         std::chrono::minutes MulticastSleep(1);
         while (!ConnectedHTTP && !ConnectedSocket) {
             std::chrono::seconds timespan(15);
 
-            /* I want to get an IPv4 IP address */
-            ifr.ifr_addr.sa_family = AF_INET;
-
-            /* I want IP address attached to "wlan0" */
-            strncpy(ifr.ifr_name, "wlan0", IFNAMSIZ - 1);
-
-            ioctl(sd, SIOCGIFADDR, &ifr);
-
             /*
             * Create message to be sent
             */
-            //    std::string message = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
-            STManager::localIp = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
-            std::string http = STManager::localIp + ":" + std::to_string(PORT_HTTP);
-            std::string socket = STManager::localIp + ":" + std::to_string(PORT);
-            std::string message = multicastResponse(socket, http);
+           
+            std::string http = STManager::localIP + ":" + std::to_string(PORT_HTTP);
+            std::string httpv6 = "[" + STManager::localIPv6 + "]:" + std::to_string(PORT_HTTP);
+            std::string socket = STManager::localIP + ":" + std::to_string(PORT);
+            std::string socketv6 = STManager::localIPv6 + ":" + std::to_string(PORT);
+            std::string message = multicastResponse(socket, http, httpv6, socketv6);
 
             /*
              * Send a message to the multicast group specified by the

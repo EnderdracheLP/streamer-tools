@@ -10,25 +10,28 @@
 //LoggerContextObject HTTPLogger;
 
 bool STManager::runServerHTTP() {
-    // Make our IPv4 endpoint
-    sockaddr_in addrHTTP;
-    addrHTTP.sin_family = AF_INET;
-    addrHTTP.sin_port = htons(PORT_HTTP);
-    addrHTTP.sin_addr.s_addr = inet_addr(ADDRESS);
+    // Make our IPv6 endpoint
+    sockaddr_in6 ServerHTTP;
+    ServerHTTP.sin6_family = AF_INET6;
+    ServerHTTP.sin6_port = htons(PORT_HTTP);
+    ServerHTTP.sin6_addr = in6addr_any;
+    int v6OnlyEnabled = 0;
+    char numeric_addr[INET6_ADDRSTRLEN];
 
-    int sockHTTP = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); // Create the socket
+    int sockHTTPv6 = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP); // Create the socket
     // Prevents the socket taking a while to close from causing a crash
     int iSetOption = 1;
-    setsockopt(sockHTTP, SOL_SOCKET, SO_REUSEADDR, (char*)&iSetOption, sizeof(iSetOption));
-    if (sockHTTP == -1) {
+    setsockopt(sockHTTPv6, SOL_SOCKET, SO_REUSEADDR, (char*)&iSetOption, sizeof(iSetOption));
+    setsockopt(sockHTTPv6, IPPROTO_IPV6, IPV6_V6ONLY, &v6OnlyEnabled, sizeof(v6OnlyEnabled));
+    if (sockHTTPv6 == -1) {
         logger.error("HTTP: Error creating socket: %s", strerror(errno));
         return false;
     }
 
     // Attempt to bind to our port
-    if (bind(sockHTTP, (struct sockaddr*)&addrHTTP, sizeof(addrHTTP))) {
+    if (bind(sockHTTPv6, (struct sockaddr*)&ServerHTTP, sizeof(ServerHTTP))) {
         logger.error("HTTP: Error binding to port %d: %s", PORT_HTTP, strerror(errno));
-        close(sockHTTP);
+        close(sockHTTPv6);
         return false;
     }
 
@@ -36,20 +39,24 @@ bool STManager::runServerHTTP() {
 
     logger.info("HTTP: Listening on port %d", PORT_HTTP);
     while (true) {
-        if (listen(sockHTTP, CONNECTION_QUEUE_LENGTH) == -1) { // Return if an error occurs listening for a request
+        if (listen(sockHTTPv6, CONNECTION_QUEUE_LENGTH) == -1) { // Return if an error occurs listening for a request
             logger.error("HTTP: Error listening for request");
             continue;
         }
 
-        socklen_t socklenHTTP = sizeof addrHTTP;
-        int client_sock = accept(sockHTTP, (struct sockaddr*)&addrHTTP, &socklenHTTP); // Accept the next request
+        socklen_t socklenHTTP = sizeof ServerHTTP;
+        int client_sock = accept(sockHTTPv6, (struct sockaddr*)&ServerHTTP, &socklenHTTP); // Accept the next request
         if (client_sock == -1) {
             logger.error("HTTP: Error accepting request %s", strerror(errno));
             continue;
         }
+        std::string ClientIP(inet_ntop(AF_INET6, (struct sockaddr*)&ServerHTTP.sin6_addr, numeric_addr, sizeof numeric_addr));
+        // If ClientIP starts with ffff it's an IPv4
+        if (ClientIP.starts_with("::ffff:")) {
+            ClientIP = ClientIP.substr(7, ClientIP.length());
+        }
+        logger.info("HTTP: Client connected with address: %s", ClientIP.c_str());
 
-
-        logger.info("HTTP: Client connected with address: %s", inet_ntoa(addrHTTP.sin_addr));
 
         ConnectedHTTP = true; // Set this to true here so it no longer sends out after a connection has first been established.
 
@@ -59,7 +66,7 @@ bool STManager::runServerHTTP() {
         RequestHTTPThread.detach(); // Detach the thread from this thread
     }
     // RequestHTTPThread.join();
-    close(sockHTTP);
+    close(sockHTTPv6);
     return true;
 }
 
@@ -204,7 +211,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
                         "</head> "\
                         "<body> <div style=\"font-size: 30px;\">Streamer-tools - 418 I'm a teapot</div> "\
                         "<div style=\"color: #888; margin-bottom: 10px; padding-left: 20px;\">The requested entity body is short and stout.</div> "\
-                        "<div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " (" + headsetType + ") server at " + STManager::localIp + ":" + std::to_string(PORT_HTTP) + "</i></div> "\
+                        "<div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " (" + headsetType + ") server at " + STManager::localIP + ":" + std::to_string(PORT_HTTP) + "</i></div> "\
                         "</body> </html>"; // Yes this is long but page is pretty-ish
 
         response =  "HTTP/1.1 418 I'm a teapot\n"\
@@ -224,7 +231,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
                         "</head> "\
                         "<body> <div style=\"font-size: 30px;\">Streamer-tools - 404 Not found</div> "\
                         "<div style=\"color: #888; margin-bottom: 10px; padding-left: 20px;\">The endpoint you were looking for could not be found.</div> "\
-                        "<div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " ("+ headsetType +") server at " + STManager::localIp + ":" + std::to_string(PORT_HTTP) + "</i></div> "\
+                        "<div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " ("+ headsetType +") server at " + STManager::localIP + ":" + std::to_string(PORT_HTTP) + "</i></div> "\
                         "</body> </html>"; // Yes this is long but page is pretty-ish
         response =  "HTTP/1.1 404 Not Found\n"\
                     "Content-Length: " + std::to_string(messageStr.length()) + "\n"\

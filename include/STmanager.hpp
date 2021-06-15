@@ -12,10 +12,10 @@
 
 #define LOG_DEBUG_HTTP(...) getLogger().WithContext("Server").WithContext("HTTP").debug(__VA_ARGS__) 
 
-#define LOG_DEBUG_SOCKET(...) 
-#define LOG_DEBUG_MULTICAST(...) 
-//#define LOG_DEBUG_SOCKET(...) getLogger().WithContext("Server").WithContext("Socket").debug(__VA_ARGS__) 
-//#define LOG_DEBUG_MULTICAST(...) getLogger().WithContext("Server").WithContext("Socket").debug(__VA_ARGS__) 
+//#define LOG_DEBUG_SOCKET(...) 
+//#define LOG_DEBUG_MULTICAST(...) 
+#define LOG_DEBUG_SOCKET(...) getLogger().WithContext("Server").WithContext("Socket").debug(__VA_ARGS__) 
+#define LOG_DEBUG_MULTICAST(...) getLogger().WithContext("Server").WithContext("Multicast").debug(__VA_ARGS__) 
 #else
 #define LOG_DEBUG_HTTP(...) 
 #define LOG_DEBUG_SOCKET(...) 
@@ -44,7 +44,7 @@ private:
     std::string constructResponse();
     std::string constructCoverResponse();
     std::string constructConfigResponse();
-    std::string multicastResponse(std::string socket, std::string http);
+    std::string multicastResponse(std::string socket, std::string http, std::string httpv6, std::string socketv6);
 
     bool ConnectedHTTP = false;
     bool ConnectedSocket = false;
@@ -87,7 +87,8 @@ public:
     std::string mpGameId = "";
     bool mpGameIdShown = false;
 
-    std::string localIp = "127.0.0.1";
+    std::string localIP = "127.0.0.1";
+    std::string localIPv6 = "::1";
     std::string headsetType = "Unknown Android";
 
     //LoggerContextObject HTTPLogger = getLogger().WithContext("Server").WithContext("HTTP");

@@ -57,7 +57,7 @@ std::string STManager::constructResponse() {
     return buffer.GetString();
 }
 
-std::string STManager::multicastResponse(std::string socket, std::string http) {
+std::string STManager::multicastResponse(std::string socket, std::string http, std::string httpv6, std::string socketv6) {
     rapidjson::Document doc;
     auto& alloc = doc.GetAllocator();
     doc.SetObject();
@@ -66,6 +66,8 @@ std::string STManager::multicastResponse(std::string socket, std::string http) {
     doc.AddMember("ModVersion", STModInfo.version, alloc);
     doc.AddMember("Socket", socket, alloc);
     doc.AddMember("HTTP", http, alloc);
+    doc.AddMember("Socketv6", socketv6, alloc);
+    doc.AddMember("HTTPv6", httpv6, alloc);
 
     // Convert the document into a string
     rapidjson::StringBuffer buffer;
