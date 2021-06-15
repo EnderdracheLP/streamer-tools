@@ -20,7 +20,7 @@ bool STManager::MulticastServer() {
     */
     int sd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sd < 0) {
-        logger.error("opening datagram socket");
+        logger.error("Error opening datagram socket");
         MulticastRunning = false;
         return false;
     }
@@ -42,7 +42,7 @@ bool STManager::MulticastServer() {
 
         if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP,
             (char*)&loopch, sizeof(loopch)) < 0) {
-            logger.error("setting IP_MULTICAST_LOOP: %s", strerror(errno));
+            logger.error("Error setting IP_MULTICAST_LOOP: %s", strerror(errno));
             close(sd);
             MulticastRunning = false;
             return false;
@@ -58,7 +58,7 @@ bool STManager::MulticastServer() {
     if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_IF,
         (char*)&localInterface,
         sizeof(localInterface)) < 0) {
-        logger.error("Multicast: setting local interface: %s", strerror(errno));
+        logger.error("Error Multicast: setting local interface: %s", strerror(errno));
         MulticastRunning = false;
         return false;
     }

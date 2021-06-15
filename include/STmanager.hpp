@@ -6,16 +6,30 @@
 #include "config-utils/shared/config-utils.hpp"
 
 /*  
-    Use macros that are commented in our out for disablig enabling debug loggers
+    Use macros that for disablig enabling debug loggers, 
+    set to 1 to enable or 0 to disable, 
+    will all be disabled if DEBUG_BUILD is not defined
 */
+#define HTTP_LOGGING        1
+#define SOCKET_LOGGING      1
+#define MULTICAST_LOGGING   1
+
 #ifdef DEBUG_BUILD
-
+#if HTTP_LOGGING == 1
 #define LOG_DEBUG_HTTP(...) getLogger().WithContext("Server").WithContext("HTTP").debug(__VA_ARGS__) 
-
-//#define LOG_DEBUG_SOCKET(...) 
-//#define LOG_DEBUG_MULTICAST(...) 
+#else
+#define LOG_DEBUG_HTTP(...)
+#endif
+#if SOCKET_LOGGING == 1
 #define LOG_DEBUG_SOCKET(...) getLogger().WithContext("Server").WithContext("Socket").debug(__VA_ARGS__) 
+#else
+#define LOG_DEBUG_SOCKET(...) 
+#endif
+#if MULTICAST_LOGGING == 1
 #define LOG_DEBUG_MULTICAST(...) getLogger().WithContext("Server").WithContext("Multicast").debug(__VA_ARGS__) 
+#else
+#define LOG_DEBUG_MULTICAST(...) 
+#endif
 #else
 #define LOG_DEBUG_HTTP(...) 
 #define LOG_DEBUG_SOCKET(...) 

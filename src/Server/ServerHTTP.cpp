@@ -4,9 +4,6 @@
 #include "STmanager.hpp"
 #include "Config.hpp"
 
-//typedef struct { char* name, * value; } header_t;
-//static header_t reqhdr[17] = { {"\0", "\0"} };
-
 //LoggerContextObject HTTPLogger;
 
 bool STManager::runServerHTTP() {
@@ -22,7 +19,7 @@ bool STManager::runServerHTTP() {
     // Prevents the socket taking a while to close from causing a crash
     int iSetOption = 1;
     setsockopt(sockHTTPv6, SOL_SOCKET, SO_REUSEADDR, (char*)&iSetOption, sizeof(iSetOption));
-    setsockopt(sockHTTPv6, IPPROTO_IPV6, IPV6_V6ONLY, &v6OnlyEnabled, sizeof(v6OnlyEnabled));
+    setsockopt(sockHTTPv6, IPPROTO_IPV6, IPV6_V6ONLY, &v6OnlyEnabled, sizeof(v6OnlyEnabled)); // Disable v6 Only restriction to allow v4 connections
     if (sockHTTPv6 == -1) {
         logger.error("HTTP: Error creating socket: %s", strerror(errno));
         return false;
@@ -34,8 +31,6 @@ bool STManager::runServerHTTP() {
         close(sockHTTPv6);
         return false;
     }
-
-    //std::thread RequestHTTPThread;
 
     logger.info("HTTP: Listening on port %d", PORT_HTTP);
     while (true) {
@@ -50,35 +45,26 @@ bool STManager::runServerHTTP() {
             logger.error("HTTP: Error accepting request %s", strerror(errno));
             continue;
         }
+        // Getting the client_ip using inet_ntop
         std::string ClientIP(inet_ntop(AF_INET6, (struct sockaddr*)&ServerHTTP.sin6_addr, numeric_addr, sizeof numeric_addr));
-        // If ClientIP starts with ffff it's an IPv4
+
+        // If ClientIP starts with ::ffff: it's an IPv4, format IPv6 mapping to IPv4 address mapping
         if (ClientIP.starts_with("::ffff:")) {
             ClientIP = ClientIP.substr(7, ClientIP.length());
         }
         logger.info("HTTP: Client connected with address: %s", ClientIP.c_str());
 
 
-        ConnectedHTTP = true; // Set this to true here so it no longer sends out after a connection has first been established.
+        ConnectedHTTP = true; // Set this to true here so it no longer sends out Multicast after a connection has been established.
 
         // Pass the socket handle over and start a seperate thread for sending back the reply
         std::thread RequestHTTPThread([this, client_sock]() { return STManager::HandleRequestHTTP(client_sock); }); // Use threads for the response
 
         RequestHTTPThread.detach(); // Detach the thread from this thread
     }
-    // RequestHTTPThread.join();
     close(sockHTTPv6);
     return true;
 }
-
-//char* request_header(const char* name)
-//{
-//    header_t* h = reqhdr;
-//    while (h->name) {
-//        if (strcmp(h->name, name) == 0) return h->value;
-//        h++;
-//    }
-//    return NULL;
-//}
 
 // This assumes buffer is at least x bytes long,
 // and that the socket is blocking.
@@ -87,7 +73,7 @@ void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
     int bytesRead = 0;
     int result;
     bool loaded = false;
-    while (bytesRead < x)   // TODO: Check if we even need this loop
+    while (bytesRead < x)
     {
         result = read(socket, buffer + bytesRead, x - bytesRead);
         if (result < 1)
@@ -113,23 +99,14 @@ void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
 void STManager::HandleRequestHTTP(int client_sock) {
     unsigned int length = 4096+1;
     char* buffer = 0;
-    //std::string cppBuffer;
     std::string response;
     std::string messageStr;
-    //// we assume that sizeof(length) will return 4 here.
-    //ReadXBytes(client_sock, sizeof(length), (void*)(&length));
     buffer = new char[length];
-    // TODO: This shouldn't be a seperate thread
-    std::thread ReadXBytesThread([this, client_sock, length, buffer]() { return STManager::ReadXBytes(client_sock, length, buffer); }); // Use threads to read request
-    //std::thread ReadXBytesThread([this, client_sock, length, cppBuffer]() { return STManager::ReadXBytes(client_sock, length, cppBuffer); }); // Use threads to read request
-    //ReadXBytes(client_sock, length, buffer);
-
-    //logger.debug((char*)buffer);
-    ReadXBytesThread.join();
+    ReadXBytes(client_sock, length, buffer);
     std::string resultStr(buffer);
     delete[] buffer;
     #define ROUTE_START()       if ((resultStr.find("GET / ") != std::string::npos) || (resultStr.find("GET /index") != std::string::npos))
-    #define ROUTE(METHOD,URI)    else if ((resultStr.find(METHOD " " URI " ") != std::string::npos))
+    #define ROUTE(METHOD,URI)    else if ((resultStr.find(METHOD " " URI " ") != std::string::npos) ||  (resultStr.find(METHOD " " URI "/ ") != std::string::npos))
     #define ROUTE_GET(URI)      ROUTE("GET", URI)
     #define ROUTE_POST(URI)      ROUTE("POST", URI)
     #define ROUTE_PUT(URI)      ROUTE("PUT", URI)
@@ -139,10 +116,9 @@ void STManager::HandleRequestHTTP(int client_sock) {
                     "Content-Length: " + std::to_string(messageStr.length()) + "\r\n" \
                     "Content-Type: application/json\r\n" \
                     "Access-Control-Allow-Origin: *\r\n" \
-                    "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
+                    "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
                     messageStr;
     }
-    ROUTE_GET("/cover/base64/") goto COVER; // I know eww goto, but give me a better solution
     ROUTE_GET("/cover/base64") {
         COVER:
         std::string stats = STManager::coverImageBase64;
@@ -151,7 +127,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
                     "Content-Length: " + std::to_string(stats.length()) + "\n"\
                     "Content-Type: text/plain\r\n"\
                     "Access-Control-Allow-Origin: *\r\n" \
-                    "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
+                    "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
                     "data:image/jpg;base64," + stats;
     }
     ROUTE_GET("/cover.jpg") {
@@ -161,10 +137,9 @@ void STManager::HandleRequestHTTP(int client_sock) {
                     "Content-Length: " + std::to_string(stats.length()) + "\n"\
                     "Content-Type: image/jpg\r\n"\
                     "Access-Control-Allow-Origin: *\r\n" \
-                    "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
+                    "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
                     stats;
     }
-    ROUTE_GET("/config/") goto CONFIG; // I know eww goto, but give me a better solution
     ROUTE_GET("/config") {
         CONFIG:
         std::string stats = constructConfigResponse();
@@ -173,10 +148,9 @@ void STManager::HandleRequestHTTP(int client_sock) {
                     "Content-Length: " + std::to_string(stats.length()) + "\n"\
                     "Content-Type: application/json\r\n"\
                     "Access-Control-Allow-Origin: *\r\n" \
-                    "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
+                    "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
                     stats;
     }
-    ROUTE_PUT("/config/") goto PCONFIG; // I know eww goto, but give me a better solution
     ROUTE_PUT("/config") {
         PCONFIG:
         size_t start = resultStr.find("{");
@@ -200,7 +174,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
 
         response =  "HTTP/1.1 204 No Content\n"\
                     "Access-Control-Allow-Origin: *\r\n" \
-                    "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n";
+                    "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n";
     }
     ROUTE_GET("/teapot") {
         messageStr =    "<!DOCTYPE html> "\
@@ -217,7 +191,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
         response =  "HTTP/1.1 418 I'm a teapot\n"\
                     "Content-Length: " + std::to_string(messageStr.length()) + "\n"\
                     "Access-Control-Allow-Origin: *\r\n" \
-                    "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
+                    "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
                     messageStr;
     }
     else {
@@ -236,11 +210,11 @@ void STManager::HandleRequestHTTP(int client_sock) {
         response =  "HTTP/1.1 404 Not Found\n"\
                     "Content-Length: " + std::to_string(messageStr.length()) + "\n"\
                     "Access-Control-Allow-Origin: *\r\n" \
-                    "X-Powered-By: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
+                    "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
                     messageStr;
     }
     if (!response.empty()) {
-        SendResponse: // Just incase we ever need to use goto SendRequest to skip over code
+        SendResponse: // Just incase we ever need to use goto SendResponse to skip over code
         int convertedLength = htonl(response.length());
         if (write(client_sock, response.c_str(), response.length()) == -1) { // Then send the string
             logger.error("HTTP: Error sending Response: \n%s", strerror(errno));

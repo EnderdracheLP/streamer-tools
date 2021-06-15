@@ -5,7 +5,7 @@
 #include "STmanager.hpp"
 
 bool STManager::runServer() {
-    // Make our IPv4 endpoint
+    // Make our IPv6 endpoint
     sockaddr_in6 addr;
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htons(PORT);
@@ -17,7 +17,7 @@ bool STManager::runServer() {
     // Prevents the socket taking a while to close from causing a crash
     int iSetOption = 1;
     setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&iSetOption, sizeof(iSetOption));
-    setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &v6OnlyEnabled, sizeof(v6OnlyEnabled)); // Disable v6 Only to allow v4 connections
+    setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &v6OnlyEnabled, sizeof(v6OnlyEnabled)); // Disable v6 Only restriction to allow v4 connections
     if (sock == -1) {
         logger.error("Error creating socket: %s", strerror(errno));
         return false;
@@ -50,9 +50,9 @@ bool STManager::runServer() {
         if (ClientIP.starts_with("::ffff:")) {
             ClientIP = ClientIP.substr(7, ClientIP.length());
         }
-        logger.info("HTTP: Client connected with address: %s", ClientIP.c_str());
+        logger.info("Client connected with address: %s", ClientIP.c_str());
 
-        ConnectedSocket = true; // Set this to true here so it no longer sends out after a connection has been established first.
+        ConnectedSocket = true; // Set this to true here so it no longer sends out Multicast while a connection has been established.
 
         // Pass the socket handle over and start a seperate thread for sending back the reply
         std::thread RequestThread([this, client_sock]() { return STManager::sendRequest(client_sock); }); // Use threads for the response
