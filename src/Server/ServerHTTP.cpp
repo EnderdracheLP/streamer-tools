@@ -70,9 +70,11 @@ bool STManager::runServerHTTP() {
 // and that the socket is blocking.
 void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
 {
+    std::string BufferStr(buffer);
     int bytesRead = 0;
     int result;
     bool loaded = false;
+
     while (bytesRead < x)
     {
         result = read(socket, buffer + bytesRead, x - bytesRead);
@@ -82,18 +84,46 @@ void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
             ConnectedHTTP = false;
             break;
         }
-        if (bytesRead == result) loaded = true;
-
         bytesRead += result;
         LOG_DEBUG_HTTP("Received bytes: %d", bytesRead);
-        LOG_DEBUG_HTTP("Received message: \n%s", buffer);
+        LOG_DEBUG_HTTP("Received Request: \n%s", buffer);
 
-        std::string resultStr(buffer);
-        if (((resultStr.find("\r\n\r\n") != std::string::npos) && (resultStr.find("GET") != std::string::npos)) || loaded) {
+        BufferStr = buffer;
+        if ((BufferStr.find("Content-Length:") != std::string::npos)) {
+            size_t start = BufferStr.find("Content-Length: ");
+            //LOG_DEBUG_HTTP("index of Content-Length: " + std::to_string(start));
+            size_t end = BufferStr.find("\r\n", start);
+            //LOG_DEBUG_HTTP("index of end: " + std::to_string(end));
+            std::string Length = BufferStr.substr(start+16, end - start + 1);
+            //LOG_DEBUG_HTTP("Content-Length: " + Length);
+            //LOG_DEBUG_HTTP("Received-Length: " + std::to_string((BufferStr.substr(BufferStr.find("\r\n\r\n"))).length() - 4));
+            if (std::stoi(Length) == (BufferStr.substr(BufferStr.find("\r\n\r\n"))).length() - 4) ConnectedHTTP = false; break;
+        }
+        else if (((BufferStr.find("\r\n\r\n") != std::string::npos) && (BufferStr.find("GET") != std::string::npos))) {
             ConnectedHTTP = false; 
             break;
         }
     }
+}
+
+// Function for generating response, second and last parameter are optional, second parameter will be "text/plain" if not specified
+std::string ResponseGen(std::string HTTPCode, std::string ContentType = "text/plain", std::string Message = "") {
+    std::string result;
+    if ((HTTPCode.find("204") != std::string::npos) || Message.empty()) {
+        result =
+            "HTTP/1.1 204 No Content\n"\
+            "Access-Control-Allow-Origin: *\r\n" \
+            "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n";
+        return result;
+    }
+    result =
+            "HTTP/1.1 " + HTTPCode + "\r\n" \
+            "Content-Length: " + std::to_string(Message.length()) + "\r\n" \
+            "Content-Type: " + ContentType + "\r\n" \
+            "Access-Control-Allow-Origin: *\r\n" \
+            "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
+            Message;
+    return result;
 }
 
 void STManager::HandleRequestHTTP(int client_sock) {
@@ -103,61 +133,41 @@ void STManager::HandleRequestHTTP(int client_sock) {
     std::string messageStr;
     buffer = new char[length];
     ReadXBytes(client_sock, length, buffer);
-    std::string resultStr(buffer);
+    std::string BufferStr(buffer);
     delete[] buffer;
-    #define ROUTE_START()       if ((resultStr.find("GET / ") != std::string::npos) || (resultStr.find("GET /index") != std::string::npos))
-    #define ROUTE(METHOD,URI)    else if ((resultStr.find(METHOD " " URI " ") != std::string::npos) ||  (resultStr.find(METHOD " " URI "/ ") != std::string::npos))
+    #define ROUTE_START()       if ((BufferStr.find("GET / ") != std::string::npos) || (BufferStr.find("GET /index") != std::string::npos))
+    #define ROUTE(METHOD,URI)    else if ((BufferStr.find(METHOD " " URI " ") != std::string::npos) ||  (BufferStr.find(METHOD " " URI "/ ") != std::string::npos))
     #define ROUTE_GET(URI)      ROUTE("GET", URI)
     #define ROUTE_POST(URI)      ROUTE("POST", URI)
     #define ROUTE_PUT(URI)      ROUTE("PUT", URI)
     ROUTE_START() {
         messageStr = constructResponse();
-        response =  "HTTP/1.1 200 OK\r\n" \
-                    "Content-Length: " + std::to_string(messageStr.length()) + "\r\n" \
-                    "Content-Type: application/json\r\n" \
-                    "Access-Control-Allow-Origin: *\r\n" \
-                    "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
-                    messageStr;
+        response = ResponseGen("200 OK", "application/json", messageStr);
     }
     ROUTE_GET("/cover/base64") {
         COVER:
-        std::string stats = STManager::coverImageBase64;
+        std::string stats = "data:image/jpg;base64," + STManager::coverImageBase64;
         if (stats.empty()) goto NotFound;
-        response =  "HTTP/1.1 200 OK\r\n"\
-                    "Content-Length: " + std::to_string(stats.length()) + "\n"\
-                    "Content-Type: text/plain\r\n"\
-                    "Access-Control-Allow-Origin: *\r\n" \
-                    "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
-                    "data:image/jpg;base64," + stats;
+        response = ResponseGen("200 OK", "text/plain", stats);
     }
     ROUTE_GET("/cover.jpg") {
         std::string stats = STManager::coverImageJPG;
         if (stats.empty()) goto NotFound;
-        response =  "HTTP/1.1 200 OK\r\n"\
-                    "Content-Length: " + std::to_string(stats.length()) + "\n"\
-                    "Content-Type: image/jpg\r\n"\
-                    "Access-Control-Allow-Origin: *\r\n" \
-                    "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
-                    stats;
+        response = ResponseGen("200 OK", "image/jpg", stats);
     }
     ROUTE_GET("/config") {
         CONFIG:
         std::string stats = constructConfigResponse();
         if (stats.empty()) goto NotFound;
-        response =  "HTTP/1.1 200 OK\r\n"\
-                    "Content-Length: " + std::to_string(stats.length()) + "\n"\
-                    "Content-Type: application/json\r\n"\
-                    "Access-Control-Allow-Origin: *\r\n" \
-                    "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
-                    stats;
+        response = ResponseGen("200 OK", "application/json", stats);
     }
     ROUTE_PUT("/config") {
         PCONFIG:
-        size_t start = resultStr.find("{");
+        size_t start = BufferStr.find("{");
         LOG_DEBUG_HTTP("index of {: " + std::to_string(start));
-        size_t end = resultStr.find("}");
+        size_t end = BufferStr.find("}");
         LOG_DEBUG_HTTP("index of }: " + std::to_string(end));
-        std::string json = resultStr.substr(start,  end - start + 1);
+        std::string json = BufferStr.substr(start,  end - start + 1);
         LOG_DEBUG_HTTP("json: " + json);
         rapidjson::Document document;
         document.Parse(json);
@@ -172,12 +182,14 @@ void STManager::HandleRequestHTTP(int client_sock) {
         getModConfig().AlwaysMpCode.SetValue(document["alwaysmpcode"].GetBool());
         getModConfig().AlwaysUpdate.SetValue(document["alwaysupdate"].GetBool());
 
-        response =  "HTTP/1.1 204 No Content\n"\
-                    "Access-Control-Allow-Origin: *\r\n" \
-                    "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n";
+        //response =  "HTTP/1.1 204 No Content\n"\
+        //            "Access-Control-Allow-Origin: *\r\n" \
+        //            "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n";
+        response = ResponseGen("204");
     }
     ROUTE_GET("/teapot") {
-        messageStr =    "<!DOCTYPE html> "\
+        response = ResponseGen("418 I'm a teapot", "text/html", 
+                        "<!DOCTYPE html> "\
                         "<html> "\
                         "<head> <title>streamer-tools - 418 I'm a teapot</title> "\
                         "<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'> "\
@@ -186,18 +198,13 @@ void STManager::HandleRequestHTTP(int client_sock) {
                         "<body> <div style=\"font-size: 30px;\">Streamer-tools - 418 I'm a teapot</div> "\
                         "<div style=\"color: #888; margin-bottom: 10px; padding-left: 20px;\">The requested entity body is short and stout.</div> "\
                         "<div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " (" + headsetType + ") server at " + STManager::localIP + ":" + std::to_string(PORT_HTTP) + "</i></div> "\
-                        "</body> </html>"; // Yes this is long but page is pretty-ish
-
-        response =  "HTTP/1.1 418 I'm a teapot\n"\
-                    "Content-Length: " + std::to_string(messageStr.length()) + "\n"\
-                    "Access-Control-Allow-Origin: *\r\n" \
-                    "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
-                    messageStr;
+                        "</body> </html>"); // Yes this is long but page is pretty-ish
     }
     else {
         // 404 or invalid
         NotFound:
-        messageStr =    "<!DOCTYPE html> "\
+        response = ResponseGen("404 Not Found", "text/html", 
+                        "<!DOCTYPE html> "\
                         "<html> "\
                         "<head> <title>streamer-tools - 404 Not found</title> "\
                         "<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'> "\
@@ -206,12 +213,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
                         "<body> <div style=\"font-size: 30px;\">Streamer-tools - 404 Not found</div> "\
                         "<div style=\"color: #888; margin-bottom: 10px; padding-left: 20px;\">The endpoint you were looking for could not be found.</div> "\
                         "<div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " ("+ headsetType +") server at " + STManager::localIP + ":" + std::to_string(PORT_HTTP) + "</i></div> "\
-                        "</body> </html>"; // Yes this is long but page is pretty-ish
-        response =  "HTTP/1.1 404 Not Found\n"\
-                    "Content-Length: " + std::to_string(messageStr.length()) + "\n"\
-                    "Access-Control-Allow-Origin: *\r\n" \
-                    "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n" + \
-                    messageStr;
+                        "</body> </html>"); // Yes this is long but page is pretty-ish
     }
     if (!response.empty()) {
         SendResponse: // Just incase we ever need to use goto SendResponse to skip over code
