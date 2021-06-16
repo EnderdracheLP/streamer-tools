@@ -68,7 +68,7 @@ bool STManager::runServerHTTP() {
 
 // This assumes buffer is at least x bytes long,
 // and that the socket is blocking.
-void STManager::ReadXBytes(int socket, unsigned int x, char* buffer)
+void STManager::ReadRequest(int socket, unsigned int x, char* buffer)
 {
     std::string BufferStr(buffer);
     int bytesRead = 0;
@@ -132,7 +132,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
     std::string response;
     std::string messageStr;
     buffer = new char[length];
-    ReadXBytes(client_sock, length, buffer);
+    ReadRequest(client_sock, length, buffer);
     std::string BufferStr(buffer);
     delete[] buffer;
     #define ROUTE_START()       if ((BufferStr.find("GET / ") != std::string::npos) || (BufferStr.find("GET /index") != std::string::npos))
@@ -181,10 +181,9 @@ void STManager::HandleRequestHTTP(int client_sock) {
         getModConfig().DontMpCode.SetValue(document["dontmpcode"].GetBool());
         getModConfig().AlwaysMpCode.SetValue(document["alwaysmpcode"].GetBool());
         getModConfig().AlwaysUpdate.SetValue(document["alwaysupdate"].GetBool());
+        
+        MakeConfigUI(true);
 
-        //response =  "HTTP/1.1 204 No Content\n"\
-        //            "Access-Control-Allow-Origin: *\r\n" \
-        //            "Server: " + STModInfo.id + "/" + STModInfo.version + "\r\n\r\n";
         response = ResponseGen("204");
     }
     ROUTE_GET("/teapot") {

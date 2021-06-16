@@ -5,13 +5,16 @@
 #include "questui/shared/QuestUI.hpp"
 #include "config-utils/shared/config-utils.hpp"
 
+#include "UnityEngine/GameObject.hpp"
+#include "UnityEngine/Transform.hpp"
+
 /*  
     Use macros that for disablig enabling debug loggers, 
     set to 1 to enable or 0 to disable, 
     will all be disabled if DEBUG_BUILD is not defined
 */
 #define HTTP_LOGGING        1
-#define SOCKET_LOGGING      0
+#define SOCKET_LOGGING      1
 #define MULTICAST_LOGGING   1
 
 #ifdef DEBUG_BUILD
@@ -36,6 +39,14 @@
 #define LOG_DEBUG_MULTICAST(...) 
 #endif
 
+extern UnityEngine::GameObject* Decimals;
+extern UnityEngine::GameObject* DEnergy;
+extern UnityEngine::GameObject* D_MP_Code;
+extern UnityEngine::GameObject* A_MP_Code;
+extern UnityEngine::GameObject* A_Update;
+
+extern void MakeConfigUI(bool Update);
+
 extern ModInfo STModInfo;
 Logger& getLogger();
 
@@ -53,7 +64,7 @@ private:
 
     void HandleRequestHTTP(int client_sock);
     void sendRequest(int client_sock);
-    void ReadXBytes(int socket, unsigned int x, char* buffer);
+    void ReadRequest(int socket, unsigned int x, char* buffer);
 
     std::string constructResponse();
     std::string constructCoverResponse();
