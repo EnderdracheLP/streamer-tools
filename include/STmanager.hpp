@@ -105,7 +105,10 @@ public:
     float bpm = 0.0f;
     float njs = 0.0f;
     std::string coverImageBase64 = "";
+    std::string coverImageBase64PNG = "";
+    // WARNING: These std::string types contain raw byte data, and will not make sense as text
     std::string coverImageJPG = "";
+    std::string coverImagePNG = "";
 
     int players = 0;
     int maxPlayers = 0;

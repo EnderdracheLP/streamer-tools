@@ -126,10 +126,14 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
     else {
         coverTexture = DuplicateTexture(coverSprite->get_texture());
     }
-    Array<uint8_t>* RawCoverbytesArray = UnityEngine::ImageConversion::EncodeToJPG(coverTexture);
-    std::string data(reinterpret_cast<char*>(RawCoverbytesArray->values), RawCoverbytesArray->Length());
-    stManager->coverImageJPG = data;
-    stManager->coverImageBase64 = to_utf8(csstrtostr(System::Convert::ToBase64String(RawCoverbytesArray)));
+    Array<uint8_t>* RawCoverbytesArrayJPG = UnityEngine::ImageConversion::EncodeToJPG(coverTexture);
+    Array<uint8_t>* RawCoverbytesArrayPNG = UnityEngine::ImageConversion::EncodeToPNG(coverTexture);
+    std::string dataJPG(reinterpret_cast<char*>(RawCoverbytesArrayJPG->values), RawCoverbytesArrayJPG->Length());
+    stManager->coverImageJPG = dataJPG;
+    std::string dataPNG(reinterpret_cast<char*>(RawCoverbytesArrayPNG->values), RawCoverbytesArrayPNG->Length());
+    stManager->coverImagePNG = dataPNG;
+    stManager->coverImageBase64 = to_utf8(csstrtostr(System::Convert::ToBase64String(RawCoverbytesArrayJPG)));
+    stManager->coverImageBase64PNG = to_utf8(csstrtostr(System::Convert::ToBase64String(RawCoverbytesArrayPNG)));
 
     stManager->statusLock.unlock();
 }

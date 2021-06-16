@@ -145,8 +145,14 @@ void STManager::HandleRequestHTTP(int client_sock) {
         response = ResponseGen("200 OK", "application/json", messageStr);
     }
     ROUTE_GET("/cover/base64") {
-        COVER:
+        COVER_B64_JPG:
         std::string stats = "data:image/jpg;base64," + STManager::coverImageBase64;
+        if (stats.empty()) goto NotFound;
+        response = ResponseGen("200 OK", "text/plain", stats);
+    }
+    ROUTE_GET("/cover/base64/png") {
+    COVER_B64_PNG:
+        std::string stats = "data:image/png;base64," + STManager::coverImageBase64PNG;
         if (stats.empty()) goto NotFound;
         response = ResponseGen("200 OK", "text/plain", stats);
     }
@@ -154,6 +160,11 @@ void STManager::HandleRequestHTTP(int client_sock) {
         std::string stats = STManager::coverImageJPG;
         if (stats.empty()) goto NotFound;
         response = ResponseGen("200 OK", "image/jpg", stats);
+    }
+    ROUTE_GET("/cover.png") {
+        std::string stats = STManager::coverImagePNG;
+        if (stats.empty()) goto NotFound;
+        response = ResponseGen("200 OK", "image/png", stats);
     }
     ROUTE_GET("/config") {
         CONFIG:
