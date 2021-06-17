@@ -2,8 +2,8 @@
   "configurations": [
     {
       "compilers": { "cpp": { "path": "F:/BS-Modding/android-ndk-r22" } },
-      //"compilerSwitches": "-Wall -std=c++2a -llog -std=gnu17 -std=gnu++2a -fexceptions -frtti",
-      "compilerSwitches": "/Wall /std:c++2a /llog /std:gnu17 /std:gnu++2a /fexceptions /frtti",
+      //"compilerSwitches": "-target aarch64-none-linux-android24 -fdata-sections -ffunction-sections -fstack-protector-strong -funwind-tables -no-canonical-prefixes --sysroot F:/BS-Modding/android-ndk-r22/build//../toolchains/llvm/prebuilt/windows-x86_64/sysroot -g -Wno-invalid-command-line-argument -Wno-unused-command-line-argument -D_FORTIFY_SOURCE=2 -fno-exceptions -fno-rtti -fpic -O2 -DNDEBUG -I./include -I./src",
+      "compilerSwitches": "/target aarch64-none-linux-android24 /fdata-sections /ffunction-sections /fstack-protector-strong /funwind-tables /no-canonical-prefixes /Wall /std:c++2a /llog /std:gnu17 /std:gnu++2a /Wno-invalid-command-line-argument /Wno-unused-command-line-argument /D_FORTIFY_SOURCE=2 /fno-exceptions /fno-rtti /fpic /O2 /DNDEBUG /I./include /I./src",
       "cppStandard": "c++20",
       "cStandard": "c11",
       "defines": [
@@ -20,7 +20,7 @@
         "${workspaceRoot}/extern/libil2cpp/il2cpp/libil2cpp",
         "${workspaceRoot}/../android-ndk-r22/**"
       ],
-      "inheritEnvironments": [ "clang-arm64" ],
+      //"inheritEnvironments": [ "clang-arm64" ],
       "intelliSenseMode": "android-clang-arm64",
       "name": "Quest",
       "undefines": [

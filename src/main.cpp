@@ -31,6 +31,8 @@
 #include "System/Action_2.hpp"
 #include "System/Action_3.hpp"
 #include "System/Threading/Tasks/Task_1.hpp"
+#include "System/Threading/Tasks/TaskStatus.hpp"
+#include "System/Threading/CancellationTokenSource.hpp"
 #include "System/Convert.hpp"
 
 #include "GlobalNamespace/IConnectedPlayer.hpp"
@@ -57,6 +59,8 @@
 #include "GlobalNamespace/OVRPlugin_SystemHeadset.hpp"
 #include "GlobalNamespace/PreviewBeatmapLevelSO.hpp"
 #include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
+
+#include "GlobalNamespace/BeatmapLevelSO.hpp"
 using namespace GlobalNamespace;
 
 //#define DEBUG_BUILD 1
@@ -98,53 +102,94 @@ UnityEngine::Texture2D* DuplicateTexture(UnityEngine::Texture2D* source) {
     return readableText;
 }
 
-// Define the current level by finding info from the IBeatmapLevel object
-MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
-    RefreshContent(self);
+bool CoverChanged[4] = { false };
+bool CoverFailed;
 
-    // Check if the level is an instance of BeatmapLevelSO
-    stManager->statusLock.lock();
-    stManager->levelName = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songName"))));
-    stManager->levelSubName = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songSubName"))));
-    stManager->levelAuthor = to_utf8(csstrtostr((Il2CppString*) CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "levelAuthorName"))));
-    stManager->songAuthor = to_utf8(csstrtostr((Il2CppString*) CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songAuthorName"))));
-    stManager->id = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "levelID"))));
-    stManager->bpm = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<float>(self->level, "beatsPerMinute"));
-    bool CustomLevel = (il2cpp_functions::class_is_assignable_from(classof(CustomPreviewBeatmapLevel*), il2cpp_functions::object_get_class(reinterpret_cast<Il2CppObject*>(self->level))));
-    stManager->njs = self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed();
-    stManager->difficulty = self->selectedDifficultyBeatmap->get_difficulty().value;
 
-    System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* coverSpriteTask = reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(self->level)->GetCoverImageAsync(System::Threading::CancellationToken::get_None());
-    coverSpriteTask->Wait();
-    UnityEngine::Sprite* coverSprite = coverSpriteTask->get_Result();
-
-    UnityEngine::Texture2D* coverTexture;
-    // Check if the Texture is Readable and if not duplicate it and read from that
-    if (coverSprite->get_texture()->get_isReadable()){
-        coverTexture = coverSprite->get_texture();
+void GetCover(PreviewBeatmapLevelSO* level) {
+    System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* coverSpriteTask;
+    UnityEngine::Sprite* coverSprite;
+    getLogger().debug("CoverSpriteTask");
+    int Tries = 5; // Try 5 times then give up
+    //System::Threading::CancellationTokenSource* CoverCancelSource = System::Threading::CancellationTokenSource::New_ctor();
+    //System::Threading::CancellationToken CoverCancel = CoverCancelSource->get_Token();
+GetCoverTask:
+    coverSpriteTask = level->GetCoverImageAsync(System::Threading::CancellationToken::get_None());
+    //coverSpriteTask->ConfigureAwait(false);
+    coverSpriteTask->Wait(80, System::Threading::CancellationToken::get_None());
+    //Waiting:
+    getLogger().debug("Task Status is: %d", coverSpriteTask->get_Status().value);
+    while ((coverSpriteTask->get_Status().value == 1 || coverSpriteTask->get_Status().value == 3) && Tries > 0) {
+        getLogger().debug("Task Status is: %d", coverSpriteTask->get_Status().value);
+        Tries--;
+        if (coverSpriteTask->get_IsFaulted()) {
+            coverSpriteTask->Dispose();
+            goto GetCoverTask;
+        }
+    }
+    if (coverSpriteTask->get_IsCompleted()) {
+        coverSprite = coverSpriteTask->get_Result();
+        UnityEngine::Texture2D* coverTexture;
+        // Check if the Texture is Readable and if not duplicate it and read from that
+        if (coverSprite->get_texture()->get_isReadable()) {
+            coverTexture = coverSprite->get_texture();
+        }
+        else {
+            coverTexture = DuplicateTexture(coverSprite->get_texture());
+        }
+        stManager->coverTexture = coverTexture;
+        for (int i = 0; i < 4; i++) {
+            CoverChanged[i] = true;
+        }
+        coverSpriteTask->Dispose();
+        CoverFailed = false;
+        getLogger().info("Successfully loaded CoverImage");
     }
     else {
-        coverTexture = DuplicateTexture(coverSprite->get_texture());
+        CoverFailed = true;
+        getLogger().error("Task Failed to load CoverImage");
+        getLogger().info("Task Errored Status is: %d", coverSpriteTask->get_Status().value);
+        if (coverSpriteTask->get_Status().value != 1) coverSpriteTask->Dispose();
     }
-    Array<uint8_t>* RawCoverbytesArrayJPG = UnityEngine::ImageConversion::EncodeToJPG(coverTexture);
-    Array<uint8_t>* RawCoverbytesArrayPNG = UnityEngine::ImageConversion::EncodeToPNG(coverTexture);
-    std::string dataJPG(reinterpret_cast<char*>(RawCoverbytesArrayJPG->values), RawCoverbytesArrayJPG->Length());
-    stManager->coverImageJPG = dataJPG;
-    std::string dataPNG(reinterpret_cast<char*>(RawCoverbytesArrayPNG->values), RawCoverbytesArrayPNG->Length());
-    stManager->coverImagePNG = dataPNG;
-    stManager->coverImageBase64 = to_utf8(csstrtostr(System::Convert::ToBase64String(RawCoverbytesArrayJPG)));
-    stManager->coverImageBase64PNG = to_utf8(csstrtostr(System::Convert::ToBase64String(RawCoverbytesArrayPNG)));
-
-    stManager->statusLock.unlock();
 }
 
-MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, PracticeSettings* practiceSettings, Il2CppString* g, bool h) {
+MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
+    getLogger().debug("Running Hook");
+    //CSTaskRunning = false;
+    RefreshContent(self);
+    getLogger().debug("Finished Hook");
+
+    // Null Check Level before trying to get any data
+    if (self->level) {
+        stManager->statusLock.lock();
+        getLogger().debug("Getting LevelData");
+            stManager->levelName = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songName"))));
+            stManager->levelSubName = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songSubName"))));
+            stManager->levelAuthor = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "levelAuthorName"))));
+            stManager->songAuthor = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songAuthorName"))));
+            stManager->id = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "levelID"))));
+            stManager->bpm = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<float>(self->level, "beatsPerMinute"));
+            // Check if level can be assigned as CustomPreviewBeatmapLevel
+            bool CustomLevel = (il2cpp_functions::class_is_assignable_from(classof(CustomPreviewBeatmapLevel*), il2cpp_functions::object_get_class(reinterpret_cast<Il2CppObject*>(self->level))));
+            stManager->njs = self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed();
+            stManager->difficulty = self->selectedDifficultyBeatmap->get_difficulty().value;
+
+            GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(self->level));
+
+        getLogger().debug("Got all LevelData");
+        stManager->statusLock.unlock();
+    }
+    else getLogger().debug("Got no Data from BeatmapLevelSO nullptr");
+}
+
+MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, PracticeSettings* practiceSettings, Il2CppString* g, bool h) {
     stManager->statusLock.lock();
     stManager->location = 1;
     ResetScores();
     stManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode
+    if (CoverFailed) GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(previewBeatmapLevel)); // Try loading the Cover again if failed previously
     stManager->statusLock.unlock();
-    SongStart(self, gameMode, difficultyBeatmap, b, c, d, e, f, practiceSettings, g, h);
+    SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, c, d, e, f, practiceSettings, g, h);
 }
 
 MAKE_HOOK_OFFSETLESS(RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank, void, RelativeScoreAndImmediateRankCounter* self, int score, int modifiedScore, int maxPossibleScore, int maxPossibleModifiedScore) {
@@ -181,10 +226,11 @@ MAKE_HOOK_OFFSETLESS(ScoreController_Update, void, ScoreController* self) {
 }
 
 // Multiplayer song starting is handled differently
-MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* previewBeatmapLevel, int beatmapDifficulty, Il2CppObject* a, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, bool g) {
+MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppString* gameMode, IPreviewBeatmapLevel* previewBeatmapLevel, int beatmapDifficulty, Il2CppObject* a, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, bool g) {
     stManager->statusLock.lock();
     stManager->location = 2;
     ResetScores();
+    if (CoverFailed) GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(previewBeatmapLevel)); // Try loading the Cover again if failed previously
     stManager->statusLock.unlock();
 
 

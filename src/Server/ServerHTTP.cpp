@@ -4,6 +4,11 @@
 #include "STmanager.hpp"
 #include "Config.hpp"
 
+#include "UnityEngine/ImageConversion.hpp"
+#include "UnityEngine/Texture2D.hpp"
+#include "Unity/Collections/NativeArray_1.hpp"
+#include "System/Convert.hpp"
+
 //LoggerContextObject HTTPLogger;
 
 bool STManager::runServerHTTP() {
@@ -126,6 +131,27 @@ std::string ResponseGen(std::string HTTPCode, std::string ContentType = "text/pl
     return result;
 }
 
+
+std::string STManager::GetCoverImage(std::string ImageFormat = "jpg", bool Base64 = true) {
+
+    std::string result;
+    Array<uint8_t>* RawCoverbytesArray;
+    if (ImageFormat == "jpg") {
+        RawCoverbytesArray = UnityEngine::ImageConversion::EncodeToJPG(coverTexture);
+    }
+    else if (ImageFormat == "png") {
+        RawCoverbytesArray = UnityEngine::ImageConversion::EncodeToPNG(coverTexture);
+    }
+    if (Base64) {
+            return result = "data:image/" + ImageFormat + ";base64," + to_utf8(csstrtostr(System::Convert::ToBase64String(RawCoverbytesArray)));
+    }
+    else {
+        std::string data(reinterpret_cast<char*>(RawCoverbytesArray->values), RawCoverbytesArray->Length());
+        return result = data;
+    }
+    return result = "";
+}
+
 void STManager::HandleRequestHTTP(int client_sock) {
     unsigned int length = 4096+1;
     char* buffer = 0;
@@ -145,26 +171,46 @@ void STManager::HandleRequestHTTP(int client_sock) {
         response = ResponseGen("200 OK", "application/json", messageStr);
     }
     ROUTE_GET("/cover/base64") {
-        COVER_B64_JPG:
-        std::string stats = "data:image/jpg;base64," + STManager::coverImageBase64;
-        if (stats.empty()) goto NotFound;
-        response = ResponseGen("200 OK", "text/plain", stats);
+    COVER_B64_JPG:
+        if (!coverTexture) goto NotFound;
+        else if (CoverChanged[0]) {
+            coverImageBase64 = GetCoverImage();
+            CoverChanged[0] = false;
+        }
+        else LOG_DEBUG_HTTP("CoverImageUnchanged");
+
+        response = ResponseGen("200 OK", "text/plain", coverImageBase64);
     }
     ROUTE_GET("/cover/base64/png") {
     COVER_B64_PNG:
-        std::string stats = "data:image/png;base64," + STManager::coverImageBase64PNG;
-        if (stats.empty()) goto NotFound;
-        response = ResponseGen("200 OK", "text/plain", stats);
+        if (!coverTexture) goto NotFound;
+        else if (CoverChanged[1]) {
+            coverImageBase64PNG = GetCoverImage("png");
+            CoverChanged[1] = false;
+        }
+        else LOG_DEBUG_HTTP("CoverImageUnchanged");
+
+        response = ResponseGen("200 OK", "text/plain", coverImageBase64PNG);
     }
     ROUTE_GET("/cover.jpg") {
-        std::string stats = STManager::coverImageJPG;
-        if (stats.empty()) goto NotFound;
-        response = ResponseGen("200 OK", "image/jpg", stats);
+        if (!coverTexture) goto NotFound;
+        else if (CoverChanged[2]) {
+            coverImageJPG = GetCoverImage("jpg", false);
+            CoverChanged[2] = false;
+        }
+        else LOG_DEBUG_HTTP("CoverImageUnchanged");
+
+        response = ResponseGen("200 OK", "image/jpg", /*stats*/ coverImageJPG);
     }
     ROUTE_GET("/cover.png") {
-        std::string stats = STManager::coverImagePNG;
-        if (stats.empty()) goto NotFound;
-        response = ResponseGen("200 OK", "image/png", stats);
+        if (!coverTexture) goto NotFound;       
+        else if (CoverChanged[3]) {
+            coverImagePNG = GetCoverImage("png", false);
+            CoverChanged[3] = false;
+        }
+        else LOG_DEBUG_HTTP("CoverImageUnchanged");
+
+        response = ResponseGen("200 OK", "image/png", /*stats*/ coverImagePNG);
     }
     ROUTE_GET("/config") {
         CONFIG:

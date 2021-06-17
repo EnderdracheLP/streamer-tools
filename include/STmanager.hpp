@@ -8,6 +8,8 @@
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Transform.hpp"
 
+#include "UnityEngine/Texture2D.hpp"
+
 /*  
     Use macros that for disablig enabling debug loggers, 
     set to 1 to enable or 0 to disable, 
@@ -38,6 +40,9 @@
 #define LOG_DEBUG_SOCKET(...) 
 #define LOG_DEBUG_MULTICAST(...) 
 #endif
+
+extern bool CoverChanged[4];
+
 
 extern UnityEngine::GameObject* Decimals;
 extern UnityEngine::GameObject* DEnergy;
@@ -70,6 +75,8 @@ private:
     std::string constructCoverResponse();
     std::string constructConfigResponse();
     std::string multicastResponse(std::string socket, std::string http, std::string httpv6, std::string socketv6);
+
+    std::string GetCoverImage(std::string ImageFormat, bool Base64);
 
     bool ConnectedHTTP = false;
     bool ConnectedSocket = false;
@@ -104,6 +111,9 @@ public:
     int difficulty = 0;
     float bpm = 0.0f;
     float njs = 0.0f;
+
+    UnityEngine::Texture2D* coverTexture = nullptr;
+
     std::string coverImageBase64 = "";
     std::string coverImageBase64PNG = "";
     // WARNING: These std::string types contain raw byte data, and will not make sense as text
