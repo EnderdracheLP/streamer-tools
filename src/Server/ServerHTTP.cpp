@@ -133,7 +133,6 @@ std::string ResponseGen(std::string HTTPCode, std::string ContentType = "text/pl
 
 
 std::string STManager::GetCoverImage(std::string ImageFormat = "jpg", bool Base64 = true) {
-
     std::string result;
     Array<uint8_t>* RawCoverbytesArray;
     if (ImageFormat == "jpg") {

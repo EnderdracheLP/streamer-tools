@@ -25,15 +25,14 @@
 #include "UnityEngine/Graphics.hpp"
 #include "UnityEngine/Texture2D.hpp"
 
-#include "Unity/Collections/NativeArray_1.hpp"
-
 #include "System/Action_1.hpp"
 #include "System/Action_2.hpp"
 #include "System/Action_3.hpp"
 #include "System/Threading/Tasks/Task_1.hpp"
 #include "System/Threading/Tasks/TaskStatus.hpp"
-#include "System/Threading/CancellationTokenSource.hpp"
-#include "System/Convert.hpp"
+//#include "System/Func_2.hpp"
+
+//#include "System/Threading/CancellationTokenSource.hpp"
 
 #include "GlobalNamespace/IConnectedPlayer.hpp"
 #include "GlobalNamespace/MultiplayerPlayersManager.hpp"
@@ -59,16 +58,12 @@
 #include "GlobalNamespace/OVRPlugin_SystemHeadset.hpp"
 #include "GlobalNamespace/PreviewBeatmapLevelSO.hpp"
 #include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
-
-#include "GlobalNamespace/BeatmapLevelSO.hpp"
 using namespace GlobalNamespace;
 
 //#define DEBUG_BUILD 1
-//#define SOCKET_LOGGING 1
 
 DEFINE_CONFIG(ModConfig);
 
-// static ModInfo modInfo;
 ModInfo STModInfo;
 
 Logger& getLogger() {
@@ -105,18 +100,67 @@ UnityEngine::Texture2D* DuplicateTexture(UnityEngine::Texture2D* source) {
 bool CoverChanged[4] = { false };
 bool CoverFailed;
 
+/*Does not work
+* (il2cpp_utils::GetSystemType) klass (in Il2CppReflectionType *il2cpp_utils::GetSystemType(const Il2CppClass *) at /home/runner/work/beatsaber-hook/beatsaber-hook/src/utils/il2cpp-utils.cpp:169) returned false!
+void GetCover(PreviewBeatmapLevelSO* level) {
+    System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* _coverGetter;
+    System::Threading::Tasks::Task_1<UnityEngine::Texture2D*>* _rawCoverGetter;
+    static UnityEngine::Texture2D* coverTexture;
+
+    _coverGetter = level->GetCoverImageAsync(System::Threading::CancellationToken::get_None());
+    _rawCoverGetter = _coverGetter->ContinueWith<UnityEngine::Texture2D*>(il2cpp_utils::MakeFunc<System::Func_2<System::Threading::Tasks::Task_1<UnityEngine::Sprite*>*, UnityEngine::Texture2D*>*>(
+        *[](System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* spriteTask)->UnityEngine::Texture2D* {
+            UnityEngine::Sprite* coverSprite = spriteTask->get_Result();
+            // Check if the Texture is Readable and if not duplicate it and read from that
+            if (!coverSprite) {
+                getLogger().debug("coverSprite is null");
+                CoverFailed = true;
+                return coverTexture = stManager->coverTexture;
+            }
+            if (coverSprite->get_texture()->get_isReadable()) {
+                coverTexture = coverSprite->get_texture();
+            }
+            else {
+                using namespace UnityEngine;
+                RenderTexture* renderTex = RenderTexture::GetTemporary(coverSprite->get_texture()->get_width(), coverSprite->get_texture()->get_height(), 0, UnityEngine::RenderTextureFormat::Default, UnityEngine::RenderTextureReadWrite::Linear);
+                Graphics::Blit(coverSprite->get_texture(), renderTex);
+                RenderTexture* previous = RenderTexture::get_active();
+                RenderTexture::set_active(renderTex);
+                Texture2D* readableText = Texture2D::New_ctor(coverSprite->get_texture()->get_width(), coverSprite->get_texture()->get_height());
+                readableText->ReadPixels(Rect(0, 0, renderTex->get_width(), renderTex->get_height()), 0, 0);
+                readableText->Apply();
+                RenderTexture::set_active(previous);
+                RenderTexture::ReleaseTemporary(renderTex);
+                coverTexture = readableText;
+                //coverTexture = DuplicateTexture(coverSprite->get_texture());
+            }
+            CoverFailed = false;
+            for (int i = 0; i < 4; i++) {
+            CoverChanged[i] = true;
+            }
+            return coverTexture;
+        }
+    ));
+    if (_rawCoverGetter->get_Status().value == 5) {
+    stManager->coverTexture = _rawCoverGetter->get_Result();
+    }
+    else getLogger().debug("Failed to get Cover Status is: %d", _rawCoverGetter->get_Status().value);
+}
+*/
 
 void GetCover(PreviewBeatmapLevelSO* level) {
-    System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* coverSpriteTask;
-    UnityEngine::Sprite* coverSprite;
+    using namespace System::Threading;
+    using namespace UnityEngine;
+    Tasks::Task_1<UnityEngine::Sprite*>* coverSpriteTask;
+    Sprite* coverSprite;
     getLogger().debug("CoverSpriteTask");
     int Tries = 5; // Try 5 times then give up
     //System::Threading::CancellationTokenSource* CoverCancelSource = System::Threading::CancellationTokenSource::New_ctor();
     //System::Threading::CancellationToken CoverCancel = CoverCancelSource->get_Token();
 GetCoverTask:
-    coverSpriteTask = level->GetCoverImageAsync(System::Threading::CancellationToken::get_None());
+    coverSpriteTask = level->GetCoverImageAsync(CancellationToken::get_None());
     //coverSpriteTask->ConfigureAwait(false);
-    coverSpriteTask->Wait(80, System::Threading::CancellationToken::get_None());
+    //coverSpriteTask->Wait(50, CancellationToken::get_None());
     //Waiting:
     getLogger().debug("Task Status is: %d", coverSpriteTask->get_Status().value);
     while ((coverSpriteTask->get_Status().value == 1 || coverSpriteTask->get_Status().value == 3) && Tries > 0) {
@@ -125,6 +169,10 @@ GetCoverTask:
         if (coverSpriteTask->get_IsFaulted()) {
             coverSpriteTask->Dispose();
             goto GetCoverTask;
+        }
+        else if (coverSpriteTask->get_Status().value == 1) {
+            getLogger().critical("Streamer Tools does not support Task queues! Skipping Task");
+            break;
         }
     }
     if (coverSpriteTask->get_IsCompleted()) {
