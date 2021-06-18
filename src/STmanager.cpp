@@ -93,18 +93,3 @@ std::string STManager::constructConfigResponse() {
     doc.Accept(writer);
     return buffer.GetString();
 }
-
-std::string STManager::constructCoverResponse() {
-    rapidjson::Document doc;
-    auto& alloc = doc.GetAllocator();
-    doc.SetObject();
-    statusLock.lock();
-    doc.AddMember("coverImageBase64", STManager::coverImageBase64, alloc);
-    statusLock.unlock();
-
-    // Convert the document into a string
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    doc.Accept(writer);
-    return buffer.GetString();
-}

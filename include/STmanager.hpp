@@ -9,7 +9,6 @@
 #include "UnityEngine/Transform.hpp"
 
 #include "UnityEngine/Texture2D.hpp"
-
 /*  
     Use macros that for disablig enabling debug loggers, 
     set to 1 to enable or 0 to disable, 
@@ -72,9 +71,9 @@ private:
     void ReadRequest(int socket, unsigned int x, char* buffer);
 
     std::string constructResponse();
-    std::string constructCoverResponse();
     std::string constructConfigResponse();
     std::string multicastResponse(std::string socket, std::string http, std::string httpv6, std::string socketv6);
+    bool MultipartResponseGen(int client_sock, std::string TypeOfMessage, std::string HTTPCode, std::string ContentType);
 
     std::string GetCoverImage(std::string ImageFormat, bool Base64);
 
