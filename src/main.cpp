@@ -171,7 +171,7 @@ GetCoverTask:
             goto GetCoverTask;
         }
         else if (coverSpriteTask->get_Status().value == 1) {
-            getLogger().critical("Streamer Tools does not support Task queues! Skipping Task");
+            getLogger().critical("Task queued, cannot wait cause it would result in the MainThread freezing! Skipping Task");
             break;
         }
     }

@@ -51,11 +51,10 @@ bool STManager::runServer() {
             ClientIP = ClientIP.substr(7, ClientIP.length());
         }
         logger.info("Client connected with address: %s", ClientIP.c_str());
-
         ConnectedSocket = true; // Set this to true here so it no longer sends out Multicast while a connection has been established.
 
         // Pass the socket handle over and start a seperate thread for sending back the reply
-        std::thread RequestThread([this, client_sock]() { return STManager::sendRequest(client_sock); }); // Use threads for the response
+        std::thread RequestThread([this, client_sock]() { return STManager::sendResponse(client_sock); }); // Use threads for the response
         RequestThread.detach(); // Detach the thread from this thread
     }
 
@@ -63,7 +62,7 @@ bool STManager::runServer() {
     return true;
 }
 
-void STManager::sendRequest(int client_sock) {
+void STManager::sendResponse(int client_sock) {
     while (client_sock != -1) {
         std::string response = constructResponse();
         LOG_DEBUG_SOCKET("Response: %s", response.c_str());

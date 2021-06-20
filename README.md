@@ -1,13 +1,16 @@
 # Streamer Tools
 
-Makes information available which can then be used by a Streamer-Tools PC application.
+Makes information available which can then be used by a Streamer-Tools PC application or directly from your Browser.
 
 ## Installation
 - To install the mod, download the mod below, drop it into BMBF then sync to Beat Saber.
+- Upon startup accessing `http://[Your Quests ip]:53502` should greet you with a nice page from which you can get the Download Link for the client and a link to the overlays site from which you can access the Overlays directly.
 - To get the mod working on your PC you may want to download the official client. The client and installation instructions are [here](https://github.com/ComputerElite/streamer-tools-client).
+- Alternatively you can access `http://[Your Quests ip]:53502/overlays` where you'll find the overlays for use without the client, <br><b>Please Note, that it is recommended to use the client if possible</b>
 
 ## Downloads
-[Download .QMOD](https://github.com/EnderdracheLP/streamer-tools/releases/latest)
+- [Download .QMOD](https://github.com/EnderdracheLP/streamer-tools/releases/latest)
+- [Client by ComputerElite](https://github.com/ComputerElite/streamer-tools-client)
 
 ## Documentation
 ### Getting Mod Info and Connection Information
@@ -78,17 +81,30 @@ This should give a response similar to this
 ### Retrieving data
 You have 2 methods to get the data which streamer-tools gives you:
 
-a) **HTTP Endpoints**
+#### a) **HTTP Endpoints**
 
 The HTTP endpoints for retrieving Data are as follows, 
-`http://[Your Quests ip]:53502` will give you the standard json output with all the information.
-`http://[Your Quests ip]:53502/cover.jpg` for the coverImage as jpg file or 
-`http://[Your Quests ip]:53502/cover/base64` for receiving the image encoded in base64 starting with the `data:image/jpg;base64,` header.
+- `http://[Your Quests ip]:53502/data` <br> will give you the standard json output with all the information.
+- `http://[Your Quests ip]:53502/cover/cover.jpg` <br> coverImage as jpg file.
+- `http://[Your Quests ip]:53502/cover/cover.png` <br>coverImage as png file.
+- `http://[Your Quests ip]:53502/cover/base64` <br> for receiving the image as jpg encoded in base64 starting with the `data:image/jpg;base64,` header.
+- `http://[Your Quests ip]:53502/cover/base64/png` <br> for receiving the image as png encoded in base64 starting with the `data:image/png;base64,` header.
 
-b) **Sockets**
+##### Image Data Format
 
-Connect via a Socket to `[Your Quests ip]:53501`.
-4 bytes will be sent which give you the length of the response (as int) and then you can read the rest of the data. The Socket can currently only serve one client and send the current status every 50ms, it's not guaranteed that the connection stays open, so it's best you make your application reconnect automatically and check if the socket is already in use.
+- Base64 Encoded Images will be sent as `text/html`.
+
+Example `data:image/jpg;base64,/9j/4AAQSkZJRgABAQA...=`
+
+- The `cover.jpg` and `cover.png` endpoints will send the data as `image/filetype` where filetype is the type of the image for example `image/jpg` 
+
+#### b) **Sockets**
+
+- Connect via a Socket to `[Your Quests ip]:53501`.
+- 4 bytes will be sent which give you the length of the response (as int). 
+- Then you can read the rest of the data. 
+ 
+**Note:** The Socket can currently only serve one client and send the current status every 50ms, it's not guaranteed that the connection stays open, so it's best you make your application reconnect automatically and check if the socket is already in use.
 
 ### Json format
 Example response:

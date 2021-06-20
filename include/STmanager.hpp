@@ -42,7 +42,6 @@
 
 extern bool CoverChanged[4];
 
-
 extern UnityEngine::GameObject* Decimals;
 extern UnityEngine::GameObject* DEnergy;
 extern UnityEngine::GameObject* D_MP_Code;
@@ -67,8 +66,10 @@ private:
     bool MulticastServer();
 
     void HandleRequestHTTP(int client_sock);
-    void sendRequest(int client_sock);
+    void sendResponse(int client_sock);
     void ReadRequest(int socket, unsigned int x, char* buffer);
+    void SendResponseHTTP(int client_sock, std::string response);
+    bool HandleConfigChange(int client_sock, std::string BufferStr);
 
     std::string constructResponse();
     std::string constructConfigResponse();
