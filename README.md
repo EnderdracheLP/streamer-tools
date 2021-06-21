@@ -72,7 +72,7 @@ This should give a response similar to this
     "ModID":"streamer-tools",
     "ModVersion":"0.1.0",
     "Socket":"192.168.188.30:53501",
-    "HTTP":"192.168.188.30:53502"
+    "HTTP":"192.168.188.30:53502",
     "Socketv6":"2345:0425:2CA1:0000:0000:0567:5673:23b5:53501",
     "HTTPv6":"[2345:0425:2CA1:0000:0000:0567:5673:23b5]:53502"
 }
@@ -135,7 +135,7 @@ Example response:
     "goodCuts": 282,         // How many blocks have been cut right
     "badCuts": 9,            // How many blocks have been cut wrong
     "missedNotes": 33,       // How many blocks have been missed
-    "fps": 72                // FPS of the game
+    "fps": 72,                // FPS of the game
     "configFetched":true     // Set to false if Settings are changed in-game and haven't been fetched yet
 }
 ```
