@@ -110,7 +110,7 @@ Example `data:image/jpg;base64,/9j/4AAQSkZJRgABAQA...=`
 Example response:
 ```json
 {
-    "location": 5,              // 0 = Menu, 1 = in song, 2 = mp in song, 3 = tutorial, 4 = campaign, 5 = in mp lobby
+    "location": 5,              // 0 = Menu, 1 = in song, 2 = mp in song, 3 = tutorial, 4 = campaign, 5 = in mp lobby, 6 = Options
     "isPractice": false,        // If they are practice mode
     "paused": false,            // If the game is paused
     "time": 39,                 // Time of the song (in seconds)

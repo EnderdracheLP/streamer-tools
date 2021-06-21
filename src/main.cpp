@@ -58,6 +58,7 @@
 #include "GlobalNamespace/OVRPlugin_SystemHeadset.hpp"
 #include "GlobalNamespace/PreviewBeatmapLevelSO.hpp"
 #include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
+#include "GlobalNamespace/MainMenuViewController.hpp"
 using namespace GlobalNamespace;
 
 //#define DEBUG_BUILD 1
@@ -456,6 +457,20 @@ MAKE_HOOK_OFFSETLESS(SceneManager_ActiveSceneChanged, void, UnityEngine::SceneMa
     SceneManager_ActiveSceneChanged(previousActiveScene, nextActiveScene);
 }
 
+MAKE_HOOK_OFFSETLESS(OptionsViewController_DidActivate, void, GlobalNamespace::OptionsViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
+    OptionsViewController_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
+    stManager->statusLock.lock();
+    stManager->location = 6;
+    stManager->statusLock.unlock();
+}
+
+MAKE_HOOK_OFFSETLESS(MainMenuViewController_DidActivate, void, GlobalNamespace::MainMenuViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
+    MainMenuViewController_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
+    stManager->statusLock.lock();
+    stManager->location = 0;
+    stManager->statusLock.unlock();
+}
+
 extern "C" void setup(ModInfo& info) {
     info.id = ID;
     info.version = VERSION;
@@ -526,6 +541,8 @@ extern "C" void load() {
     INSTALL_HOOK_OFFSETLESS(logger, ScoreController_HandleNoteWasCut, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "HandleNoteWasCut", 2));
     INSTALL_HOOK_OFFSETLESS(logger, FPSCounter_Update, il2cpp_utils::FindMethodUnsafe("", "FPSCounter", "Update", 0));
     INSTALL_HOOK_OFFSETLESS(logger, SceneManager_ActiveSceneChanged, il2cpp_utils::FindMethodUnsafe("UnityEngine.SceneManagement", "SceneManager", "Internal_ActiveSceneChanged", 2));
+    INSTALL_HOOK_OFFSETLESS(logger, OptionsViewController_DidActivate, il2cpp_utils::FindMethodUnsafe("", "OptionsViewController", "DidActivate", 3));
+    INSTALL_HOOK_OFFSETLESS(logger, MainMenuViewController_DidActivate, il2cpp_utils::FindMethodUnsafe("", "MainMenuViewController", "DidActivate", 3));
 
     getLogger().debug("Installed all hooks!");
 

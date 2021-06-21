@@ -11,6 +11,8 @@
 
 //LoggerContextObject HTTPLogger;
 
+std::string lastClientIP;
+
 bool STManager::runServerHTTP() {
     // Make our IPv6 endpoint
     sockaddr_in6 ServerHTTP;
@@ -57,7 +59,15 @@ bool STManager::runServerHTTP() {
         if (ClientIP.starts_with("::ffff:")) {
             ClientIP = ClientIP.substr(7, ClientIP.length());
         }
+        // For normal builds we only want to log Client Connected if the IP is different from the Client that connected on the last Request
+#ifdef DEBUG_BUILD
+#if HTTP_LOGGING == 1
         logger.info("HTTP: Client connected with address: %s", ClientIP.c_str());
+#endif
+#else  
+        if (lastClientIP != ClientIP) logger.info("HTTP: Client connected with address: %s", ClientIP.c_str());
+        lastClientIP = ClientIP;
+#endif
         ConnectedHTTP = true; // Set this to true here so it no longer sends out Multicast after a connection has been established.
 
         // Pass the socket handle over and start a seperate thread for sending back the reply
