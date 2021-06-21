@@ -434,10 +434,16 @@ bool FPSObjectCreated = false;
 std::string GetHeadsetType() {
     GlobalNamespace::OVRPlugin::SystemHeadset HeadsetType = GlobalNamespace::OVRPlugin::GetSystemHeadsetType();
     std::string result;
-    if (HeadsetType.value == HeadsetType.Oculus_Quest) return result = "Oculus Quest";
-    else if (HeadsetType.value == HeadsetType.Oculus_Quest_2) return result = "Oculus Quest 2";
-    else if (HeadsetType.value == 10) return result = "Oculus Quest 3";
-    else return result = "Unknown " + to_utf8(csstrtostr(GlobalNamespace::OVRPlugin::get_productName()));
+    switch (HeadsetType.value) {
+    case HeadsetType.Oculus_Quest:
+        return result = "Oculus Quest";
+    case HeadsetType.Oculus_Quest_2:
+        return result = "Oculus Quest 2";
+    case 10:
+        return result = "Oculus Quest 3";
+    default:
+        return result = "Unknown " + to_utf8(csstrtostr(GlobalNamespace::OVRPlugin::get_productName()));
+    }    
 }
 
 MAKE_HOOK_OFFSETLESS(SceneManager_ActiveSceneChanged, void, UnityEngine::SceneManagement::Scene previousActiveScene, UnityEngine::SceneManagement::Scene nextActiveScene) {
