@@ -34,11 +34,15 @@ DEFINE_TYPE(StreamerTools, stSettingViewController);
 DEFINE_TYPE(StreamerTools::stSettingViewController);
 #endif
 
+bool configFetched = false;
+
+// Using 
 inline ::UnityEngine::UI::Toggle* STAddConfigValueToggle(::UnityEngine::Transform* parent, ConfigUtils::ConfigValue<bool>& configValue) {
     auto object = ::QuestUI::BeatSaberUI::CreateToggle(parent, configValue.GetName(), configValue.GetValue(),
         [&configValue](bool value) {
             configValue.SetValue(value);
             getModConfig().LastChanged.SetValue(static_cast<int>(time(0)));
+            configFetched = false;
         }
     );
     if (!configValue.GetHoverHint().empty())
@@ -51,6 +55,7 @@ inline ::QuestUI::IncrementSetting* STAddConfigValueIncrementInt(::UnityEngine::
         [&configValue](float value) {
             configValue.SetValue((int)value);
             getModConfig().LastChanged.SetValue(static_cast<int>(time(0)));
+            configFetched = false;
         }
     );
     if (!configValue.GetHoverHint().empty())
@@ -63,6 +68,7 @@ inline ::QuestUI::IncrementSetting* STAddConfigValueIncrementFloat(::UnityEngine
         [&configValue](float value) {
             configValue.SetValue(value);
             getModConfig().LastChanged.SetValue(static_cast<int>(time(0)));
+            configFetched = false;
         }
     );
     if (!configValue.GetHoverHint().empty())

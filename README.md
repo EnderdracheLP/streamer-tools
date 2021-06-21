@@ -136,6 +136,7 @@ Example response:
     "badCuts": 9,            // How many blocks have been cut wrong
     "missedNotes": 33,       // How many blocks have been missed
     "fps": 72                // FPS of the game
+    "configFetched":true     // Set to false if Settings are changed in-game and haven't been fetched yet
 }
 ```
 **Currently many values only update and do not reset (What I mean is that after you go out of a mp lobby the game id will still be there)**

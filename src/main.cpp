@@ -440,7 +440,7 @@ std::string GetHeadsetType() {
     case HeadsetType.Oculus_Quest_2:
         return result = "Oculus Quest 2";
     case 10:
-        return result = "Oculus Quest 3";
+        return result = "Oculus Quest 3/2 Pro";
     default:
         return result = "Unknown " + to_utf8(csstrtostr(GlobalNamespace::OVRPlugin::get_productName()));
     }    

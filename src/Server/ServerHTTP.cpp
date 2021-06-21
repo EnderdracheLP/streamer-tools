@@ -249,6 +249,7 @@ bool STManager::HandleConfigChange(int client_sock, std::string BufferStr) {
         return true;
     }
     else {
+        // TODO: Maybe use this in the future for Parsing
         //static const char* kTypeNames[] =
         //{ "Null", "False", "True", "Object", "Array", "String", "Number" };
 
@@ -263,21 +264,15 @@ bool STManager::HandleConfigChange(int client_sock, std::string BufferStr) {
                 getModConfig().DecimalsForNumbers.SetValue(document["decimals"].GetInt());
                 didValueChange = true;
             }
-            if (document.FindMember("dontenergy") != document.MemberEnd() && document["dontenergy"].IsBool()) {
-                getModConfig().DontEnergy.SetValue(document["dontenergy"].GetBool());
-                didValueChange = true;
-            }
-            if (document.FindMember("dontmpcode") != document.MemberEnd() && document["dontmpcode"].IsBool()) {
-                getModConfig().DontMpCode.SetValue(document["dontmpcode"].GetBool());
-                didValueChange = true;
-            }
-            if (document.FindMember("alwaysmpcode") != document.MemberEnd() && document["alwaysmpcode"].IsBool()) {
-                getModConfig().AlwaysMpCode.SetValue(document["alwaysmpcode"].GetBool());
-                didValueChange = true;
-            }
-            if (document.FindMember("alwaysupdate") != document.MemberEnd() && document["alwaysupdate"].IsBool()) {
-                getModConfig().AlwaysUpdate.SetValue(document["alwaysupdate"].GetBool());
-                didValueChange = true;
+            static const char* BoolModConfigValueNames[] = 
+            { "dontenergy", "dontmpcode", "alwaysmpcode", "alwaysupdate" };
+            ConfigUtils::ConfigValue<bool>* CUBoolModConfigValueNames[] =
+            { &getModConfig().DontEnergy, &getModConfig().DontMpCode, &getModConfig().AlwaysMpCode, &getModConfig().AlwaysUpdate };
+            for (int i = 0; i < sizeof(BoolModConfigValueNames)/sizeof(char*); ++i) {
+                if (document.FindMember(BoolModConfigValueNames[i]) != document.MemberEnd() && document[BoolModConfigValueNames[i]].IsBool()) {
+                    CUBoolModConfigValueNames[i]->SetValue(document[BoolModConfigValueNames[i]].GetBool());
+                    didValueChange = true;
+                }
             }
             if (didValueChange) {
                 getModConfig().LastChanged.SetValue(document["lastChanged"].GetInt());
@@ -400,6 +395,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
     }
     ROUTE_GET("/config") {
     CONFIG:
+        configFetched = true;
         response = ResponseGen("200 OK", "application/json", constructConfigResponse(), "GET, PATCH");
         SendResponseHTTP(client_sock, response);
         return;

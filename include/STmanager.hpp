@@ -40,6 +40,7 @@
 #define LOG_DEBUG_MULTICAST(...) 
 #endif
 
+extern bool configFetched;
 extern bool CoverChanged[4];
 
 extern UnityEngine::GameObject* Decimals;
