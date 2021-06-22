@@ -1,4 +1,4 @@
-name: NDK build
+name: NDK build 1.13.2
 
 on:
   workflow_dispatch:
@@ -9,10 +9,10 @@ on:
       - '!.github/workflows/BuildMod.yml'
       - '**.json'
       - '!qpm.json'
-      - '!qpm_1.16.2.json'
-      - '**.ps1'
+      - '!qpm_1.13.2.json'
       - '!build.ps1'
-      - '!buildQMOD.ps1'
+      - '!buildBMBF.ps1'
+      - '**.ps1'
       - '**.md'
       - '.gitignore'
   pull_request:
@@ -20,10 +20,10 @@ on:
 
 env:
      module_id: streamer-tools
-     BSVersion: 1.16.2
+     BSVersion: 1.13.2
      version: 0.1.0-Dev-${{ github.run_number }}
-     bs_hook: 1_3_5
-     codegen: 0_9_0
+     bs_hook: 1_1_5
+     codegen: 0_6_2
      ndkname: android-ndk-r22
     
 jobs:
@@ -78,9 +78,9 @@ jobs:
         cache-name: cache-qpm-deps
       with:
         path: QPM_Temp
-        key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('qpm_${{ env.BSVersion }}.json', '.github/BuildMod.yml') }}
+        key: ${{ runner.os }}-${{ env.cache-name }}-${{ env.BSVersion }}-${{ hashFiles('qpm_${{ env.BSVersion }}.json', '.github/BuildMod.yml') }}
         restore-keys: |
-          ${{ runner.os }}-${{ env.cache-name }}-
+          ${{ runner.os }}-${{ env.cache-name }}-${{ env.BSVersion }}-
           ${{ runner.os }}-${{ env.cache-name }}
       
     - name: QPM Restore
@@ -112,10 +112,10 @@ jobs:
         pattern="lib${module_id}*.so"
         files=( $pattern )
         echo ::set-output name=NAME::"${files[0]}"
-    - name: Package QMOD
+    - name: Package BMBFmod
       run: |
         cd ${GITHUB_WORKSPACE}
-        pwsh -Command ./buildQMOD.ps1 --package
+        pwsh -Command ./buildBMBF.ps1 --package
     - name: Upload non-debug artifact
       uses: actions/upload-artifact@v2
       with:
@@ -131,6 +131,6 @@ jobs:
     - name: Upload QMOD
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ env.module_id }}-(UNZIP-for-QMOD)
-        path: ./${{ env.module_id }}.qmod
+        name: ${{ env.module_id }}-(UNZIP-for-BMBFmod-zip)
+        path: ./${{ env.module_id }}.zip
         if-no-files-found: warn

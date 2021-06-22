@@ -1,0 +1,31 @@
+{
+  "id": "streamer-tools",
+  "name": "Streamer Tools",
+  "version": "{VERSION_NUMBER_PLACEHOLDER}",
+  "icon": "cover.png",
+  "coverImageFilename": "cover.png",
+  "author": "ItzWiresDev#6193, EnderdracheLP#2305, ComputerElite#0486, Lauriethefish#6700",
+  "description": [
+    "Allows applications to get information from the game like, currently played song."
+  ],
+  "category": "Other",
+  "gameVersion": "{BS_Version}",
+  "platform": "Quest",
+  "components": [
+    {
+      "type": "HookMod",
+      "installAction": {
+        "installLibraryFile": "libstreamer-tools.so"
+      },
+      "uninstallAction": {
+        "removeLibraryFile": "libstreamer-tools.so"
+      }
+    },
+    {
+      "type": "HookModLibrary",
+      "installAction": {
+        "installLibraryFile": "libbeatsaber-hook_{BS_Hook}.so"
+      }
+    }
+  ]
+}
