@@ -1,8 +1,7 @@
 #include "modloader/shared/modloader.hpp"
 #include "STmanager.hpp"
-#include "Config.hpp"
-
 #include "SettingsViewController.hpp"
+#include "Config.hpp"
 
 #include "custom-types/shared/register.hpp"
 
@@ -24,6 +23,7 @@
 #include "UnityEngine/RenderTexture.hpp"
 #include "UnityEngine/Graphics.hpp"
 #include "UnityEngine/Texture2D.hpp"
+#include "UnityEngine/Rect.hpp"
 
 #include "System/Action_1.hpp"
 #include "System/Action_2.hpp"
@@ -59,6 +59,7 @@
 #include "GlobalNamespace/PreviewBeatmapLevelSO.hpp"
 #include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
 #include "GlobalNamespace/MainMenuViewController.hpp"
+#include "GlobalNamespace/OptionsViewController.hpp"
 using namespace GlobalNamespace;
 
 //#define DEBUG_BUILD 1
@@ -231,6 +232,7 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
     else getLogger().debug("Got no Data from BeatmapLevelSO nullptr");
 }
 
+#ifdef BS__1_16
 MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, PracticeSettings* practiceSettings, Il2CppString* g, bool h) {
     stManager->statusLock.lock();
     stManager->location = 1;
@@ -240,6 +242,37 @@ MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode
     stManager->statusLock.unlock();
     SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, c, d, e, f, practiceSettings, g, h);
 }
+
+MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void, Il2CppObject* self, Il2CppString* missionId, Il2CppObject* a, Il2CppArray* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, Il2CppString* g) {
+    stManager->statusLock.lock();
+    stManager->location = 4;
+    ResetScores();
+    stManager->statusLock.unlock();
+    CampaignLevelStart(self, missionId, a, b, c, d, e, f, g);
+}
+
+#elif defined(BS__1_13_2)
+MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject * self, Il2CppString * gameMode, Il2CppObject * difficultyBeatmap, IPreviewBeatmapLevel * previewBeatmapLevel, Il2CppObject * c, Il2CppObject * d, Il2CppObject * e, PracticeSettings * practiceSettings, Il2CppString * g, bool h) {
+    stManager->statusLock.lock();
+    stManager->location = 1;
+    ResetScores();
+    stManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode
+    if (CoverFailed) GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(previewBeatmapLevel)); // Try loading the Cover again if failed previously
+    stManager->statusLock.unlock();
+    SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, c, d, e, practiceSettings, g, h);
+}
+
+MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void, Il2CppObject* self, Il2CppObject* a, Il2CppArray* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, Il2CppString* g) {
+    stManager->statusLock.lock();
+    stManager->location = 4;
+    ResetScores();
+    stManager->statusLock.unlock();
+    CampaignLevelStart(self, a, b, c, d, e, f, g);
+}
+
+#else
+#error "Define BSVERSION can be BS__1_16 or BS__1_13_2"
+#endif
 
 MAKE_HOOK_OFFSETLESS(RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank, void, RelativeScoreAndImmediateRankCounter* self, int score, int modifiedScore, int maxPossibleScore, int maxPossibleModifiedScore) {
     RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank(self, score, modifiedScore, maxPossibleScore, maxPossibleModifiedScore);
@@ -302,6 +335,8 @@ void onPlayerLeave() {
 void onLobbyDisconnect() {
     stManager->statusLock.lock();
     stManager->location = 0;
+    stManager->mpGameId = "";
+    stManager->mpGameIdShown = false;
     stManager->statusLock.unlock();
 }
 
@@ -366,13 +401,6 @@ MAKE_HOOK_OFFSETLESS(TutorialEnd, void, Il2CppObject* self)   {
     TutorialEnd(self);
 }
 
-MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void, Il2CppObject* self, Il2CppString* missionId, Il2CppObject* a, Il2CppArray* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, Il2CppString* g)   {
-    stManager->statusLock.lock();
-    stManager->location = 4;
-    ResetScores();
-    stManager->statusLock.unlock();
-    CampaignLevelStart(self, missionId, a, b, c, d, e, f, g);
-}
 MAKE_HOOK_OFFSETLESS(CampaignLevelEnd, void, Il2CppObject* self)   {
     stManager->statusLock.lock();
     stManager->location = 0;
@@ -437,8 +465,17 @@ std::string GetHeadsetType() {
     switch (HeadsetType.value) {
     case HeadsetType.Oculus_Quest:
         return result = "Oculus Quest";
+#ifdef BS__1_13_2
+    case HeadsetType.Oculus_Go:
+        return result = "Oculus Go";
+    case 9:
+        return result = "Oculus Quest 2";
+#elif defined(BS__1_16)
+    case 7:
+        return result = "Oculus Go";
     case HeadsetType.Oculus_Quest_2:
         return result = "Oculus Quest 2";
+#endif
     case 10:
         return result = "Oculus Quest 3/2 Pro";
     default:
@@ -454,7 +491,11 @@ MAKE_HOOK_OFFSETLESS(SceneManager_ActiveSceneChanged, void, UnityEngine::SceneMa
         std::string EmptyTransition = "EmptyTransition";
         if (sceneName == EmptyTransition) stManager->headsetType = GetHeadsetType();
         else if (sceneName == shaderWarmup) {
+#ifdef BS__1_16_2
             auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::newcsstr("FPSC"));
+#elif defined(BS__1_13_2)
+            auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::createcsstr("FPSC"));
+#endif
             UnityEngine::Object::DontDestroyOnLoad(FPSCObject->AddComponent<FPSCounter*>());
         }
         FPSObjectCreated = true;
@@ -527,11 +568,16 @@ extern "C" void load() {
     // Install our function hooks
     Logger& logger = getLogger();
     INSTALL_HOOK_OFFSETLESS(logger, RefreshContent, il2cpp_utils::FindMethodUnsafe("", "StandardLevelDetailView", "RefreshContent", 0));
+#ifdef BS__1_16
     INSTALL_HOOK_OFFSETLESS(logger, SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 10));
+    INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 8));
+#elif defined(BS__1_13_2)
+    INSTALL_HOOK_OFFSETLESS(logger, SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 9));
+    INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 7));
+#endif
     INSTALL_HOOK_OFFSETLESS(logger, RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank, il2cpp_utils::FindMethodUnsafe("", "RelativeScoreAndImmediateRankCounter", "UpdateRelativeScoreAndImmediateRank", 4));
     INSTALL_HOOK_OFFSETLESS(logger, ScoreController_Update, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "Update", 0));
     INSTALL_HOOK_OFFSETLESS(logger, SongEnd, il2cpp_utils::FindMethodUnsafe("", "StandardLevelGameplayManager", "OnDestroy", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 8));
     INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelEnd, il2cpp_utils::FindMethodUnsafe("", "MissionLevelGameplayManager", "OnDestroy", 0));
     INSTALL_HOOK_OFFSETLESS(logger, TutorialStart, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "Awake", 0));
     INSTALL_HOOK_OFFSETLESS(logger, TutorialEnd, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "OnDestroy", 0));

@@ -30,13 +30,15 @@ using namespace HMUI;
 
 #ifndef REGISTER_FUNCTION
 DEFINE_TYPE(StreamerTools, stSettingViewController);
-#else
+#elif defined(DEFINE_TYPE)
 DEFINE_TYPE(StreamerTools::stSettingViewController);
+#elif defined(DEFINE_CLASS)
+DEFINE_CLASS(StreamerTools::stSettingViewController);
 #endif
 
 bool configFetched = false;
 
-// Using 
+// Using these functions instead of the ones builtin to config-utils as we need to add extra code
 inline ::UnityEngine::UI::Toggle* STAddConfigValueToggle(::UnityEngine::Transform* parent, ConfigUtils::ConfigValue<bool>& configValue) {
     auto object = ::QuestUI::BeatSaberUI::CreateToggle(parent, configValue.GetName(), configValue.GetValue(),
         [&configValue](bool value) {
@@ -131,7 +133,6 @@ void StreamerTools::stSettingViewController::DidActivate(bool firstActivation, b
         get_gameObject()->AddComponent<Touchable*>();
         GameObject* container = BeatSaberUI::CreateScrollableSettingsContainer(get_transform());
         parent = container->get_transform();
-
         QuestUI::BeatSaberUI::CreateText(parent, "Client configuration");
         MakeConfigUI(false);
     } else MakeConfigUI(true);
