@@ -12,6 +12,7 @@ $ModID = "streamer-tools"
 $VERSION = "0.1.0-InDev"
 $BSHook = "1_3_5"
 $codegen_ver = "0_9_0"
+if ($env:BSVersion -eq "1.13.2") { $1_13_2build = $true }
 }
 
 
