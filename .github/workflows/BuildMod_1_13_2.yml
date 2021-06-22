@@ -10,9 +10,9 @@ on:
       - '**.json'
       - '!qpm.json'
       - '!qpm_1.13.2.json'
+      - '**.ps1'
       - '!build.ps1'
       - '!buildBMBF.ps1'
-      - '**.ps1'
       - '**.md'
       - '.gitignore'
   pull_request:

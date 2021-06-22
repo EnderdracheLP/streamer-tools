@@ -12,7 +12,6 @@ $ModID = "streamer-tools"
 $VERSION = "0.1.0-InDev"
 $BSHook = "1_3_5"
 $codegen_ver = "0_9_0"
-if ($env:BSVersion -eq "1.13.2") { $1_13_2build = $true }
 }
 
 
@@ -21,6 +20,7 @@ if ($actions -eq $true) {
     $BSHook = $env:bs_hook
     $VERSION = $env:version
     $codegen_ver = $env:codegen
+    if ($env:BSVersion -eq "1.13.2") { $1_13_2build = $true }
 }
 if ($1_13_2build -eq $true) {
 echo "Making 1.13.2 Build!"
