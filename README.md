@@ -1,4 +1,5 @@
 # Streamer Tools
+[![NDK build](https://github.com/EnderdracheLP/streamer-tools/actions/workflows/BuildMod.yml/badge.svg?branch=master)](https://github.com/EnderdracheLP/streamer-tools/actions/workflows/BuildMod.yml)
 
 Makes information available which can then be used by a Streamer-Tools PC application or directly from your Browser.
 
