@@ -1,4 +1,5 @@
 # Streamer Tools
+[![NDK build](https://github.com/EnderdracheLP/streamer-tools/actions/workflows/BuildMod.yml/badge.svg?branch=master)](https://github.com/EnderdracheLP/streamer-tools/actions/workflows/BuildMod.yml)
 
 Makes information available which can then be used by a Streamer-Tools PC application or directly from your Browser.
 
@@ -72,7 +73,7 @@ This should give a response similar to this
     "ModID":"streamer-tools",
     "ModVersion":"0.1.0",
     "Socket":"192.168.188.30:53501",
-    "HTTP":"192.168.188.30:53502"
+    "HTTP":"192.168.188.30:53502",
     "Socketv6":"2345:0425:2CA1:0000:0000:0567:5673:23b5:53501",
     "HTTPv6":"[2345:0425:2CA1:0000:0000:0567:5673:23b5]:53502"
 }
@@ -108,7 +109,7 @@ Example `data:image/jpg;base64,/9j/4AAQSkZJRgABAQA...=`
 
 ### Json format
 Example response:
-```json
+```jsonc
 {
     "location": 5,              // 0 = Menu, 1 = in song, 2 = mp in song, 3 = tutorial, 4 = campaign, 5 = in mp lobby, 6 = Options
     "isPractice": false,        // If they are practice mode
@@ -135,7 +136,7 @@ Example response:
     "goodCuts": 282,         // How many blocks have been cut right
     "badCuts": 9,            // How many blocks have been cut wrong
     "missedNotes": 33,       // How many blocks have been missed
-    "fps": 72                // FPS of the game
+    "fps": 72,                // FPS of the game
     "configFetched":true     // Set to false if Settings are changed in-game and haven't been fetched yet
 }
 ```
