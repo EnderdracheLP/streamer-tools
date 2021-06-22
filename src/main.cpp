@@ -302,6 +302,8 @@ void onPlayerLeave() {
 void onLobbyDisconnect() {
     stManager->statusLock.lock();
     stManager->location = 0;
+    stManager->mpGameId = "";
+    stManager->mpGameIdShown = false;
     stManager->statusLock.unlock();
 }
 
