@@ -3,7 +3,7 @@
 #include "beatsaber-hook/shared/utils/logging.hpp"
 
 #include "questui/shared/QuestUI.hpp"
-#include "config-utils/shared/config-utils.hpp"
+//#include "config-utils/shared/config-utils.hpp"
 
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Transform.hpp"

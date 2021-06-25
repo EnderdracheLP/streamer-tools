@@ -67,4 +67,5 @@ extern/
 Android.mk.backup
 
 !.vs/tasks.vs.json
+/0
 /log_timestamp

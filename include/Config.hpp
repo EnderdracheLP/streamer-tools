@@ -1,5 +1,6 @@
 #pragma once
-#include "config-utils/shared/config-utils.hpp"
+//#include "config-utils/shared/config-utils.hpp"
+#include "config-utils-compat.hpp"
 
 DECLARE_CONFIG(ModConfig,
 

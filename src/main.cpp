@@ -1,8 +1,7 @@
 #include "modloader/shared/modloader.hpp"
 #include "STmanager.hpp"
-#include "Config.hpp"
-
 #include "SettingsViewController.hpp"
+#include "Config.hpp"
 
 #include "custom-types/shared/register.hpp"
 
@@ -24,6 +23,7 @@
 #include "UnityEngine/RenderTexture.hpp"
 #include "UnityEngine/Graphics.hpp"
 #include "UnityEngine/Texture2D.hpp"
+#include "UnityEngine/Rect.hpp"
 
 #include "System/Action_1.hpp"
 #include "System/Action_2.hpp"
@@ -59,6 +59,7 @@
 #include "GlobalNamespace/PreviewBeatmapLevelSO.hpp"
 #include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
 #include "GlobalNamespace/MainMenuViewController.hpp"
+#include "GlobalNamespace/OptionsViewController.hpp"
 using namespace GlobalNamespace;
 
 //#define DEBUG_BUILD 1
@@ -149,69 +150,97 @@ void GetCover(PreviewBeatmapLevelSO* level) {
 }
 */
 
+void GetCoverTexture(System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* coverSpriteTask) {
+    using namespace System::Threading;
+    using namespace UnityEngine;
+    Sprite* coverSprite;
+    coverSprite = coverSpriteTask->get_Result();
+    UnityEngine::Texture2D* coverTexture;
+    // Check if the Texture is Readable and if not duplicate it and read from that
+    if (coverSprite->get_texture()->get_isReadable()) {
+        coverTexture = coverSprite->get_texture();
+    }
+    else {
+        coverTexture = DuplicateTexture(coverSprite->get_texture());
+    }
+    stManager->coverTexture = coverTexture;
+    for (int i = 0; i < 4; i++) {
+        CoverChanged[i] = true;
+    }
+    coverSpriteTask->Dispose();
+    CoverFailed = false;
+    getLogger().info("Successfully loaded CoverImage");
+}
+
 void GetCover(PreviewBeatmapLevelSO* level) {
     using namespace System::Threading;
     using namespace UnityEngine;
     Tasks::Task_1<UnityEngine::Sprite*>* coverSpriteTask;
-    Sprite* coverSprite;
     getLogger().debug("CoverSpriteTask");
     int Tries = 5; // Try 5 times then give up
-    //System::Threading::CancellationTokenSource* CoverCancelSource = System::Threading::CancellationTokenSource::New_ctor();
-    //System::Threading::CancellationToken CoverCancel = CoverCancelSource->get_Token();
-GetCoverTask:
     coverSpriteTask = level->GetCoverImageAsync(CancellationToken::get_None());
-    //coverSpriteTask->ConfigureAwait(false);
-    //coverSpriteTask->Wait(50, CancellationToken::get_None());
-    //Waiting:
-    getLogger().debug("Task Status is: %d", coverSpriteTask->get_Status().value);
-    while ((coverSpriteTask->get_Status().value == 1 || coverSpriteTask->get_Status().value == 3) && Tries > 0) {
-        getLogger().debug("Task Status is: %d", coverSpriteTask->get_Status().value);
-        Tries--;
-        if (coverSpriteTask->get_IsFaulted()) {
-            coverSpriteTask->Dispose();
-            goto GetCoverTask;
-        }
-        else if (coverSpriteTask->get_Status().value == 1) {
-            getLogger().critical("Task queued, cannot wait cause it would result in the MainThread freezing! Skipping Task");
-            break;
-        }
-    }
-    if (coverSpriteTask->get_IsCompleted()) {
-        coverSprite = coverSpriteTask->get_Result();
-        UnityEngine::Texture2D* coverTexture;
-        // Check if the Texture is Readable and if not duplicate it and read from that
-        if (coverSprite->get_texture()->get_isReadable()) {
-            coverTexture = coverSprite->get_texture();
-        }
-        else {
-            coverTexture = DuplicateTexture(coverSprite->get_texture());
-        }
-        stManager->coverTexture = coverTexture;
-        for (int i = 0; i < 4; i++) {
-            CoverChanged[i] = true;
-        }
-        coverSpriteTask->Dispose();
-        CoverFailed = false;
-        getLogger().info("Successfully loaded CoverImage");
-    }
-    else {
-        CoverFailed = true;
-        getLogger().error("Task Failed to load CoverImage");
-        getLogger().info("Task Errored Status is: %d", coverSpriteTask->get_Status().value);
-        if (coverSpriteTask->get_Status().value != 1) coverSpriteTask->Dispose();
-    }
+    auto action = il2cpp_utils::MakeDelegate<System::Action_1<System::Threading::Tasks::Task*>*>(classof(System::Action_1<System::Threading::Tasks::Task*>*), coverSpriteTask, GetCoverTexture);
+    reinterpret_cast<System::Threading::Tasks::Task*>(coverSpriteTask)->ContinueWith(action);
 }
 
+
+//void OldGetCover(PreviewBeatmapLevelSO* level) {
+//    using namespace System::Threading;
+//    using namespace UnityEngine;
+//    Tasks::Task_1<UnityEngine::Sprite*>* coverSpriteTask;
+//    Sprite* coverSprite;
+//    getLogger().debug("CoverSpriteTask");
+//    int Tries = 5; // Try 5 times then give up
+//    //System::Threading::CancellationTokenSource* CoverCancelSource = System::Threading::CancellationTokenSource::New_ctor();
+//    //System::Threading::CancellationToken CoverCancel = CoverCancelSource->get_Token();
+//GetCoverTask:
+//    coverSpriteTask = level->GetCoverImageAsync(CancellationToken::get_None());
+//    //coverSpriteTask->ConfigureAwait(false);
+//    //coverSpriteTask->Wait(50, CancellationToken::get_None());
+//    //Waiting:
+//    while ((coverSpriteTask->get_Status().value == 1 || coverSpriteTask->get_Status().value == 3) && Tries > 0) {
+//        Tries--;
+//        if (coverSpriteTask->get_IsFaulted()) {
+//            coverSpriteTask->Dispose();
+//            goto GetCoverTask;
+//        }
+//        else if (coverSpriteTask->get_Status().value == 1) {
+//            getLogger().critical("Task queued, cannot wait cause it would result in the MainThread freezing! Skipping Task");
+//            break;
+//        }
+//    }
+//    if (coverSpriteTask->get_IsCompleted()) {
+//        coverSprite = coverSpriteTask->get_Result();
+//        UnityEngine::Texture2D* coverTexture;
+//        // Check if the Texture is Readable and if not duplicate it and read from that
+//        if (coverSprite->get_texture()->get_isReadable()) {
+//            coverTexture = coverSprite->get_texture();
+//        }
+//        else {
+//            coverTexture = DuplicateTexture(coverSprite->get_texture());
+//        }
+//        stManager->coverTexture = coverTexture;
+//        for (int i = 0; i < 4; i++) {
+//            CoverChanged[i] = true;
+//        }
+//        coverSpriteTask->Dispose();
+//        CoverFailed = false;
+//        getLogger().info("Successfully loaded CoverImage");
+//    }
+//    else {
+//        CoverFailed = true;
+//        getLogger().error("Task Failed to load CoverImage");
+//        getLogger().debug("Task Errored Status is: %d", coverSpriteTask->get_Status().value);
+//        if (coverSpriteTask->get_Status().value != 1) coverSpriteTask->Dispose();
+//    }
+//}
+
 MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
-    getLogger().debug("Running Hook");
-    //CSTaskRunning = false;
     RefreshContent(self);
-    getLogger().debug("Finished Hook");
 
     // Null Check Level before trying to get any data
     if (self->level) {
         stManager->statusLock.lock();
-        getLogger().debug("Getting LevelData");
             stManager->levelName = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songName"))));
             stManager->levelSubName = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songSubName"))));
             stManager->levelAuthor = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "levelAuthorName"))));
@@ -225,20 +254,40 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
 
             GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(self->level));
 
-        getLogger().debug("Got all LevelData");
         stManager->statusLock.unlock();
     }
-    else getLogger().debug("Got no Data from BeatmapLevelSO nullptr");
+    else getLogger().info("BeatmapLevelSO is nullptr");
 }
+#if defined(BS__1_16)
+#define SONGSTARTHOOK MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, PracticeSettings* practiceSettings, Il2CppString* g, bool h)
+#define SONGSTART SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, c, d, e, f, practiceSettings, g, h)
+#define CAMPAIGNLEVELSTARTHOOK MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void, Il2CppObject* self, Il2CppString* missionId, Il2CppObject* a, Il2CppArray* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, Il2CppString* g)
+#define CAMPAIGNLEVELSTART CampaignLevelStart(self, missionId, a, b, c, d, e, f, g)
+#elif defined(BS__1_13_2)
+#define SONGSTARTHOOK MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, PracticeSettings* practiceSettings, Il2CppString* g, bool h)
+#define CAMPAIGNLEVELSTARTHOOK MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void, Il2CppObject* self, Il2CppObject* a, Il2CppArray* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, Il2CppString* g)
+#define SONGSTART SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, c, d, e, practiceSettings, g, h)
+#define CAMPAIGNLEVELSTART CampaignLevelStart(self, a, b, c, d, e, f, g)
+#else
+#error Define BSVERSION can be BS__1_16 or BS__1_13_2
+#endif
 
-MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, PracticeSettings* practiceSettings, Il2CppString* g, bool h) {
+SONGSTARTHOOK {
     stManager->statusLock.lock();
     stManager->location = 1;
     ResetScores();
     stManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode
     if (CoverFailed) GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(previewBeatmapLevel)); // Try loading the Cover again if failed previously
     stManager->statusLock.unlock();
-    SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, c, d, e, f, practiceSettings, g, h);
+    SONGSTART;
+}
+
+CAMPAIGNLEVELSTARTHOOK {
+    stManager->statusLock.lock();
+    stManager->location = 4;
+    ResetScores();
+    stManager->statusLock.unlock();
+    CAMPAIGNLEVELSTART;
 }
 
 MAKE_HOOK_OFFSETLESS(RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank, void, RelativeScoreAndImmediateRankCounter* self, int score, int modifiedScore, int maxPossibleScore, int maxPossibleModifiedScore) {
@@ -368,13 +417,6 @@ MAKE_HOOK_OFFSETLESS(TutorialEnd, void, Il2CppObject* self)   {
     TutorialEnd(self);
 }
 
-MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void, Il2CppObject* self, Il2CppString* missionId, Il2CppObject* a, Il2CppArray* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, Il2CppString* g)   {
-    stManager->statusLock.lock();
-    stManager->location = 4;
-    ResetScores();
-    stManager->statusLock.unlock();
-    CampaignLevelStart(self, missionId, a, b, c, d, e, f, g);
-}
 MAKE_HOOK_OFFSETLESS(CampaignLevelEnd, void, Il2CppObject* self)   {
     stManager->statusLock.lock();
     stManager->location = 0;
@@ -439,8 +481,17 @@ std::string GetHeadsetType() {
     switch (HeadsetType.value) {
     case HeadsetType.Oculus_Quest:
         return result = "Oculus Quest";
+#ifdef BS__1_13_2
+    case HeadsetType.Oculus_Go:
+        return result = "Oculus Go";
+    case 9:
+        return result = "Oculus Quest 2";
+#elif defined(BS__1_16)
+    case 7:
+        return result = "Oculus Go";
     case HeadsetType.Oculus_Quest_2:
         return result = "Oculus Quest 2";
+#endif
     case 10:
         return result = "Oculus Quest 3/2 Pro";
     default:
@@ -456,7 +507,11 @@ MAKE_HOOK_OFFSETLESS(SceneManager_ActiveSceneChanged, void, UnityEngine::SceneMa
         std::string EmptyTransition = "EmptyTransition";
         if (sceneName == EmptyTransition) stManager->headsetType = GetHeadsetType();
         else if (sceneName == shaderWarmup) {
+#if defined(BS__1_16)
             auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::newcsstr("FPSC"));
+#elif defined(BS__1_13_2)
+            auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::createcsstr("FPSC"));
+#endif
             UnityEngine::Object::DontDestroyOnLoad(FPSCObject->AddComponent<FPSCounter*>());
         }
         FPSObjectCreated = true;
@@ -529,11 +584,16 @@ extern "C" void load() {
     // Install our function hooks
     Logger& logger = getLogger();
     INSTALL_HOOK_OFFSETLESS(logger, RefreshContent, il2cpp_utils::FindMethodUnsafe("", "StandardLevelDetailView", "RefreshContent", 0));
+#if defined(BS__1_16)
     INSTALL_HOOK_OFFSETLESS(logger, SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 10));
+    INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 8)); 
+#elif defined(BS__1_13_2)
+    INSTALL_HOOK_OFFSETLESS(logger, SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 9));
+    INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 7));
+#endif
     INSTALL_HOOK_OFFSETLESS(logger, RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank, il2cpp_utils::FindMethodUnsafe("", "RelativeScoreAndImmediateRankCounter", "UpdateRelativeScoreAndImmediateRank", 4));
     INSTALL_HOOK_OFFSETLESS(logger, ScoreController_Update, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "Update", 0));
     INSTALL_HOOK_OFFSETLESS(logger, SongEnd, il2cpp_utils::FindMethodUnsafe("", "StandardLevelGameplayManager", "OnDestroy", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 8));
     INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelEnd, il2cpp_utils::FindMethodUnsafe("", "MissionLevelGameplayManager", "OnDestroy", 0));
     INSTALL_HOOK_OFFSETLESS(logger, TutorialStart, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "Awake", 0));
     INSTALL_HOOK_OFFSETLESS(logger, TutorialEnd, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "OnDestroy", 0));

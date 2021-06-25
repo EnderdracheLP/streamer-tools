@@ -9,7 +9,6 @@ echo "Compiling Mod"
 }
 
     Copy-Item "./mod_Template.json" "./mod.json" -Force
-# TODO: Get the below working with Github Actions variables.
 if ($args[0] -eq "--package") {
     $ModID = $env:module_id
     $BSHook = $env:bs_hook
