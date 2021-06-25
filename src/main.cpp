@@ -114,7 +114,8 @@ void GetCoverTexture(System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* cov
             coverTexture = coverSprite->get_texture();
         }
         else {
-            coverTexture = DuplicateTexture(coverSprite->get_texture());
+            CoverFailed = true;
+            return;
         }
         stManager->coverTexture = coverTexture;
         for (int i = 0; i < 4; i++) {
@@ -127,6 +128,7 @@ void GetCoverTexture(System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* cov
     else if (coverSpriteTask->get_IsFaulted()) {
         getLogger().error("GetCover Task Faulted: Satus is, %d", coverSpriteTask->get_Status());
         CoverFailed = true;
+        coverSpriteTask->Dispose();
     }
     else {
         getLogger().error("Task Error: Status is %d", coverSpriteTask->get_Status());
@@ -141,9 +143,49 @@ void GetCover(PreviewBeatmapLevelSO* level) {
     using namespace UnityEngine;
     Tasks::Task_1<UnityEngine::Sprite*>* coverSpriteTask;
     getLogger().debug("CoverSpriteTask");
+GetCoverTask:
     coverSpriteTask = level->GetCoverImageAsync(CancellationToken::get_None());
-    auto action = il2cpp_utils::MakeDelegate<System::Action_1<System::Threading::Tasks::Task*>*>(classof(System::Action_1<System::Threading::Tasks::Task*>*), coverSpriteTask, GetCoverTexture);
-    reinterpret_cast<System::Threading::Tasks::Task*>(coverSpriteTask)->ContinueWith(action);
+    bool CustomLevel = (il2cpp_functions::class_is_assignable_from(classof(CustomPreviewBeatmapLevel*), il2cpp_functions::object_get_class(reinterpret_cast<Il2CppObject*>(level))));
+    if (CustomLevel) {
+        auto action = il2cpp_utils::MakeDelegate<System::Action_1<System::Threading::Tasks::Task*>*>(classof(System::Action_1<System::Threading::Tasks::Task*>*), coverSpriteTask, GetCoverTexture);
+        reinterpret_cast<System::Threading::Tasks::Task*>(coverSpriteTask)->ContinueWith(action);
+    }
+    else {
+        if (coverSpriteTask->get_IsFaulted()) {
+            coverSpriteTask->Dispose();
+            goto GetCoverTask;
+        }
+        else if (coverSpriteTask->get_Status().value == 1) {
+            getLogger().critical("Task queued, cannot wait cause it would result in the MainThread freezing! Skipping Task");
+            CoverFailed = true;
+            return;
+        }
+        if (coverSpriteTask->get_IsCompleted()) {
+            Sprite* coverSprite;
+            coverSprite = coverSpriteTask->get_Result();
+            UnityEngine::Texture2D* coverTexture;
+            // Check if the Texture is Readable and if not duplicate it and read from that
+            if (coverSprite->get_texture()->get_isReadable()) {
+                coverTexture = coverSprite->get_texture();
+            }
+            else {
+                coverTexture = DuplicateTexture(coverSprite->get_texture());
+            }
+            stManager->coverTexture = coverTexture;
+            for (int i = 0; i < 4; i++) {
+                CoverChanged[i] = true;
+            }
+            coverSpriteTask->Dispose();
+            CoverFailed = false;
+            getLogger().info("Successfully loaded CoverImage");
+        }
+        else {
+            CoverFailed = true;
+            getLogger().error("Task Failed to load CoverImage");
+            getLogger().debug("Task Errored Status is: %d", coverSpriteTask->get_Status().value);
+            if (coverSpriteTask->get_Status().value != 1) coverSpriteTask->Dispose();
+        }
+    }
 }
 
 
