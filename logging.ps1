@@ -41,6 +41,7 @@ while ($true)
                 echo "Terminating logcat and getting crash dumps..."
                 get-job | remove-job -Force
                 adb logcat -b crash -d -T "$timestamp" | & $ndkstackScript -sym ./obj/local/arm64-v8a/ | Tee-Object -FilePath $PSScriptRoot/log_unstripped.log
+                & Pause
                 echo "Exiting logging.ps1"
                 break
             }

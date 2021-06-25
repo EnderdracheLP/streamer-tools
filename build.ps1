@@ -37,7 +37,7 @@ Copy-Item "./Android_Template.mk" "./Android.mk" -Force
 
 if ($debug) {
 echo "Building Debug Build!"
-    $PARAM = " -DDEBUG_BUILD=1 "
+    $PARAM += " -DDEBUG_BUILD=1 "
 }
 (Get-Content "./Android.mk").replace('{DEBUG_PARAMS}',    $PARAM)   | Set-Content "./Android.mk"
 
