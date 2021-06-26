@@ -95,3 +95,37 @@ std::string STManager::constructConfigResponse() {
     doc.Accept(writer);
     return buffer.GetString();
 }
+
+std::string STManager::constructPositionResponse() {
+    rapidjson::Document doc;
+    auto& alloc = doc.GetAllocator();
+    doc.SetObject();
+    rapidjson::Value HeadPos(rapidjson::kArrayType);
+    HeadPos.PushBack(Head->get_position().x, alloc).PushBack(Head->get_position().y, alloc).PushBack(Head->get_position().z, alloc);
+    doc.AddMember("HeadPos", HeadPos, alloc);
+    rapidjson::Value HeadRot(rapidjson::kArrayType);
+    HeadRot.PushBack(Head->get_eulerAngles().x, alloc).PushBack(Head->get_eulerAngles().y, alloc).PushBack(Head->get_eulerAngles().z, alloc);
+    doc.AddMember("HeadRot", HeadRot, alloc);
+    
+    rapidjson::Value VRC_RightPos(rapidjson::kArrayType);
+    VRC_RightPos.PushBack(VR_Right->get_position().x, alloc).PushBack(VR_Right->get_position().y, alloc).PushBack(VR_Right->get_position().z, alloc);
+    doc.AddMember("VR_RightPos", VRC_RightPos, alloc);
+
+    rapidjson::Value VRC_RightRot(rapidjson::kArrayType);
+    VRC_RightRot.PushBack(VR_Right->get_eulerAngles().x, alloc).PushBack(VR_Right->get_eulerAngles().y, alloc).PushBack(VR_Right->get_eulerAngles().z, alloc);
+    doc.AddMember("VR_RightRot", VRC_RightRot, alloc);
+
+    rapidjson::Value VRC_LeftPos(rapidjson::kArrayType);
+    VRC_LeftPos.PushBack(VR_Left->get_position().x, alloc).PushBack(VR_Left->get_position().y, alloc).PushBack(VR_Left->get_position().z, alloc);
+    doc.AddMember("VR_LeftPos", VRC_LeftPos, alloc);
+
+    rapidjson::Value VRC_LeftRot(rapidjson::kArrayType);
+    VRC_LeftRot.PushBack(VR_Left->get_eulerAngles().x, alloc).PushBack(VR_Left->get_eulerAngles().y, alloc).PushBack(VR_Left->get_eulerAngles().z, alloc);
+    doc.AddMember("VR_leftRot", VRC_LeftRot, alloc);
+
+    // Convert the document into a string
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+    return buffer.GetString();
+}

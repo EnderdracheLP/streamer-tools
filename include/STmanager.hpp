@@ -9,14 +9,18 @@
 #include "UnityEngine/Transform.hpp"
 
 #include "UnityEngine/Texture2D.hpp"
+#include "UnityEngine/Vector3.hpp"
+
+#include <chrono>
+#include <condition_variable>
 /*  
     Use macros that for disablig enabling debug loggers, 
     set to 1 to enable or 0 to disable, 
     will all be disabled if DEBUG_BUILD is not defined
 */
 #define HTTP_LOGGING        1
-#define SOCKET_LOGGING      1
-#define MULTICAST_LOGGING   1
+#define SOCKET_LOGGING      0
+#define MULTICAST_LOGGING   0
 
 #ifdef DEBUG_BUILD
 #if HTTP_LOGGING == 1
@@ -42,6 +46,17 @@
 
 extern bool configFetched;
 extern bool CoverChanged[4];
+extern int CoverStatus;
+
+
+enum CSt {
+    Init, Running, Failed, Completed
+};
+
+enum locations_t {
+    Menu, Solo_Song, MP_Song, Tutorial, Campaign, MP_Lobby, Options
+};
+
 
 extern UnityEngine::GameObject* Decimals;
 extern UnityEngine::GameObject* DEnergy;
@@ -74,6 +89,7 @@ private:
 
     std::string constructResponse();
     std::string constructConfigResponse();
+    std::string constructPositionResponse();
     std::string multicastResponse(std::string socket, std::string http, std::string httpv6, std::string socketv6);
     bool MultipartResponseGen(int client_sock, std::string TypeOfMessage, std::string HTTPCode, std::string ContentType);
 
@@ -85,7 +101,10 @@ private:
 public:
     std::mutex statusLock; // Lock to make sure that stuff doesn't get overwritten while being read by the network thread
 
-    int location = 0; //0 = Menu, 1 = Solo song, 2 = mp song, 3 = tutorial, 4 = campaign, 5 = mp lobby
+    std::condition_variable cv; // These are similar to the above, yet they are meant to block a thread until a condition is met
+    std::mutex CoverLock;
+
+    int location = 0; //0 = Menu, 1 = Solo song, 2 = mp song, 3 = tutorial, 4 = campaign, 5 = mp lobby, 6 = options
     bool isPractice = false;
     bool paused = false;
     
@@ -129,6 +148,10 @@ public:
     std::string localIP = "127.0.0.1";
     std::string localIPv6 = "::1";
     std::string headsetType = "Unknown Android";
+
+    UnityEngine::Transform* Head;
+    UnityEngine::Transform* VR_Right;
+    UnityEngine::Transform* VR_Left;
 
     //LoggerContextObject HTTPLogger = getLogger().WithContext("Server").WithContext("HTTP");
     //LoggerContextObject SocketLogger = getLogger().WithContext("Server").WithContext("Socket");

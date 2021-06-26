@@ -60,6 +60,7 @@
 #include "GlobalNamespace/CustomPreviewBeatmapLevel.hpp"
 #include "GlobalNamespace/MainMenuViewController.hpp"
 #include "GlobalNamespace/OptionsViewController.hpp"
+#include "GlobalNamespace/PlayerTransforms.hpp"
 using namespace GlobalNamespace;
 
 //#define DEBUG_BUILD 1
@@ -100,7 +101,7 @@ UnityEngine::Texture2D* DuplicateTexture(UnityEngine::Texture2D* source) {
 }
 
 bool CoverChanged[4] = { false };
-bool CoverFailed;
+int CoverStatus = Init;
 
 void GetCoverTexture(System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* coverSpriteTask) {
     using namespace System::Threading;
@@ -114,25 +115,31 @@ void GetCoverTexture(System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* cov
             coverTexture = coverSprite->get_texture();
         }
         else {
-            CoverFailed = true;
+            stManager->cv.notify_one();
+            CoverStatus = Failed;
             return;
         }
+        stManager->statusLock.lock();
         stManager->coverTexture = coverTexture;
+        stManager->statusLock.unlock();
         for (int i = 0; i < 4; i++) {
             CoverChanged[i] = true;
         }
         coverSpriteTask->Dispose();
-        CoverFailed = false;
+        stManager->cv.notify_one();
+        CoverStatus = Completed;
         getLogger().info("Successfully loaded CoverImage");
     }
     else if (coverSpriteTask->get_IsFaulted()) {
         getLogger().error("GetCover Task Faulted: Satus is, %d", coverSpriteTask->get_Status());
-        CoverFailed = true;
+        stManager->cv.notify_one();
+        CoverStatus = Failed;
         coverSpriteTask->Dispose();
     }
     else {
         getLogger().error("Task Error: Status is %d", coverSpriteTask->get_Status());
-        CoverFailed = true;
+        stManager->cv.notify_one();
+        CoverStatus = Failed;
     }
 }
 
@@ -143,7 +150,11 @@ void GetCover(PreviewBeatmapLevelSO* level) {
     using namespace UnityEngine;
     Tasks::Task_1<UnityEngine::Sprite*>* coverSpriteTask;
     getLogger().debug("CoverSpriteTask");
+    int Attempts = 0;
 GetCoverTask:
+    CoverStatus = Running;
+    std::lock_guard<std::mutex> lk(stManager->CoverLock);
+
     coverSpriteTask = level->GetCoverImageAsync(CancellationToken::get_None());
     bool CustomLevel = (il2cpp_functions::class_is_assignable_from(classof(CustomPreviewBeatmapLevel*), il2cpp_functions::object_get_class(reinterpret_cast<Il2CppObject*>(level))));
     if (CustomLevel) {
@@ -151,13 +162,15 @@ GetCoverTask:
         reinterpret_cast<System::Threading::Tasks::Task*>(coverSpriteTask)->ContinueWith(action);
     }
     else {
-        if (coverSpriteTask->get_IsFaulted()) {
+        if (coverSpriteTask->get_IsFaulted() && Attempts < 5) {
             coverSpriteTask->Dispose();
+            Attempts++;
             goto GetCoverTask;
         }
         else if (coverSpriteTask->get_Status().value == 1) {
             getLogger().critical("Task queued, cannot wait cause it would result in the MainThread freezing! Skipping Task");
-            CoverFailed = true;
+            stManager->cv.notify_one();
+            CoverStatus = Failed;
             return;
         }
         if (coverSpriteTask->get_IsCompleted()) {
@@ -176,13 +189,14 @@ GetCoverTask:
                 CoverChanged[i] = true;
             }
             coverSpriteTask->Dispose();
-            CoverFailed = false;
+            stManager->cv.notify_one();
+            CoverStatus = Completed;
             getLogger().info("Successfully loaded CoverImage");
         }
         else {
-            CoverFailed = true;
-            getLogger().error("Task Failed to load CoverImage");
-            getLogger().debug("Task Errored Status is: %d", coverSpriteTask->get_Status().value);
+            stManager->cv.notify_one();
+            CoverStatus = Failed;
+            getLogger().error("Task Failed to load CoverImage: Status was: %d", coverSpriteTask->get_Status().value);
             if (coverSpriteTask->get_Status().value != 1) coverSpriteTask->Dispose();
         }
     }
@@ -195,19 +209,17 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
     // Null Check Level before trying to get any data
     if (self->level) {
         stManager->statusLock.lock();
-            stManager->levelName = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songName"))));
-            stManager->levelSubName = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songSubName"))));
-            stManager->levelAuthor = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "levelAuthorName"))));
-            stManager->songAuthor = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songAuthorName"))));
-            stManager->id = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "levelID"))));
-            stManager->bpm = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<float>(self->level, "beatsPerMinute"));
-            // Check if level can be assigned as CustomPreviewBeatmapLevel
-            bool CustomLevel = (il2cpp_functions::class_is_assignable_from(classof(CustomPreviewBeatmapLevel*), il2cpp_functions::object_get_class(reinterpret_cast<Il2CppObject*>(self->level))));
-            stManager->njs = self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed();
-            stManager->difficulty = self->selectedDifficultyBeatmap->get_difficulty().value;
-
-            GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(self->level));
-
+        stManager->levelName = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songName"))));
+        stManager->levelSubName = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songSubName"))));
+        stManager->levelAuthor = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "levelAuthorName"))));
+        stManager->songAuthor = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songAuthorName"))));
+        stManager->id = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "levelID"))));
+        stManager->bpm = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<float>(self->level, "beatsPerMinute"));
+        // Check if level can be assigned as CustomPreviewBeatmapLevel
+        bool CustomLevel = (il2cpp_functions::class_is_assignable_from(classof(CustomPreviewBeatmapLevel*), il2cpp_functions::object_get_class(reinterpret_cast<Il2CppObject*>(self->level))));
+        stManager->njs = self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed();
+        stManager->difficulty = self->selectedDifficultyBeatmap->get_difficulty().value;
+        GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(self->level));
         stManager->statusLock.unlock();
     }
     else getLogger().info("BeatmapLevelSO is nullptr");
@@ -228,17 +240,17 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
 
 SONGSTARTHOOK {
     stManager->statusLock.lock();
-    stManager->location = 1;
+    stManager->location = Solo_Song;
     ResetScores();
     stManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode
-    if (CoverFailed) GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(previewBeatmapLevel)); // Try loading the Cover again if failed previously
+    if (CoverStatus == Failed) GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(previewBeatmapLevel)); // Try loading the Cover again if failed previously
     stManager->statusLock.unlock();
     SONGSTART;
 }
 
 CAMPAIGNLEVELSTARTHOOK {
     stManager->statusLock.lock();
-    stManager->location = 4;
+    stManager->location = Campaign;
     ResetScores();
     stManager->statusLock.unlock();
     CAMPAIGNLEVELSTART;
@@ -280,9 +292,9 @@ MAKE_HOOK_OFFSETLESS(ScoreController_Update, void, ScoreController* self) {
 // Multiplayer song starting is handled differently
 MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppString* gameMode, IPreviewBeatmapLevel* previewBeatmapLevel, int beatmapDifficulty, Il2CppObject* a, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, bool g) {
     stManager->statusLock.lock();
-    stManager->location = 2;
+    stManager->location = MP_Song;
     ResetScores();
-    if (CoverFailed) GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(previewBeatmapLevel)); // Try loading the Cover again if failed previously
+    if (CoverStatus == Failed) GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(previewBeatmapLevel)); // Try loading the Cover again if failed previously
     stManager->statusLock.unlock();
 
 
@@ -304,7 +316,7 @@ void onPlayerLeave() {
 // Reset the lobby back to null when we leave back to the menu
 void onLobbyDisconnect() {
     stManager->statusLock.lock();
-    stManager->location = 0;
+    stManager->location = Menu;
     stManager->mpGameId = "";
     stManager->mpGameIdShown = false;
     stManager->statusLock.unlock();
@@ -334,7 +346,7 @@ MAKE_HOOK_OFFSETLESS(MultiplayerJoinLobby, void, GameServerLobbyFlowCoordinator*
     stManager->statusLock.lock();
     stManager->players = numActivePlayers + 1;
     stManager->maxPlayers = maxPlayers;
-    stManager->location = 5;
+    stManager->location = MP_Lobby;
     stManager->statusLock.unlock();
 
     MultiplayerJoinLobby(self, firstActivation, addedToHierarchy, screenSystemEnabling);
@@ -343,14 +355,14 @@ MAKE_HOOK_OFFSETLESS(MultiplayerJoinLobby, void, GameServerLobbyFlowCoordinator*
 MAKE_HOOK_OFFSETLESS(SongEnd, void, Il2CppObject* self) {
     stManager->statusLock.lock();
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
-    stManager->location = 0;
+    stManager->location = Menu;
     stManager->statusLock.unlock();
     SongEnd(self);
 }
 
 MAKE_HOOK_OFFSETLESS(MultiplayerSongEnd, void, Il2CppObject* self) {
     stManager->statusLock.lock();
-    stManager->location = 0;
+    stManager->location = Menu;
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
     stManager->statusLock.unlock();
     SongEnd(self);
@@ -358,14 +370,14 @@ MAKE_HOOK_OFFSETLESS(MultiplayerSongEnd, void, Il2CppObject* self) {
 
 MAKE_HOOK_OFFSETLESS(TutorialStart, void, Il2CppObject* self)   {
     stManager->statusLock.lock();
-    stManager->location = 3;
+    stManager->location = Tutorial;
     ResetScores();
     stManager->statusLock.unlock();
     TutorialStart(self);
 }
 MAKE_HOOK_OFFSETLESS(TutorialEnd, void, Il2CppObject* self)   {
     stManager->statusLock.lock();
-    stManager->location = 0;
+    stManager->location = Menu;
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
     stManager->statusLock.unlock();
     TutorialEnd(self);
@@ -373,7 +385,7 @@ MAKE_HOOK_OFFSETLESS(TutorialEnd, void, Il2CppObject* self)   {
 
 MAKE_HOOK_OFFSETLESS(CampaignLevelEnd, void, Il2CppObject* self)   {
     stManager->statusLock.lock();
-    stManager->location = 0;
+    stManager->location = Menu;
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
     stManager->statusLock.unlock();
     CampaignLevelEnd(self);
@@ -427,6 +439,15 @@ MAKE_HOOK_OFFSETLESS(FPSCounter_Update, void, FPSCounter* self) {
     stManager->statusLock.unlock();
 }
 
+MAKE_HOOK_OFFSETLESS(PlayerTransforms_Update, void, PlayerTransforms* self) {
+    PlayerTransforms_Update(self);
+    stManager->statusLock.lock();
+    stManager->Head = self->headTransform;
+    stManager->VR_Right = self->rightHandTransform;
+    stManager->VR_Left = self->leftHandTransform;
+    stManager->statusLock.unlock();
+}
+
 bool FPSObjectCreated = false;
 
 std::string GetHeadsetType() {
@@ -477,14 +498,14 @@ MAKE_HOOK_OFFSETLESS(SceneManager_ActiveSceneChanged, void, UnityEngine::SceneMa
 MAKE_HOOK_OFFSETLESS(OptionsViewController_DidActivate, void, GlobalNamespace::OptionsViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     OptionsViewController_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
     stManager->statusLock.lock();
-    stManager->location = 6;
+    stManager->location = Options;
     stManager->statusLock.unlock();
 }
 
 MAKE_HOOK_OFFSETLESS(MainMenuViewController_DidActivate, void, GlobalNamespace::MainMenuViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     MainMenuViewController_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
     stManager->statusLock.lock();
-    stManager->location = 0;
+    stManager->location = Menu;
     stManager->statusLock.unlock();
 }
 
@@ -537,6 +558,8 @@ extern "C" void load() {
 
     // Install our function hooks
     Logger& logger = getLogger();
+
+    INSTALL_HOOK_OFFSETLESS(logger, PlayerTransforms_Update, il2cpp_utils::FindMethodUnsafe("", "PlayerTransforms", "Update", 0));
     INSTALL_HOOK_OFFSETLESS(logger, RefreshContent, il2cpp_utils::FindMethodUnsafe("", "StandardLevelDetailView", "RefreshContent", 0));
 #if defined(BS__1_16)
     INSTALL_HOOK_OFFSETLESS(logger, SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 10));

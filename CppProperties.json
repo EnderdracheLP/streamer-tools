@@ -15,8 +15,8 @@
       ],
       "includePath": [
         "${workspaceRoot}/**",
-        "${workspaceRoot}/shared",
-        "${workspaceRoot}/include",
+        "${workspaceRoot}/shared/",
+        "${workspaceRoot}/include/",
         "${workspaceRoot}/extern/**",
         "${workspaceRoot}/extern/libil2cpp/il2cpp/libil2cpp",
         "${workspaceRoot}/../android-ndk-r22/**"
