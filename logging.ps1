@@ -22,7 +22,7 @@ $timestamp = Get-Date -Format "MM-dd HH:mm:ss.fff"
 $logger = Start-Job -Arg "$timestamp", $PSScriptRoot -scriptblock {
     param($timestamp, $Path)
     $timestamp > log_timestamp
-    adb logcat -v color -T "$timestamp" main-modloader:W libmodloader:W libmain:W QuestHook[streamer-tools`|v0.1.0-InDev]:* QuestHook[streamer-tools`|v0.1.0-Dev]:* AndroidRuntime:E *:S QuestHook[UtilsLogger`|v1.3.5]:E | Tee-Object -FilePath "$Path/logcat.log"
+    adb logcat -v color -T "$timestamp" main-modloader:W libmodloader:W libmain:W QuestHook[streamer-tools`|v0.1.0-InDev]:* QuestHook[streamer-tools`|v0.1.0-Dev]:* SockLib:* AndroidRuntime:E *:S QuestHook[UtilsLogger`|v1.3.5]:E | Tee-Object -FilePath "$Path/logcat.log"
 }
 [console]::TreatControlCAsInput = $true
 while ($true)

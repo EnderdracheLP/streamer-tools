@@ -11,7 +11,9 @@
 #include "socket_lib/shared/SocketHandler.hpp"
 using namespace SocketLib;
 
-#define PORT_HTTP 53520
+#define PORT_HTTP 53502
+//#define PORT_HTTP 53520
+
 
 //void STManager::connectEvent(int clientDescriptor, bool connected) {
 //    //std::cout << "Connected " << clientDescriptor << " status: " << (connected ? "true" : "false") << std::endl;
@@ -44,26 +46,24 @@ using namespace SocketLib;
 //}
 
 void STManager::startHTTPserver() {
-    //std::cout << "Starting server at port 53520" << std::endl;
     getLogger().debug("Starting server at port " + std::to_string(PORT_HTTP));
     SocketHandler& socketHandler = SocketHandler::getCommonSocketHandler();
 
     serverSocket = socketHandler.createServerSocket(PORT_HTTP);
     serverSocket->bindAndListen();
-    //std::cout << "Started server\n";
     getLogger().debug("Started server");
 
     ServerSocket& serverSocket = *this->serverSocket;
 
+    serverSocket.bufferSize = 4096 + 1;
     //serverSocket.registerConnectCallback([this](int client, bool connected) {
     //    connectEvent(client, connected);
     //    });
 
-    serverSocket.registerListenCallback([this](int client, const Message& message) {
+    serverSocket.registerListenCallback([this](Channel& client, const Message& message) {
         listenOnEvents(client, message);
         });
 
-    //std::cout << "Listening server fully started up" << std::endl;
     getLogger().debug("Listening server fully started up");
     //while (serverSocket.isActive()) {}
 
@@ -76,7 +76,7 @@ void STManager::startHTTPserver() {
     //delete this->serverSocket;
 }
 
-bool STManager::HandleConfigChangeSL(int client, std::string message) {
+bool STManager::HandleConfigChangeSL(Channel& client, std::string message) {
     size_t start = message.find("{");
     LOG_DEBUG_HTTP("index of {: " + std::to_string(start));
     size_t end = message.find("}");
@@ -85,7 +85,7 @@ bool STManager::HandleConfigChangeSL(int client, std::string message) {
     LOG_DEBUG_HTTP("json: " + json);
     rapidjson::Document document;
     if (document.Parse(json).HasParseError()) {
-        serverSocket->write(client, Message(ResponseGen("400 Bad Request", "text/html",
+        client.queueWrite(Message(ResponseGen("400 Bad Request", "text/html",
             "<!DOCTYPE html> "\
             "<html> "\
             "<head> <title>streamer-tools - 400 Bad Request</title> "\
@@ -128,13 +128,13 @@ bool STManager::HandleConfigChangeSL(int client, std::string message) {
                 getModConfig().LastChanged.SetValue(document["lastChanged"].GetInt());
                 MakeConfigUI(true);
 
-                serverSocket->write(client, Message(ResponseGen("200 OK", "application/json", constructConfigResponse(), "GET, PATCH")));
+                client.queueWrite(Message(ResponseGen("200 OK", "application/json", constructConfigResponse(), "GET, PATCH")));
                 return true;
             }
             else return false;
         }
         else {
-            serverSocket->write(client, Message(ResponseGen("422 Unprocessable Entity", "text/html",
+            client.queueWrite(Message(ResponseGen("422 Unprocessable Entity", "text/html",
                 "<!DOCTYPE html> "\
                 "<html> "\
                 "<head> <title>streamer-tools - 422 Unprocessable Entity</title> "\
@@ -168,22 +168,23 @@ bool STManager::HandleConfigChangeSL(int client, std::string message) {
 #define ROUTE_PATCH(URI)      ROUTE("PATCH", URI)
 
 
-void STManager::listenOnEvents(int client, const Message& message) {
+void STManager::listenOnEvents(Channel& client, const Message& message) {
     auto msgStr = message.toString();
     std::string response;
     std::string messageStr;
+    LOG_SLIBHTTP("Received message is: %s", msgStr.c_str());
     ROUTE_START() {
         ROUTE_GET("/index.json") goto NormalResponse;
         //if (BufferStr);
         response = ResponseGen("200 OK", "text/html", "<!DOCTYPE html>\n<html>\n    <head>\n        <title>streamer-tools</title>\n        <link href=\'https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic\' rel=\'stylesheet\' type=\'text/css\'>\n        <style>\n            body {\n                color: #EEEEEE;\n                background-color: #202225;\n                font-size: 14px;\n                font-family: \'Open Sans\';\n            }\n            a {\n                color: #30A2EC;\n            }\n        </style>\n    </head>\n    <body>\n        <div style=\"font-size: 30px;\">Streamer-tools</div>\n        <div style=\"color: #EEEEEE; margin-bottom: 10px; padding-left: 20px;\">\n            Enhance your Beat Saber stream with overlays and more. This mod provides all data necessary for the client on your PC to work.\n            <br/>\n            Get <a href=\"https://github.com/ComputerElite/streamer-tools-client/\">the client by ComputerElite</a> or <a href=\"overlays.html\">Open the overlays in your browser</a> (not every overlay may work) to start your Beat Saber streamer life\n        </div>\n        <div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " (" + headsetType + ") server at " + STManager::localIP + ":" + std::to_string(PORT_HTTP) + "</i></div>\n    </body>\n</html>");
-        serverSocket->write(client, Message(response));
+        client.queueWrite(Message(response));
         return;
     }
     ROUTE_GET("/data") {
     NormalResponse:
         messageStr = constructResponse();
         response = ResponseGen("200 OK", "application/json", messageStr);
-        serverSocket->write(client, Message(response));
+        client.queueWrite(Message(response));
         return;
     }
     ROUTE_PATH("/cover/") {
@@ -201,7 +202,7 @@ void STManager::listenOnEvents(int client, const Message& message) {
             else LOG_DEBUG_HTTP("CoverImageUnchanged");
 
             response = ResponseGen("200 OK", "text/plain", coverImageBase64);
-            serverSocket->write(client, Message(response));
+            client.queueWrite(Message(response));
             return;
         }
         ROUTE_GET("/cover/base64/png") {
@@ -214,7 +215,7 @@ void STManager::listenOnEvents(int client, const Message& message) {
             else LOG_DEBUG_HTTP("CoverImageUnchanged");
 
             response = ResponseGen("200 OK", "text/plain", coverImageBase64PNG);
-            serverSocket->write(client, Message(response));
+            client.queueWrite(Message(response));
             return;
         }
         ROUTE_GET("/cover/cover.jpg") {
@@ -226,7 +227,7 @@ void STManager::listenOnEvents(int client, const Message& message) {
             else LOG_DEBUG_HTTP("CoverImageUnchanged");
 
             response = ResponseGen("200 OK", "image/jpg", /*stats*/ coverImageJPG);
-            serverSocket->write(client, Message(response));
+            client.queueWrite(Message(response));
             return;
         }
         ROUTE_GET("/cover/cover.png") {
@@ -238,7 +239,7 @@ void STManager::listenOnEvents(int client, const Message& message) {
             else LOG_DEBUG_HTTP("CoverImageUnchanged");
 
             response = ResponseGen("200 OK", "image/png", /*stats*/ coverImagePNG);
-            serverSocket->write(client, Message(response));
+            client.queueWrite(Message(response));
             return;
         }
     }
@@ -246,32 +247,35 @@ void STManager::listenOnEvents(int client, const Message& message) {
     CONFIG:
         configFetched = true;
         response = ResponseGen("200 OK", "application/json", constructConfigResponse(), "GET, PATCH");
-        serverSocket->write(client, Message(response));
+        client.queueWrite(Message(response));
         return;
     }
     ROUTE_PATCH("/config") {
     PCONFIG:
-        if (!HandleConfigChangeSL(client, msgStr)) serverSocket->write(client, Message(ResponseGen("204")));
+        if (!HandleConfigChangeSL(client, msgStr)) client.queueWrite(Message(ResponseGen("204")));
         return;
     }
     ROUTE_GET("/positions") {
         if (STManager::Head && STManager::VR_Right && STManager::VR_Left && !(location == 0 || location >= 4)) {
-            serverSocket->write(client, Message(response));
+            client.queueWrite(Message(response));
             return;
         }
         else {
-            serverSocket->write(client, Message(response));
+            client.queueWrite(Message(response));
             return;
         }
     }
     ROUTE_GET("/loader.html") {
+        LOG_SLIBHTTP("In /loader.html");
         response = ResponseGen("200 OK", "text/html", "<!DOCTYPE html>\n<html>\n    <head>\n        <title>test</title>\n    </head>\n    <body>\n        Yeah so it load Something\n        <script>\n            var url = new URL(window.location.href);\n            var uri = url.searchParams.get(\"uri\");\n            var html = MakeTextGetRequest(uri)\n            var baseDir = uri\n            if(baseDir.endsWith(\"/\")) baseDir = baseDir.substring(0, baseDir.length - 1)\n            baseDir = baseDir.substring(0, baseDir.lastIndexOf(\"/\"))\n            const reg = /\"(((\\.\\.\\/)+)|\\/)?[a-zA-Z0-9\\-_\\.\\/]+\"/g\n            while ((match = reg.exec(html)) !== null) {\n                match[0] = match[0].substring(1, match[0].length - 1)\n                if(!match[0].includes(\".\") && !match[0].endsWith(\"/\")) continue;\n                console.log(`Found ${match[0]} start=${match.index} end=${reg.lastIndex}.`);\n                var replacement = GetAbsoluteLink(baseDir, match[0])\n                console.log(\"replacing with \" + replacement)\n                html = html.replace(match[0], replacement)\n            }\n\n            \n\n            const scriptReg = /<script( src=\".+?\")?>.*?<\\/script>/gs\n            const headStart = html.indexOf(\"<head>\") + 6\n            var scripts = []\n            while ((match = scriptReg.exec(html)) !== null) {\n                html = html.replace(match[0], \"\")\n                scripts.push(match[0]);\n                console.log(\"moved script \" + match[0] + \" into head\")\n            }\n\n            \n\n            document.documentElement.innerHTML = html\n            const srcRegex = /src=\".+?\"/gs\n            scripts.forEach(e => {\n                var script = document.createElement(\"script\")\n                if(e.substring(e.indexOf(\"<\"), e.indexOf(\">\")).includes(\"src\"))\n                {\n                    var found = srcRegex.exec(e.substring(0, e.indexOf(\">\")))[0];\n                    script.src = found.substring(5, found.length - 1)\n                } else script.appendChild(document.createTextNode(e.substring(e.indexOf(\">\") + 1, e.lastIndexOf(\"<\") - 1)))\n                document.head.appendChild(script)\n            })\n\n            function GetAbsoluteLink(baseUri, relativeUri) {\n                var absolute = baseUri;\n                if(relativeUri.startsWith(\"../\")) {\n                    var tmp = absolute.split(\"/\")\n                    tmp.pop();\n                    absolute = tmp.join(\"/\")\n                    absolute = GetAbsoluteLink(absolute, relativeUri.substring(3, relativeUri.length))\n                } else {\n                    absolute += \"/\" + relativeUri\n                }\n                return absolute\n            }\n\n            function InsertString(toInsert, position, text) {\n                return [text.slice(0, position), toInsert, text.slice(position)].join(\'\')\n            }\n\n            function MakeTextGetRequest(url) {\n                var request = new XMLHttpRequest();\n                request.open(\'GET\', url, false);\n                request.send(null);\n                if (request.status == 200) {\n                    return request.responseText;\n                } else {\n                    return \"Something went wrong: \" + request.status;\n                }\n            }\n        </script>\n    </body>\n</html>");
-        serverSocket->write(client, Message(response));
+        LOG_SLIBHTTP("/loader.html sending response");
+        client.queueWrite(Message(response));
+        LOG_SLIBHTTP("/loader.html response sent");
         return;
     }
     ROUTE_GET("/overlays.html") {
         response = ResponseGen("200 OK", "text/html", "<!DOCTYPE html>\n<html>\n    <head>\n        <title>streamer-tools</title>\n        <link href=\'https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic\' rel=\'stylesheet\' type=\'text/css\'>\n        <style>\n            body {\n                color: #EEEEEE;\n                background-color: #202225;\n                font-size: 14px;\n                font-family: \'Open Sans\';\n            }\n            a {\n                color: #30A2EC;\n            }\n        </style>\n    </head>\n    <body>\n        <div style=\"font-size: 30px;\">Streamer-tools - Overlays</div>\n        <div style=\"color: #EEEEEE; margin-bottom: 10px; padding-left: 20px;\">\n            Here are all currently available overlays (not every overlay may work):\n            <br/>\n            <div id=\"overlays\">\n\n            </div>\n        </div>\n        <div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " (" + headsetType + ") server at " + STManager::localIP + ":" + std::to_string(PORT_HTTP) + "</i></div>\n        <script>\n        const baseUrl = window.location.href.split(\"?\")[0];\n        function FormatToHTML(overlay) {\n            var link = \"loader.html?uri=\" + getLink(overlay) + \"&ip=" + STManager::localIP + "\"\n            return `<div style=\"margin-top: 20px;\">${overlay.Name}:<br/><div style=\"font-size: 14px;\">URL: <a style=\"font-size: 14px;\" target=\"_blank\" href=\"${link}\">${link}</a><br/><input type=\'button\' onclick=\'Copy(\"${link}\")\' style=\"margin-bottom: 5px;\" value=\"Copy URL\"><br/><iframe width=85% height=\"500px\" src=\"${link}\"></iframe></div></div>`\n        }\n\n        function getLink(overlay) {\n            for(let i = 0; i < overlay.downloads.length; i++) {\n                if(overlay.downloads[i].IsEntryPoint) return overlay.downloads[i].URL\n            }\n        }\n\n        fetch(`https://computerelite.github.io/tools/Streamer_Tools_Quest_Overlay/overlays.json`).then(res => {\n            res.json().then(json => {\n                document.getElementById(\"overlays\").innerHTML = \"\";\n                json.overlays.forEach(overlay => {\n                    document.getElementById(\"overlays\").innerHTML += FormatToHTML(overlay);\n                })\n            })\n        })\n        </script>\n    </body>\n</html>");
-        serverSocket->write(client, Message(response));
+        client.queueWrite(Message(response));
         return;
     }
     ROUTE_GET("/teapot") {
@@ -286,7 +290,7 @@ void STManager::listenOnEvents(int client, const Message& message) {
             "<div style=\"color: #888; margin-bottom: 10px; padding-left: 20px;\">The requested entity body is short and stout.</div> "\
             "<div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " (" + headsetType + ") server at " + STManager::localIP + ":" + std::to_string(PORT_HTTP) + "</i></div> "\
             "</body> </html>"); // Yes this is long but page is pretty-ish
-        serverSocket->write(client, Message(response));
+        client.queueWrite(Message(response));
         return;
     }
     // 404 or invalid
@@ -302,7 +306,7 @@ NotFound:
         "<div style=\"color: #888; margin-bottom: 10px; padding-left: 20px;\">The endpoint you were looking for could not be found.</div> "\
         "<div style=\"font-size: 18px; margin-top: 30px; border-top: solid #BBBBBB 2px; padding: 10px; width: fit-content;\"><i>" + STModInfo.id + "/" + STModInfo.version + " (" + headsetType + ") server at " + STManager::localIP + ":" + std::to_string(PORT_HTTP) + "</i></div> "\
         "</body> </html>"); // Yes this is long but page is pretty-ish
-    serverSocket->write(client, Message(response));
+    client.queueWrite(Message(response));
 
 
 

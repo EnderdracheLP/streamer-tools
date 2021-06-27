@@ -9,9 +9,8 @@
 STManager::STManager(Logger& logger) : logger(logger) {
     logger.info("Starting network thread . . .");
     networkThread = std::thread(&STManager::runServer, this); // Run the thread
-    networkThreadHTTP = std::thread(&STManager::runServerHTTP, this); // Run the thread
+    //networkThreadHTTP = std::thread(&STManager::runServerHTTP, this); // Run the thread
     networkThreadMulticast = std::thread(&STManager::MulticastServer, this); // Run the thread
-    //networkThreadSocketLibTest = std::thread(&STManager::StartServer, this);
     startHTTPserver();
 }
 

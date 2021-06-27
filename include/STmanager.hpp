@@ -15,7 +15,6 @@
 #include <condition_variable>
 
 #include "socket_lib/shared/ServerSocket.hpp"
-#include "socket_lib/shared/FieldWrapper.hpp"
 /*  
     Use macros that for disablig enabling debug loggers, 
     set to 1 to enable or 0 to disable, 
@@ -24,6 +23,7 @@
 #define HTTP_LOGGING        1
 #define SOCKET_LOGGING      0
 #define MULTICAST_LOGGING   0
+#define SOCKETLIB_HTTP_LOGGING 1
 
 #ifdef DEBUG_BUILD
 #if HTTP_LOGGING == 1
@@ -41,10 +41,14 @@
 #else
 #define LOG_DEBUG_MULTICAST(...) 
 #endif
+#if SOCKETLIB_HTTP_LOGGING == 1
+#define LOG_SLIBHTTP(...) getLogger().WithContext("Server").WithContext("SocketLibHTTP").debug(__VA_ARGS__)
+#endif
 #else
 #define LOG_DEBUG_HTTP(...) 
 #define LOG_DEBUG_SOCKET(...) 
 #define LOG_DEBUG_MULTICAST(...) 
+#define LOG_SLIBHTTP(...)
 #endif
 
 extern bool configFetched;
@@ -89,8 +93,8 @@ private:
     
 
         void startHTTPserver();
-        void connectEvent(int clientDescriptor, bool connected);
-        void listenOnEvents(int clientDescriptor, const SocketLib::Message& message);
+        void connectEvent(SocketLib::Channel& clientDescriptor, bool connected);
+        void listenOnEvents(SocketLib::Channel& client, const SocketLib::Message& message);
 
         SocketLib::ServerSocket* serverSocket;
     
@@ -103,7 +107,7 @@ private:
     void SendResponseHTTP(int client_sock, std::string response);
     bool HandleConfigChange(int client_sock, std::string BufferStr);
 
-    bool HandleConfigChangeSL(int client, std::string message);
+    bool HandleConfigChangeSL(SocketLib::Channel& client, std::string message);
     std::string ResponseGen(std::string HTTPCode, std::string ContentType = "text/plain", std::string Message = "", std::string AllowedMethods = "");
 
     std::string constructResponse();
