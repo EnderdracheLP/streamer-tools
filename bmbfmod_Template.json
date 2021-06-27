@@ -26,6 +26,12 @@
       "installAction": {
         "installLibraryFile": "libbeatsaber-hook_{BS_Hook}.so"
       }
+    },
+    {
+      "type": "HookModLibrary",
+      "installAction": {
+        "installLibraryFile": "libsocket_lib.so"
+      }
     }
   ]
 }

@@ -13,6 +13,9 @@
 
 #include <chrono>
 #include <condition_variable>
+
+#include "socket_lib/shared/ServerSocket.hpp"
+#include "socket_lib/shared/FieldWrapper.hpp"
 /*  
     Use macros that for disablig enabling debug loggers, 
     set to 1 to enable or 0 to disable, 
@@ -53,7 +56,7 @@ enum CSt {
     Init, Running, Failed, Completed
 };
 
-enum locations_t {
+enum lcts_t {
     Menu, Solo_Song, MP_Song, Tutorial, Campaign, MP_Lobby, Options
 };
 
@@ -76,10 +79,23 @@ private:
     std::thread networkThread;
     std::thread networkThreadHTTP;
     std::thread networkThreadMulticast;
+    std::thread networkThreadSocketLibTest;
+
 
     bool runServer();
     bool runServerHTTP();
     bool MulticastServer();
+
+    
+
+        void startHTTPserver();
+        void connectEvent(int clientDescriptor, bool connected);
+        void listenOnEvents(int clientDescriptor, const SocketLib::Message& message);
+
+        SocketLib::ServerSocket* serverSocket;
+    
+
+    //void StartServer();
 
     void HandleRequestHTTP(int client_sock);
     void sendResponse(int client_sock);
@@ -87,13 +103,16 @@ private:
     void SendResponseHTTP(int client_sock, std::string response);
     bool HandleConfigChange(int client_sock, std::string BufferStr);
 
+    bool HandleConfigChangeSL(int client, std::string message);
+    std::string ResponseGen(std::string HTTPCode, std::string ContentType = "text/plain", std::string Message = "", std::string AllowedMethods = "");
+
     std::string constructResponse();
     std::string constructConfigResponse();
     std::string constructPositionResponse();
     std::string multicastResponse(std::string socket, std::string http, std::string httpv6, std::string socketv6);
     bool MultipartResponseGen(int client_sock, std::string TypeOfMessage, std::string HTTPCode, std::string ContentType);
 
-    std::string GetCoverImage(std::string ImageFormat, bool Base64);
+    std::string GetCoverImage(std::string ImageFormat = "jpg", bool Base64 = true);
 
     bool ConnectedHTTP = false;
     bool ConnectedSocket = false;

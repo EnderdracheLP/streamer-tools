@@ -5,6 +5,7 @@ if ($args[0] -eq "--debug" -or $args[1] -eq "--debug") {
 }
 if ($?) {
     adb push libs/arm64-v8a/libstreamer-tools.so /sdcard/Android/data/com.beatgames.beatsaber/files/mods/libstreamer-tools.so
+    adb push libs/arm64-v8a/libsocket_lib.so /sdcard/Android/data/com.beatgames.beatsaber/files/libs/libsocket_lib.so
     if ($?) {
         adb shell am force-stop com.beatgames.beatsaber
         adb shell am start com.beatgames.beatsaber/com.unity3d.player.UnityPlayerActivity

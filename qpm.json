@@ -37,6 +37,11 @@
       "id": "questui",
       "versionRange": "^0.7.0",
       "additionalData": {}
+    },
+    {
+      "id": "socket_lib",
+      "versionRange": "*",
+      "additionalData": {}
     }
   ],
   "additionalData": {}

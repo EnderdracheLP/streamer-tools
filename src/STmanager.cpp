@@ -11,6 +11,8 @@ STManager::STManager(Logger& logger) : logger(logger) {
     networkThread = std::thread(&STManager::runServer, this); // Run the thread
     networkThreadHTTP = std::thread(&STManager::runServerHTTP, this); // Run the thread
     networkThreadMulticast = std::thread(&STManager::MulticastServer, this); // Run the thread
+    //networkThreadSocketLibTest = std::thread(&STManager::StartServer, this);
+    startHTTPserver();
 }
 
 // Creates the JSON to send back to the Streamer Tools application

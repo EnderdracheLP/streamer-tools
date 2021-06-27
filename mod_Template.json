@@ -12,7 +12,8 @@
     "libstreamer-tools.so"
   ],
   "libraryFiles": [
-    "libbeatsaber-hook_{BS_Hook}.so"
+    "libbeatsaber-hook_{BS_Hook}.so",
+    "libsocket_lib.so"
   ],
   "dependencies": [],
   "fileCopies": []

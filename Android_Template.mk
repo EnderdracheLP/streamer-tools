@@ -32,6 +32,12 @@ LOCAL_MODULE := codegen_{CG_VER}
 LOCAL_EXPORT_C_INCLUDES := extern/codegen
 LOCAL_SRC_FILES := extern/libcodegen_{CG_VER}.so
 include $(PREBUILT_SHARED_LIBRARY)
+# Creating prebuilt for dependency: socket_lib - version: 0.1.1
+include $(CLEAR_VARS)
+LOCAL_MODULE := socket_lib
+LOCAL_EXPORT_C_INCLUDES := extern/socket_lib
+LOCAL_SRC_FILES := extern/libsocket_lib.so
+include $(PREBUILT_SHARED_LIBRARY)
 # Creating prebuilt for dependency: custom types
 include $(CLEAR_VARS)
 LOCAL_MODULE := customtypes
@@ -61,6 +67,7 @@ LOCAL_SHARED_LIBRARIES += codegen_{CG_VER}
 LOCAL_SHARED_LIBRARIES += questui
 LOCAL_SHARED_LIBRARIES += customtypes
 LOCAL_SHARED_LIBRARIES += modloader
+LOCAL_SHARED_LIBRARIES += socket_lib
 LOCAL_LDLIBS += -llog
 LOCAL_CFLAGS += -I'extern/libil2cpp/il2cpp/libil2cpp' -I'extern/codegen/include' -DID='"streamer-tools"' -DVERSION='"$(VERSION)"' {DEBUG_PARAMS} -I'./shared' -I'./extern'
 LOCAL_CPPFLAGS += -std=c++2a

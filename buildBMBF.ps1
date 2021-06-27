@@ -28,13 +28,13 @@ echo "Actions: Packaging QMod with ModID: $ModID and BS-Hook version: $BSHook"
     (Get-Content "./bmbfmod.json").replace('{VERSION_NUMBER_PLACEHOLDER}', "$env:version") | Set-Content "./bmbfmod.json"
     (Get-Content "./bmbfmod.json").replace('{BS_Hook}', "$BSHook") | Set-Content "./bmbfmod.json"
     (Get-Content "./bmbfmod.json").replace('{BS_Version}', "$BS_Version") | Set-Content "./bmbfmod.json"
-    Compress-Archive -Path "./libs/arm64-v8a/lib$ModID.so", "./libs/arm64-v8a/libbeatsaber-hook_$BSHook.so", ".\bmbfmod.json", ".\cover.png" -DestinationPath "./$ModID.zip" -Update
+    Compress-Archive -Path "./libs/arm64-v8a/lib$ModID.so", "./libs/arm64-v8a/libbeatsaber-hook_$BSHook.so", ".\bmbfmod.json", ".\cover.png", "./libs/arm64-v8a/libsocket_lib.so" -DestinationPath "./$ModID.zip" -Update
 }
 if ($? -And $args.Count -eq 0) {
 echo "Packaging QMod with ModID: $ModID"
     (Get-Content "./bmbfmod.json").replace('{VERSION_NUMBER_PLACEHOLDER}', "$VERSION") | Set-Content "./bmbfmod.json"
     (Get-Content "./bmbfmod.json").replace('{BS_Hook}', "$BSHook") | Set-Content "./bmbfmod.json"
     (Get-Content "./bmbfmod.json").replace('{BS_Version}', "$BS_Version") | Set-Content "./bmbfmod.json"
-    Compress-Archive -Path "./libs/arm64-v8a/lib$ModID.so", "./libs/arm64-v8a/libbeatsaber-hook_$BSHook.so", ".\bmbfmod.json", ".\cover.png" -DestinationPath "./$ModID.zip" -Update
+    Compress-Archive -Path "./libs/arm64-v8a/lib$ModID.so", "./libs/arm64-v8a/libbeatsaber-hook_$BSHook.so", ".\bmbfmod.json", ".\cover.png", "./libs/arm64-v8a/libsocket_lib.so" -DestinationPath "./$ModID.zip" -Update
 }
 echo "Task Completed"

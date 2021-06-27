@@ -158,7 +158,7 @@ void STManager::ReadRequest(int socket, unsigned int x, char* buffer)
 //}
 
 // Function for generating response, second and last parameter is optional, second parameter will be "text/plain" if not specified
-std::string ResponseGen(std::string HTTPCode, std::string ContentType = "text/plain", std::string Message = "", std::string AllowedMethods = "") {
+std::string STManager::ResponseGen(std::string HTTPCode, std::string ContentType, std::string Message, std::string AllowedMethods) {
     std::string result;
     if ((HTTPCode.find("204") != std::string::npos) || Message.empty()) {
         result =
@@ -192,7 +192,7 @@ std::string ResponseGen(std::string HTTPCode, std::string ContentType = "text/pl
 }
 
 
-std::string STManager::GetCoverImage(std::string ImageFormat = "jpg", bool Base64 = true) {
+std::string STManager::GetCoverImage(std::string ImageFormat, bool Base64) {
     std::string result;
     Array<uint8_t>* RawCoverbytesArray;
     if (ImageFormat == "jpg") {
