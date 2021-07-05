@@ -3,7 +3,7 @@ name: NDK build
 on:
   workflow_dispatch:
   push:
-    branches: [ master, dev, 1.13.2_Support ]
+    branches: [ master, dev ]
     paths-ignore:
       - '**.yml'
       - '!.github/workflows/BuildMod.yml'
@@ -22,8 +22,8 @@ env:
      module_id: streamer-tools
      BSVersion: 1.16.2
      version: 0.1.0-Dev-${{ github.run_number }}
-     bs_hook: 1_3_5
-     codegen: 0_9_0
+     bs_hook: 2_0_2
+     codegen: 0_10_2
      ndkname: android-ndk-r22
     
 jobs:

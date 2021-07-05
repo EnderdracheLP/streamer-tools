@@ -11,12 +11,16 @@
 #include "beatsaber-hook/shared/utils/logging.hpp"
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
 #include "beatsaber-hook/shared/utils/typedefs.h"
+#ifndef MAKE_HOOK_OFFSETLESS
+#include "beatsaber-hook/shared/utils/hooking.hpp"
+#endif
 //#include "beatsaber-hook/shared/config/config-utils.hpp"
 
 #include "UnityEngine/Resources.hpp"
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Component.hpp"
 #include "UnityEngine/SceneManagement/Scene.hpp"
+#include "UnityEngine/SceneManagement/SceneManager.hpp"
 
 #include "UnityEngine/ImageConversion.hpp"
 #include "UnityEngine/Sprite.hpp"
@@ -61,7 +65,26 @@
 #include "GlobalNamespace/MainMenuViewController.hpp"
 #include "GlobalNamespace/OptionsViewController.hpp"
 #include "GlobalNamespace/PlayerTransforms.hpp"
+#include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
+#include "GlobalNamespace/MissionLevelScenesTransitionSetupDataSO.hpp"
+#include "GlobalNamespace/MultiplayerLevelScenesTransitionSetupDataSO.hpp"
+#include "GlobalNamespace/StandardLevelGameplayManager.hpp"
+#include "GlobalNamespace/MultiplayerLocalActivePlayerGameplayManager.hpp"
+#include "GlobalNamespace/TutorialSongController.hpp"
+#include "GlobalNamespace/MissionLevelGameplayManager.hpp"
+#include "GlobalNamespace/PauseController.hpp"
+#include "GlobalNamespace/AudioTimeSyncController.hpp"
 using namespace GlobalNamespace;
+
+#if defined(MAKE_HOOK_OFFSETLESS) && !defined(MAKE_HOOK_MATCH)
+#define ST_MAKE_HOOK(name, mPtr, retval, ...) MAKE_HOOK_OFFSETLESS(name, retval, __VA_ARGS__)
+#define ST_INSTALL_HOOK(logger, name, methodInfo) INSTALL_HOOK_OFFSETLESS(logger, name, methodInfo)
+#elif defined(MAKE_HOOK_MATCH)
+#define ST_MAKE_HOOK(name, mPtr, retval, ...) MAKE_HOOK_MATCH(name, mPtr, retval, __VA_ARGS__)
+#define ST_INSTALL_HOOK(logger, name, methodInfo) INSTALL_HOOK(logger, name)
+#else
+#error No Compatible HOOK macro found
+#endif
 
 //#define DEBUG_BUILD 1
 
@@ -131,13 +154,13 @@ void GetCoverTexture(System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* cov
         getLogger().info("Successfully loaded CoverImage");
     }
     else if (coverSpriteTask->get_IsFaulted()) {
-        getLogger().error("GetCover Task Faulted: Satus is, %d", coverSpriteTask->get_Status());
+        getLogger().error("GetCover Task Faulted: Satus is, %d", (int)coverSpriteTask->get_Status());
         stManager->cv.notify_one();
         CoverStatus = Failed;
         coverSpriteTask->Dispose();
     }
     else {
-        getLogger().error("Task Error: Status is %d", coverSpriteTask->get_Status());
+        getLogger().error("Task Error: Status is %d", (int)coverSpriteTask->get_Status());
         stManager->cv.notify_one();
         CoverStatus = Failed;
     }
@@ -203,7 +226,7 @@ GetCoverTask:
 }
 
 
-MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
+ST_MAKE_HOOK(RefreshContent, &StandardLevelDetailView::RefreshContent, void, StandardLevelDetailView* self) {
     RefreshContent(self);
 
     // Null Check Level before trying to get any data
@@ -225,10 +248,10 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, StandardLevelDetailView* self) {
     else getLogger().info("BeatmapLevelSO is nullptr");
 }
 #if defined(BS__1_16)
-#define SONGSTARTHOOK MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, PracticeSettings* practiceSettings, Il2CppString* g, bool h)
-#define SONGSTART SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, c, d, e, f, practiceSettings, g, h)
-#define CAMPAIGNLEVELSTARTHOOK MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void, Il2CppObject* self, Il2CppString* missionId, Il2CppObject* a, Il2CppArray* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, Il2CppString* g)
-#define CAMPAIGNLEVELSTART CampaignLevelStart(self, missionId, a, b, c, d, e, f, g)
+#define SONGSTARTHOOK ST_MAKE_HOOK(SongStart, &StandardLevelScenesTransitionSetupDataSO::Init, void, StandardLevelScenesTransitionSetupDataSO* self, Il2CppString* gameMode, IDifficultyBeatmap* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, OverrideEnvironmentSettings* overrideEnvironmentSettings, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, PracticeSettings* practiceSettings, Il2CppString* backButtonText, bool useTestNoteCutSoundEffects)
+#define SONGSTART SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, overrideEnvironmentSettings, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, backButtonText, useTestNoteCutSoundEffects)
+#define CAMPAIGNLEVELSTARTHOOK ST_MAKE_HOOK(CampaignLevelStart, &MissionLevelScenesTransitionSetupDataSO::Init, void, MissionLevelScenesTransitionSetupDataSO* self, Il2CppString* missionId, IDifficultyBeatmap* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, Array<MissionObjective*>* missionObjectives, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, Il2CppString* backButtonText)
+#define CAMPAIGNLEVELSTART CampaignLevelStart(self, missionId, difficultyBeatmap, previewBeatmapLevel, missionObjectives, overrideColorScheme, gameplayModifiers, playerSpecificSettings, backButtonText)
 #elif defined(BS__1_13_2)
 #define SONGSTARTHOOK MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, PracticeSettings* practiceSettings, Il2CppString* g, bool h)
 #define CAMPAIGNLEVELSTARTHOOK MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void, Il2CppObject* self, Il2CppObject* a, Il2CppArray* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, Il2CppString* g)
@@ -256,7 +279,7 @@ CAMPAIGNLEVELSTARTHOOK {
     CAMPAIGNLEVELSTART;
 }
 
-MAKE_HOOK_OFFSETLESS(RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank, void, RelativeScoreAndImmediateRankCounter* self, int score, int modifiedScore, int maxPossibleScore, int maxPossibleModifiedScore) {
+ST_MAKE_HOOK(RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank, &RelativeScoreAndImmediateRankCounter::UpdateRelativeScoreAndImmediateRank, void, RelativeScoreAndImmediateRankCounter* self, int score, int modifiedScore, int maxPossibleScore, int maxPossibleModifiedScore) {
     RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank(self, score, modifiedScore, maxPossibleScore, maxPossibleModifiedScore);
     stManager->statusLock.lock();
     stManager->score = modifiedScore;
@@ -265,14 +288,14 @@ MAKE_HOOK_OFFSETLESS(RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAnd
     stManager->statusLock.unlock();
 }
 
-MAKE_HOOK_OFFSETLESS(GameEnergyUIPanel_HandleGameEnergyDidChange, void, GameEnergyUIPanel* self, float energy) {
+ST_MAKE_HOOK(GameEnergyUIPanel_HandleGameEnergyDidChange, &GameEnergyUIPanel::HandleGameEnergyDidChange, void, GameEnergyUIPanel* self, float energy) {
     GameEnergyUIPanel_HandleGameEnergyDidChange(self, energy);
     stManager->statusLock.lock();
     stManager->energy = energy;
     stManager->statusLock.unlock();
 }
 
-MAKE_HOOK_OFFSETLESS(ServerCodeView_RefreshText, void, ServerCodeView* self, bool refreshText) {
+ST_MAKE_HOOK(ServerCodeView_RefreshText, &ServerCodeView::RefreshText, void, ServerCodeView* self, bool refreshText) {
     ServerCodeView_RefreshText(self, refreshText);
     if (self->serverCode) {
         stManager->statusLock.lock();
@@ -282,7 +305,7 @@ MAKE_HOOK_OFFSETLESS(ServerCodeView_RefreshText, void, ServerCodeView* self, boo
     }
 }
 
-MAKE_HOOK_OFFSETLESS(ScoreController_Update, void, ScoreController* self) {
+ST_MAKE_HOOK(ScoreController_Update, &ScoreController::Update, void, ScoreController* self) {
     stManager->statusLock.lock();
     stManager->combo = self->combo;
     stManager->statusLock.unlock();
@@ -290,7 +313,7 @@ MAKE_HOOK_OFFSETLESS(ScoreController_Update, void, ScoreController* self) {
 }
 
 // Multiplayer song starting is handled differently
-MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppString* gameMode, IPreviewBeatmapLevel* previewBeatmapLevel, int beatmapDifficulty, Il2CppObject* a, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, bool g) {
+ST_MAKE_HOOK(MultiplayerSongStart, &MultiplayerLevelScenesTransitionSetupDataSO::Init, void, MultiplayerLevelScenesTransitionSetupDataSO* self, Il2CppString* gameMode, IPreviewBeatmapLevel* previewBeatmapLevel, BeatmapDifficulty beatmapDifficulty, BeatmapCharacteristicSO* beatmapCharacteristic, IDifficultyBeatmap* difficultyBeatmap, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, PracticeSettings* practiceSettings, bool useTestNoteCutSoundEffects) {
     stManager->statusLock.lock();
     stManager->location = MP_Song;
     ResetScores();
@@ -298,7 +321,7 @@ MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppStrin
     stManager->statusLock.unlock();
 
 
-    MultiplayerSongStart(self, gameMode, previewBeatmapLevel, beatmapDifficulty, a, b, c, d, e, f, g);
+    MultiplayerSongStart(self, gameMode, previewBeatmapLevel, beatmapDifficulty, beatmapCharacteristic, difficultyBeatmap, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, useTestNoteCutSoundEffects);
 }
 
 void onPlayerJoin() {
@@ -322,7 +345,7 @@ void onLobbyDisconnect() {
     stManager->statusLock.unlock();
 }
 
-MAKE_HOOK_OFFSETLESS(MultiplayerJoinLobby, void, GameServerLobbyFlowCoordinator* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)    {
+ST_MAKE_HOOK(MultiplayerJoinLobby, &GameServerLobbyFlowCoordinator::DidActivate, void, GameServerLobbyFlowCoordinator* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)    {
     IMultiplayerSessionManager* sessionManager = self->multiplayerSessionManager;
 
     int maxPlayers = sessionManager->get_maxPlayerCount();
@@ -352,7 +375,7 @@ MAKE_HOOK_OFFSETLESS(MultiplayerJoinLobby, void, GameServerLobbyFlowCoordinator*
     MultiplayerJoinLobby(self, firstActivation, addedToHierarchy, screenSystemEnabling);
 }
 
-MAKE_HOOK_OFFSETLESS(SongEnd, void, Il2CppObject* self) {
+ST_MAKE_HOOK(SongEnd, &StandardLevelGameplayManager::OnDestroy, void, StandardLevelGameplayManager* self) {
     stManager->statusLock.lock();
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
     stManager->location = Menu;
@@ -360,22 +383,22 @@ MAKE_HOOK_OFFSETLESS(SongEnd, void, Il2CppObject* self) {
     SongEnd(self);
 }
 
-MAKE_HOOK_OFFSETLESS(MultiplayerSongEnd, void, Il2CppObject* self) {
+ST_MAKE_HOOK(MultiplayerSongEnd, &MultiplayerLocalActivePlayerGameplayManager::OnDisable, void, MultiplayerLocalActivePlayerGameplayManager* self) {
     stManager->statusLock.lock();
     stManager->location = Menu;
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
     stManager->statusLock.unlock();
-    SongEnd(self);
+    MultiplayerSongEnd(self);
 }
 
-MAKE_HOOK_OFFSETLESS(TutorialStart, void, Il2CppObject* self)   {
+ST_MAKE_HOOK(TutorialStart, &TutorialSongController::Awake, void, TutorialSongController* self)   {
     stManager->statusLock.lock();
     stManager->location = Tutorial;
     ResetScores();
     stManager->statusLock.unlock();
     TutorialStart(self);
 }
-MAKE_HOOK_OFFSETLESS(TutorialEnd, void, Il2CppObject* self)   {
+ST_MAKE_HOOK(TutorialEnd, &TutorialSongController::OnDestroy, void, TutorialSongController* self)   {
     stManager->statusLock.lock();
     stManager->location = Menu;
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
@@ -383,7 +406,7 @@ MAKE_HOOK_OFFSETLESS(TutorialEnd, void, Il2CppObject* self)   {
     TutorialEnd(self);
 }
 
-MAKE_HOOK_OFFSETLESS(CampaignLevelEnd, void, Il2CppObject* self)   {
+ST_MAKE_HOOK(CampaignLevelEnd, &MissionLevelGameplayManager::OnDestroy, void, MissionLevelGameplayManager* self)   {
     stManager->statusLock.lock();
     stManager->location = Menu;
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
@@ -391,24 +414,27 @@ MAKE_HOOK_OFFSETLESS(CampaignLevelEnd, void, Il2CppObject* self)   {
     CampaignLevelEnd(self);
 }
 
-MAKE_HOOK_OFFSETLESS(GamePause, void, Il2CppObject* self)   {
+ST_MAKE_HOOK(GamePause, &PauseController::Pause, void, PauseController* self)   {
     stManager->statusLock.lock();
     stManager->paused = true;
     stManager->statusLock.unlock();
     GamePause(self);
 }
-MAKE_HOOK_OFFSETLESS(GameResume, void, Il2CppObject* self)   {
+ST_MAKE_HOOK(GameResume, &PauseController::HandlePauseMenuManagerDidPressContinueButton, void, PauseController* self)   {
     stManager->statusLock.lock();
     stManager->paused = false;
     stManager->statusLock.unlock();
     GameResume(self);
 }
 
-MAKE_HOOK_OFFSETLESS(AudioUpdate, void, Il2CppObject* self) {
+ST_MAKE_HOOK(AudioUpdate, &AudioTimeSyncController::Update, void, AudioTimeSyncController* self) {
     AudioUpdate(self);
 
-    float time = CRASH_UNLESS(il2cpp_utils::RunMethodUnsafe<float>(self, "get_songTime"));
-    float endTime = CRASH_UNLESS(il2cpp_utils::RunMethodUnsafe<float>(self, "get_songEndTime"));
+    //float time = CRASH_UNLESS(il2cpp_utils::RunMethodUnsafe<float>(self, "get_songTime"));
+    //float endTime = CRASH_UNLESS(il2cpp_utils::RunMethodUnsafe<float>(self, "get_songEndTime"));
+
+    float time = self->get_songTime();
+    float endTime = self->get_songEndTime();
 
     stManager->statusLock.lock();
     stManager->time = (int)time;
@@ -416,22 +442,22 @@ MAKE_HOOK_OFFSETLESS(AudioUpdate, void, Il2CppObject* self) {
     stManager->statusLock.unlock();
 }
 
-MAKE_HOOK_OFFSETLESS(ScoreController_HandleNoteWasMissed, void, ScoreController* self, NoteController* note) {
+ST_MAKE_HOOK(ScoreController_HandleNoteWasMissed, &ScoreController::HandleNoteWasMissed, void, ScoreController* self, NoteController* note) {
     ScoreController_HandleNoteWasMissed(self, note);
     stManager->statusLock.lock();
     stManager->missedNotes++;
     stManager->statusLock.unlock();
 }
 
-MAKE_HOOK_OFFSETLESS(ScoreController_HandleNoteWasCut, void, ScoreController* self, NoteController* note, NoteCutInfo* info) {
-    ScoreController_HandleNoteWasCut(self, note, info);
+ST_MAKE_HOOK(ScoreController_HandleNoteWasCut, &ScoreController::HandleNoteWasCut, void, ScoreController* self, NoteController* noteController, NoteCutInfo& noteCutInfo) {
+    ScoreController_HandleNoteWasCut(self, noteController, noteCutInfo);
     stManager->statusLock.lock();
-    if(info->get_allIsOK()) stManager->goodCuts++;
+    if(noteCutInfo.get_allIsOK()) stManager->goodCuts++;
     else stManager->badCuts++;
     stManager->statusLock.unlock();
 }
 
-MAKE_HOOK_OFFSETLESS(FPSCounter_Update, void, FPSCounter* self) {
+ST_MAKE_HOOK(FPSCounter_Update, &FPSCounter::Update, void, FPSCounter* self) {
     FPSCounter_Update(self);
     
     stManager->statusLock.lock();
@@ -439,7 +465,7 @@ MAKE_HOOK_OFFSETLESS(FPSCounter_Update, void, FPSCounter* self) {
     stManager->statusLock.unlock();
 }
 
-MAKE_HOOK_OFFSETLESS(PlayerTransforms_Update, void, PlayerTransforms* self) {
+ST_MAKE_HOOK(PlayerTransforms_Update, &PlayerTransforms::Update, void, PlayerTransforms* self) {
     PlayerTransforms_Update(self);
     stManager->statusLock.lock();
     stManager->Head = self->headTransform;
@@ -474,7 +500,7 @@ std::string GetHeadsetType() {
     }    
 }
 
-MAKE_HOOK_OFFSETLESS(SceneManager_ActiveSceneChanged, void, UnityEngine::SceneManagement::Scene previousActiveScene, UnityEngine::SceneManagement::Scene nextActiveScene) {
+ST_MAKE_HOOK(SceneManager_ActiveSceneChanged, &UnityEngine::SceneManagement::SceneManager::Internal_ActiveSceneChanged, void, UnityEngine::SceneManagement::Scene previousActiveScene, UnityEngine::SceneManagement::Scene nextActiveScene) {
     
     if (nextActiveScene.IsValid()) {
         std::string sceneName = to_utf8(csstrtostr(nextActiveScene.get_name()));
@@ -495,14 +521,14 @@ MAKE_HOOK_OFFSETLESS(SceneManager_ActiveSceneChanged, void, UnityEngine::SceneMa
     SceneManager_ActiveSceneChanged(previousActiveScene, nextActiveScene);
 }
 
-MAKE_HOOK_OFFSETLESS(OptionsViewController_DidActivate, void, GlobalNamespace::OptionsViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
+ST_MAKE_HOOK(OptionsViewController_DidActivate, &OptionsViewController::DidActivate, void, OptionsViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     OptionsViewController_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
     stManager->statusLock.lock();
     stManager->location = Options;
     stManager->statusLock.unlock();
 }
 
-MAKE_HOOK_OFFSETLESS(MainMenuViewController_DidActivate, void, GlobalNamespace::MainMenuViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
+ST_MAKE_HOOK(MainMenuViewController_DidActivate, &MainMenuViewController::DidActivate, void, MainMenuViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     MainMenuViewController_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
     stManager->statusLock.lock();
     stManager->location = Menu;
@@ -558,36 +584,36 @@ extern "C" void load() {
 
     // Install our function hooks
     Logger& logger = getLogger();
-
-    INSTALL_HOOK_OFFSETLESS(logger, PlayerTransforms_Update, il2cpp_utils::FindMethodUnsafe("", "PlayerTransforms", "Update", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, RefreshContent, il2cpp_utils::FindMethodUnsafe("", "StandardLevelDetailView", "RefreshContent", 0));
+    ST_INSTALL_HOOK(logger, PlayerTransforms_Update, il2cpp_utils::FindMethodUnsafe("", "PlayerTransforms", "Update", 0));
+    ST_INSTALL_HOOK(logger, RefreshContent, il2cpp_utils::FindMethodUnsafe("", "StandardLevelDetailView", "RefreshContent", 0));
 #if defined(BS__1_16)
-    INSTALL_HOOK_OFFSETLESS(logger, SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 10));
-    INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 8)); 
+    ST_INSTALL_HOOK(logger, SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 10));
+    ST_INSTALL_HOOK(logger, CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 8));
 #elif defined(BS__1_13_2)
     INSTALL_HOOK_OFFSETLESS(logger, SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 9));
     INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 7));
 #endif
-    INSTALL_HOOK_OFFSETLESS(logger, RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank, il2cpp_utils::FindMethodUnsafe("", "RelativeScoreAndImmediateRankCounter", "UpdateRelativeScoreAndImmediateRank", 4));
-    INSTALL_HOOK_OFFSETLESS(logger, ScoreController_Update, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "Update", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, SongEnd, il2cpp_utils::FindMethodUnsafe("", "StandardLevelGameplayManager", "OnDestroy", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelEnd, il2cpp_utils::FindMethodUnsafe("", "MissionLevelGameplayManager", "OnDestroy", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, TutorialStart, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "Awake", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, TutorialEnd, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "OnDestroy", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, GamePause, il2cpp_utils::FindMethodUnsafe("", "PauseController", "Pause", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, GameResume, il2cpp_utils::FindMethodUnsafe("", "PauseController", "HandlePauseMenuManagerDidPressContinueButton", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, AudioUpdate, il2cpp_utils::FindMethodUnsafe("", "AudioTimeSyncController", "Update", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, MultiplayerSongStart, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLevelScenesTransitionSetupDataSO", "Init", 10));
-    INSTALL_HOOK_OFFSETLESS(logger, MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "GameServerLobbyFlowCoordinator", "DidActivate", 3));
-    INSTALL_HOOK_OFFSETLESS(logger, MultiplayerSongEnd, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLocalActivePlayerGameplayManager", "OnDisable", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, GameEnergyUIPanel_HandleGameEnergyDidChange, il2cpp_utils::FindMethodUnsafe("", "GameEnergyUIPanel", "HandleGameEnergyDidChange", 1));
-    INSTALL_HOOK_OFFSETLESS(logger, ServerCodeView_RefreshText, il2cpp_utils::FindMethodUnsafe("", "ServerCodeView", "RefreshText", 1));
-    INSTALL_HOOK_OFFSETLESS(logger, ScoreController_HandleNoteWasMissed, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "HandleNoteWasMissed", 1));
-    INSTALL_HOOK_OFFSETLESS(logger, ScoreController_HandleNoteWasCut, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "HandleNoteWasCut", 2));
-    INSTALL_HOOK_OFFSETLESS(logger, FPSCounter_Update, il2cpp_utils::FindMethodUnsafe("", "FPSCounter", "Update", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, SceneManager_ActiveSceneChanged, il2cpp_utils::FindMethodUnsafe("UnityEngine.SceneManagement", "SceneManager", "Internal_ActiveSceneChanged", 2));
-    INSTALL_HOOK_OFFSETLESS(logger, OptionsViewController_DidActivate, il2cpp_utils::FindMethodUnsafe("", "OptionsViewController", "DidActivate", 3));
-    INSTALL_HOOK_OFFSETLESS(logger, MainMenuViewController_DidActivate, il2cpp_utils::FindMethodUnsafe("", "MainMenuViewController", "DidActivate", 3));
+    ST_INSTALL_HOOK(logger, RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank, il2cpp_utils::FindMethodUnsafe("", "RelativeScoreAndImmediateRankCounter", "UpdateRelativeScoreAndImmediateRank", 4));
+    ST_INSTALL_HOOK(logger, ScoreController_Update, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "Update", 0));
+    ST_INSTALL_HOOK(logger, SongEnd, il2cpp_utils::FindMethodUnsafe("", "StandardLevelGameplayManager", "OnDestroy", 0));
+    ST_INSTALL_HOOK(logger, CampaignLevelEnd, il2cpp_utils::FindMethodUnsafe("", "MissionLevelGameplayManager", "OnDestroy", 0));
+    ST_INSTALL_HOOK(logger, TutorialStart, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "Awake", 0));
+    ST_INSTALL_HOOK(logger, TutorialEnd, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "OnDestroy", 0));
+    ST_INSTALL_HOOK(logger, GamePause, il2cpp_utils::FindMethodUnsafe("", "PauseController", "Pause", 0));
+    ST_INSTALL_HOOK(logger, GameResume, il2cpp_utils::FindMethodUnsafe("", "PauseController", "HandlePauseMenuManagerDidPressContinueButton", 0));
+    ST_INSTALL_HOOK(logger, AudioUpdate, il2cpp_utils::FindMethodUnsafe("", "AudioTimeSyncController", "Update", 0));
+    ST_INSTALL_HOOK(logger, MultiplayerSongStart, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLevelScenesTransitionSetupDataSO", "Init", 10));
+    ST_INSTALL_HOOK(logger, MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "GameServerLobbyFlowCoordinator", "DidActivate", 3));
+    ST_INSTALL_HOOK(logger, MultiplayerSongEnd, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLocalActivePlayerGameplayManager", "OnDisable", 0));
+    ST_INSTALL_HOOK(logger, GameEnergyUIPanel_HandleGameEnergyDidChange, il2cpp_utils::FindMethodUnsafe("", "GameEnergyUIPanel", "HandleGameEnergyDidChange", 1));
+    ST_INSTALL_HOOK(logger, ServerCodeView_RefreshText, il2cpp_utils::FindMethodUnsafe("", "ServerCodeView", "RefreshText", 1));
+    ST_INSTALL_HOOK(logger, ScoreController_HandleNoteWasMissed, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "HandleNoteWasMissed", 1));
+    ST_INSTALL_HOOK(logger, ScoreController_HandleNoteWasCut, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "HandleNoteWasCut", 2));
+    ST_INSTALL_HOOK(logger, FPSCounter_Update, il2cpp_utils::FindMethodUnsafe("", "FPSCounter", "Update", 0));
+    ST_INSTALL_HOOK(logger, SceneManager_ActiveSceneChanged, il2cpp_utils::FindMethodUnsafe("UnityEngine.SceneManagement", "SceneManager", "Internal_ActiveSceneChanged", 2));
+    ST_INSTALL_HOOK(logger, OptionsViewController_DidActivate, il2cpp_utils::FindMethodUnsafe("", "OptionsViewController", "DidActivate", 3));
+    ST_INSTALL_HOOK(logger, MainMenuViewController_DidActivate, il2cpp_utils::FindMethodUnsafe("", "MainMenuViewController", "DidActivate", 3));
+
 
     getLogger().debug("Installed all hooks!");
 

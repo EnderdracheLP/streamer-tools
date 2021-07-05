@@ -228,11 +228,11 @@ void STManager::SendResponseHTTP(int client_sock, std::string response) {
 
 bool STManager::HandleConfigChange(int client_sock, std::string BufferStr) {
     size_t start = BufferStr.find("{");
-    LOG_DEBUG_HTTP("index of {: " + std::to_string(start));
+    LOG_DEBUG_HTTP("index of {: %s", std::to_string(start).c_str());
     size_t end = BufferStr.find("}");
-    LOG_DEBUG_HTTP("index of }: " + std::to_string(end));
+    LOG_DEBUG_HTTP("index of }: %s", std::to_string(end).c_str());
     std::string json = BufferStr.substr(start, end - start + 1);
-    LOG_DEBUG_HTTP("json: " + json);
+    LOG_DEBUG_HTTP("json: %s", json.c_str());
     rapidjson::Document document;
     if (document.Parse(json).HasParseError()) {
         SendResponseHTTP(client_sock, ResponseGen("400 Bad Request", "text/html",

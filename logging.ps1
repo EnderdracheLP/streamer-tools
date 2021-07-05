@@ -1,5 +1,6 @@
 $NDKPath = Get-Content $PSScriptRoot/ndkpath.txt
 $ndkstackScript = "$NDKPath/ndk-stack"
+# $SymbolsPath = Get-Content $PSScriptRoot/Symbol_SO.txt
 
 if (-not ($PSVersionTable.PSEdition -eq "Core")) {
     $ndkstackScript += ".cmd"
