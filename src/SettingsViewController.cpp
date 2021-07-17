@@ -38,46 +38,6 @@ DEFINE_CLASS(StreamerTools::stSettingViewController);
 
 bool configFetched = false;
 
-// Using these functions instead of the ones builtin to config-utils as we need to add extra code
-inline ::UnityEngine::UI::Toggle* STAddConfigValueToggle(::UnityEngine::Transform* parent, ConfigUtils::ConfigValue<bool>& configValue) {
-    auto object = ::QuestUI::BeatSaberUI::CreateToggle(parent, configValue.GetName(), configValue.GetValue(),
-        [&configValue](bool value) {
-            configValue.SetValue(value);
-            getModConfig().LastChanged.SetValue(static_cast<int>(time(0)));
-            configFetched = false;
-        }
-    );
-    if (!configValue.GetHoverHint().empty())
-        ::QuestUI::BeatSaberUI::AddHoverHint(object->get_gameObject(), configValue.GetHoverHint());
-    return object;
-}
-
-inline ::QuestUI::IncrementSetting* STAddConfigValueIncrementInt(::UnityEngine::Transform* parent, ConfigUtils::ConfigValue<int>& configValue, int increment, int min, int max) {
-    auto object = ::QuestUI::BeatSaberUI::CreateIncrementSetting(parent, configValue.GetName(), 0, increment, configValue.GetValue(), min, max,
-        [&configValue](float value) {
-            configValue.SetValue((int)value);
-            getModConfig().LastChanged.SetValue(static_cast<int>(time(0)));
-            configFetched = false;
-        }
-    );
-    if (!configValue.GetHoverHint().empty())
-        ::QuestUI::BeatSaberUI::AddHoverHint(object->get_gameObject(), configValue.GetHoverHint());
-    return object;
-}
-
-inline ::QuestUI::IncrementSetting* STAddConfigValueIncrementFloat(::UnityEngine::Transform* parent, ConfigUtils::ConfigValue<float>& configValue, int decimals, float increment, float min, float max) {
-    auto object = ::QuestUI::BeatSaberUI::CreateIncrementSetting(parent, configValue.GetName(), decimals, increment, configValue.GetValue(), min, max,
-        [&configValue](float value) {
-            configValue.SetValue(value);
-            getModConfig().LastChanged.SetValue(static_cast<int>(time(0)));
-            configFetched = false;
-        }
-    );
-    if (!configValue.GetHoverHint().empty())
-        ::QuestUI::BeatSaberUI::AddHoverHint(object->get_gameObject(), configValue.GetHoverHint());
-    return object;
-}
-
 Transform* parent;
 
 bool SettingsInit = false;
@@ -103,23 +63,63 @@ void MakeConfigUI(bool UpdateOnly) {
     }
     // Creates the Config UI
     else {
-        Decimals = STAddConfigValueIncrementInt(parent, getModConfig().DecimalsForNumbers, 1, 0, 20)->get_gameObject();
+        // Decimals for numbers
+        getModConfig().DecimalsForNumbers.AddChangeEvent(
+            [&](int value) {
+                getModConfig().LastChanged.SetValue(static_cast<int>(time(0)));
+                configFetched = false;
+            }
+        );
+
+        Decimals = AddConfigValueIncrementInt(parent, getModConfig().DecimalsForNumbers, 1, 0, 20)->get_gameObject();
         BeatSaberUI::AddHoverHint(Decimals, "How many decimal places to show");
 
+
+        //Decimals = STAddConfigValueIncrementInt(parent, getModConfig().DecimalsForNumbers, 1, 0, 20)->get_gameObject();
+        //BeatSaberUI::AddHoverHint(Decimals, "How many decimal places to show");
+
         // DontEnergy
-        DEnergy = STAddConfigValueToggle(parent, getModConfig().DontEnergy)->get_gameObject();
+        getModConfig().DontEnergy.AddChangeEvent(
+            [&](bool value) {
+                getModConfig().LastChanged.SetValue(static_cast<int>(time(0)));
+                configFetched = false;
+            }
+        );
+
+        DEnergy = AddConfigValueToggle(parent, getModConfig().DontEnergy)->get_gameObject();
         BeatSaberUI::AddHoverHint(DEnergy, "Dont show energy bar");
 
         // DontMpCode
-        D_MP_Code = STAddConfigValueToggle(parent, getModConfig().DontMpCode)->get_gameObject();
+        getModConfig().DontMpCode.AddChangeEvent(
+            [&](bool value) {
+                getModConfig().LastChanged.SetValue(static_cast<int>(time(0)));
+                configFetched = false;
+            }
+        );
+
+        D_MP_Code = AddConfigValueToggle(parent, getModConfig().DontMpCode)->get_gameObject();
         BeatSaberUI::AddHoverHint(D_MP_Code, "Don't show multiplayer code");
-
+        
         // AlwaysMpCode
-        A_MP_Code = STAddConfigValueToggle(parent, getModConfig().AlwaysMpCode)->get_gameObject();
-        BeatSaberUI::AddHoverHint(A_MP_Code, "Always show multiplayer code. default: if no shown in game as *****");
+        getModConfig().AlwaysMpCode.AddChangeEvent(
+            [&](bool value) {
+                getModConfig().LastChanged.SetValue(static_cast<int>(time(0)));
+                configFetched = false;
+            }
+        );
 
+        A_MP_Code = AddConfigValueToggle(parent, getModConfig().AlwaysMpCode)->get_gameObject();
+        BeatSaberUI::AddHoverHint(A_MP_Code, "Always show multiplayer code. default: if no shown in game as *****");
+        
         // AlwaysUpdate
-        A_Update = STAddConfigValueToggle(parent, getModConfig().AlwaysUpdate)->get_gameObject();
+        getModConfig().AlwaysUpdate.AddChangeEvent(
+            [&](bool value) {
+                getModConfig().LastChanged.SetValue(static_cast<int>(time(0)));
+                configFetched = false;
+            }
+        );
+
+        A_Update = AddConfigValueToggle(parent, getModConfig().AlwaysUpdate)->get_gameObject();
         BeatSaberUI::AddHoverHint(A_Update, "Update the overlay on song select an not just on song start");
         SettingsInit = true;
     }

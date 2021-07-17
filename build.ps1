@@ -10,8 +10,8 @@ echo "Arg $($i) is $($args[$i])"
 if ($args.Count -eq 0 -or $actions -ne $true) {
 $ModID = "streamer-tools"
 $VERSION = "0.1.0-InDev"
-$BSHook = "1_3_5"
-$codegen_ver = "0_9_0"
+$BSHook = "2_0_3"
+$codegen_ver = "0_10_2"
 }
 
 
@@ -46,6 +46,6 @@ if (-not ($PSVersionTable.PSEdition -eq "Core")) {
     $buildScript += ".cmd"
 }
 
-& $buildScript -j4 NDK_PROJECT_PATH=$PSScriptRoot APP_BUILD_SCRIPT=$PSScriptRoot/Android.mk NDK_APPLICATION_MK=$PSScriptRoot/Application.mk VERSION=$VERSION
+& $buildScript NDK_PROJECT_PATH=$PSScriptRoot APP_BUILD_SCRIPT=$PSScriptRoot/Android.mk NDK_APPLICATION_MK=$PSScriptRoot/Application.mk -j 4 --output-sync=none -- VERSION=$VERSION
 
 echo Done
