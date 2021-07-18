@@ -90,7 +90,7 @@ private:
     std::string constructResponse();
     std::string constructConfigResponse();
     std::string constructPositionResponse();
-    std::string multicastResponse(std::string socket, std::string http, std::string httpv6, std::string socketv6);
+    std::string multicastResponse();
     bool MultipartResponseGen(int client_sock, std::string TypeOfMessage, std::string HTTPCode, std::string ContentType);
 
     std::string GetCoverImage(std::string ImageFormat, bool Base64);

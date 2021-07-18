@@ -117,11 +117,7 @@ bool STManager::MulticastServer() {
             * Create message to be sent
             */
            
-            std::string http = STManager::localIP + ":" + std::to_string(PORT_HTTP);
-            std::string httpv6 = "[" + STManager::localIPv6 + "]:" + std::to_string(PORT_HTTP);
-            std::string socket = STManager::localIP + ":" + std::to_string(PORT);
-            std::string socketv6 = STManager::localIPv6 + ":" + std::to_string(PORT);
-            std::string message = multicastResponse(socket, http, httpv6, socketv6);
+            std::string message = multicastResponse();
 
             /*
              * Send a message to the multicast group specified by the

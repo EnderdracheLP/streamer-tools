@@ -5,6 +5,7 @@
 
 #include "STmanager.hpp"
 #include "Config.hpp"
+#include "Server/ServerHeaders.hpp"
 
 STManager::STManager(Logger& logger) : logger(logger) {
     logger.info("Starting network thread . . .");
@@ -58,10 +59,15 @@ std::string STManager::constructResponse() {
     return buffer.GetString();
 }
 
-std::string STManager::multicastResponse(std::string socket, std::string http, std::string httpv6, std::string socketv6) {
+std::string STManager::multicastResponse() {
     rapidjson::Document doc;
     auto& alloc = doc.GetAllocator();
     doc.SetObject();
+
+    std::string http = localIP + ":" + std::to_string(PORT_HTTP);
+    std::string httpv6 = "[" + localIPv6 + "]:" + std::to_string(PORT_HTTP);
+    std::string socket = localIP + ":" + std::to_string(PORT);
+    std::string socketv6 = localIPv6 + ":" + std::to_string(PORT);
 
     doc.AddMember("ModID", STModInfo.id, alloc);
     doc.AddMember("ModVersion", STModInfo.version, alloc);
