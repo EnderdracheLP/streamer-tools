@@ -26,7 +26,7 @@ if ($1_13_2build -eq $true) {
 echo "Making 1.13.2 Build!"
     $PARAM += " -DBS__1_13_2=1 "
     if (!$actions) {
-        $BSHook = "1_1_5"
+        $BSHook = "1_0_12"
         $codegen_ver = "0_6_2"
     }
 } else { $PARAM += " -DBS__1_16=1 " }
