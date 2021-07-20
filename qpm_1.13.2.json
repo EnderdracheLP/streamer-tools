@@ -25,7 +25,7 @@
     },
     {
       "id": "custom-types",
-      "versionRange": "<=0.4.7",
+      "versionRange": "<=0.4.4",
       "additionalData": {}
     },
     {
