@@ -116,7 +116,7 @@ UnityEngine::Texture2D* DuplicateTexture(UnityEngine::Texture2D* source) {
     RenderTexture* previous = RenderTexture::get_active();
     RenderTexture::set_active(renderTex);
     Texture2D* readableText = Texture2D::New_ctor(source->get_width(), source->get_height());
-    readableText->ReadPixels(Rect(0, 0, renderTex->get_width(), renderTex->get_height()), 0, 0);
+    readableText->ReadPixels(UnityEngine::Rect(0, 0, renderTex->get_width(), renderTex->get_height()), 0, 0);
     readableText->Apply();
     RenderTexture::set_active(previous);
     RenderTexture::ReleaseTemporary(renderTex);
