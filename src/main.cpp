@@ -91,8 +91,7 @@ using namespace GlobalNamespace;
 #else
 #error No Compatible HOOK macro found
 #endif
-
-#if !defined(BS_1_13_2) && !defined(BS__1_16)
+#if !defined(BS__1_13_2) && !defined(BS__1_16)
 #define BS__1_16 4
 #endif
 
@@ -558,7 +557,7 @@ ST_MAKE_HOOK(SceneManager_ActiveSceneChanged, &UnityEngine::SceneManagement::Sce
         std::string EmptyTransition = "EmptyTransition";
         if (sceneName == EmptyTransition) stManager->headsetType = GetHeadsetType();
         else if (sceneName == shaderWarmup) {
-#if defined(BS__1_16)
+#if defined(BS__1_16) && !defined(BS__1_13_2)
             auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::newcsstr("FPSC"));
 #elif defined(BS__1_13_2)
             auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::createcsstr("FPSC"));

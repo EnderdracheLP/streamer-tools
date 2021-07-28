@@ -9,7 +9,7 @@ on:
       - '!.github/workflows/BuildMod.yml'
       - '**.json'
       - '!qpm.json'
-      - '!qpm_1.16.2.json'
+      - '!qpm_1.16.4.json'
       - '**.ps1'
       - '!build.ps1'
       - '!buildQMOD.ps1'
@@ -22,8 +22,8 @@ env:
      module_id: streamer-tools
      BSVersion: 1.16.4
      version: 0.1.0-Dev.${{ github.run_number }}
-     bs_hook: 2_2_2
-     codegen: 0_12_3
+     bs_hook: 2_2_3
+     codegen: 0_12_4
      ndkname: android-ndk-r22
     
 jobs:
