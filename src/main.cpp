@@ -490,18 +490,18 @@ ST_MAKE_HOOK(ScoreController_HandleNoteWasMissed, &ScoreController::HandleNoteWa
     stManager->statusLock.unlock();
 }
 
-#if defined(BS__1_16) && BS__1_16 > 2
-ST_MAKE_HOOK(ScoreController_HandleNoteWasCut, &ScoreController::HandleNoteWasCut, void, ScoreController* self, NoteController* noteController, ByRef<NoteCutInfo> noteCutInfo)
+#if defined(BS__1_13_2) || defined(BS__1_16) && BS__1_16 < 4
+ST_MAKE_HOOK(ScoreController_HandleNoteWasCut, &ScoreController::HandleNoteWasCut, void, ScoreController* self, NoteController* noteController, NoteCutInfo& noteCutInfo)
 #else
-ST_MAKE_HOOK(ScoreController_HandleNoteWasCut, &ScoreController::HandleNoteWasCut, void, ScoreController * self, NoteController * noteController, NoteCutInfo& noteCutInfo)
+ST_MAKE_HOOK(ScoreController_HandleNoteWasCut, &ScoreController::HandleNoteWasCut, void, ScoreController* self, NoteController* noteController, ByRef<NoteCutInfo> noteCutInfo)
 #endif
 {
     ScoreController_HandleNoteWasCut(self, noteController, noteCutInfo);
     stManager->statusLock.lock();
-#if defined(BS__1_16) && BS__1_16 > 2
-    if (noteCutInfo.heldRef.get_allIsOK()) stManager->goodCuts++;
-#else
+#if defined(BS__1_13_2) || defined(BS__1_16) && BS__1_16 < 4
     if (noteCutInfo.get_allIsOK()) stManager->goodCuts++;
+#else
+    if (noteCutInfo.heldRef.get_allIsOK()) stManager->goodCuts++;
 #endif
     else stManager->badCuts++;
     stManager->statusLock.unlock();
