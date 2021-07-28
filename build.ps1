@@ -4,23 +4,33 @@ for ($i = 0; $i -le $args.Length-1; $i++) {
 echo "Arg $($i) is $($args[$i])"
     if ($args[$i] -eq "--actions") { $actions = $true }
     elseif ($args[$i] -eq "--debug") { $PARAM += "-DDEBUG_BUILD=1 " }
+    elseif ($args[$i] -eq "--1_16_2") { $1_16_2build = $true }
     elseif ($args[$i] -eq "--1_13_2") { $1_13_2build = $true }
     else { $PARAM += $args[$i] }
 }
 if ($args.Count -eq 0 -or $actions -ne $true) {
 $ModID = "streamer-tools"
 $VERSION = "0.1.0-InDev"
-$BSHook = "2_0_3"
-$codegen_ver = "0_10_2"
+    if ($1_16_2build -eq $true) {
+        $BSHook = "2_0_3"
+        $codegen_ver = "0_10_2"
+        $BS_VERSION_PATCH = 2
+    }
+    else {
+        $BSHook = "2_2_2"
+        $codegen_ver = "0_12_3"
+        $BS_VERSION_PATCH = 4
+    }
 }
-
 
 if ($actions -eq $true) {
     $ModID = $env:module_id
     $BSHook = $env:bs_hook
     $VERSION = $env:version
     $codegen_ver = $env:codegen
-    if ($env:BSVersion -eq "1.13.2") { $1_13_2build = $true }
+    if ($env:BSVersion -eq "1.16.4") {$BS_VERSION_PATCH = 4}
+    elseif ($env:BSVersion -eq "1.16.2") {$BS_VERSION_PATCH = 2}
+    elseif ($env:BSVersion -eq "1.13.2") { $1_13_2build = $true }
 }
 if ($1_13_2build -eq $true) {
 echo "Making 1.13.2 Build!"
@@ -29,7 +39,7 @@ echo "Making 1.13.2 Build!"
         $BSHook = "1_0_12"
         $codegen_ver = "0_6_2"
     }
-} else { $PARAM += " -DBS__1_16=1 " }
+} else { $PARAM += " -DBS__1_16=$BS_VERSION_PATCH " }
 echo "Building mod with ModID: $ModID version: $VERSION, BS-Hook version: $BSHook"
 Copy-Item "./Android_Template.mk" "./Android.mk" -Force
 (Get-Content "./Android.mk").replace('{BS_Hook}',   "$BSHook")        | Set-Content "./Android.mk"

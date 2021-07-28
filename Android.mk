@@ -21,16 +21,16 @@ rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 include $(CLEAR_VARS)
 # Creating prebuilt for dependency: beatsaber-hook - version: 1.3.5
 include $(CLEAR_VARS)
-LOCAL_MODULE := beatsaber-hook_2_0_3
+LOCAL_MODULE := beatsaber-hook_2_2_2
 LOCAL_EXPORT_C_INCLUDES := extern/beatsaber-hook
-LOCAL_SRC_FILES := extern/libbeatsaber-hook_2_0_3.so
+LOCAL_SRC_FILES := extern/libbeatsaber-hook_2_2_2.so
 LOCAL_CPP_FEATURES += exceptions
 include $(PREBUILT_SHARED_LIBRARY)
 # Creating prebuilt for dependency: codegen - version: 0.8.1
 include $(CLEAR_VARS)
-LOCAL_MODULE := codegen_0_10_2
+LOCAL_MODULE := codegen_0_12_3
 LOCAL_EXPORT_C_INCLUDES := extern/codegen
-LOCAL_SRC_FILES := extern/libcodegen_0_10_2.so
+LOCAL_SRC_FILES := extern/libcodegen_0_12_3.so
 include $(PREBUILT_SHARED_LIBRARY)
 # Creating prebuilt for dependency: custom types
 include $(CLEAR_VARS)
@@ -56,13 +56,13 @@ LOCAL_MODULE := streamer-tools
 LOCAL_SRC_FILES += $(call rwildcard,src/,*.cpp)
 LOCAL_SRC_FILES += $(call rwildcard,extern/beatsaber-hook/src/inline-hook,*.cpp)
 LOCAL_SRC_FILES += $(call rwildcard,extern/beatsaber-hook/src/inline-hook,*.c)
-LOCAL_SHARED_LIBRARIES += beatsaber-hook_2_0_3
-LOCAL_SHARED_LIBRARIES += codegen_0_10_2
+LOCAL_SHARED_LIBRARIES += beatsaber-hook_2_2_2
+LOCAL_SHARED_LIBRARIES += codegen_0_12_3
 LOCAL_SHARED_LIBRARIES += questui
 LOCAL_SHARED_LIBRARIES += customtypes
 LOCAL_SHARED_LIBRARIES += modloader
 LOCAL_LDLIBS += -llog
-LOCAL_CFLAGS += -I'extern/libil2cpp/il2cpp/libil2cpp' -I'extern/codegen/include' -DID='"streamer-tools"' -DVERSION='"$(VERSION)"' -DDEBUG_BUILD=1  -DBS__1_16=1  -I'./shared' -I'./extern'
+LOCAL_CFLAGS += -I'extern/libil2cpp/il2cpp/libil2cpp' -I'extern/codegen/include' -DID='"streamer-tools"' -DVERSION='"$(VERSION)"'  -DBS__1_16=1  -I'./shared' -I'./extern'
 LOCAL_CPPFLAGS += -std=c++2a
 LOCAL_C_INCLUDES += ./include ./src
 include $(BUILD_SHARED_LIBRARY)

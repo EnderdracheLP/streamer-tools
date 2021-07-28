@@ -41,7 +41,9 @@
 #include "GlobalNamespace/IConnectedPlayer.hpp"
 #include "GlobalNamespace/MultiplayerPlayersManager.hpp"
 #include "GlobalNamespace/MultiplayerSessionManager.hpp"
-#include "GlobalNamespace/GameServerLobbyFlowCoordinator.hpp"
+//#include "GlobalNamespace/GameServerLobbyFlowCoordinator.hpp"
+#include "GlobalNamespace/MultiplayerLobbyConnectionController.hpp"
+
 #include "GlobalNamespace/PracticeSettings.hpp"
 #include "GlobalNamespace/ScoreController.hpp"
 #include "GlobalNamespace/RelativeScoreAndImmediateRankCounter.hpp"
@@ -84,6 +86,10 @@ using namespace GlobalNamespace;
 #define ST_INSTALL_HOOK(logger, name, methodInfo) INSTALL_HOOK(logger, name)
 #else
 #error No Compatible HOOK macro found
+#endif
+
+#if !defined(BS_1_13_2) && !defined(BS__1_16)
+#define BS__1_16 4
 #endif
 
 //#define DEBUG_BUILD 1
@@ -345,6 +351,7 @@ void onLobbyDisconnect() {
     stManager->statusLock.unlock();
 }
 
+#if defined(BS__1_13_2) || defined(BS__1_16) && BS__1_16 < 4
 ST_MAKE_HOOK(MultiplayerJoinLobby, &GameServerLobbyFlowCoordinator::DidActivate, void, GameServerLobbyFlowCoordinator* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)    {
     IMultiplayerSessionManager* sessionManager = self->multiplayerSessionManager;
 
@@ -374,7 +381,37 @@ ST_MAKE_HOOK(MultiplayerJoinLobby, &GameServerLobbyFlowCoordinator::DidActivate,
 
     MultiplayerJoinLobby(self, firstActivation, addedToHierarchy, screenSystemEnabling);
 }
+#else
+ST_MAKE_HOOK(MultiplayerJoinLobby, &MultiplayerLobbyConnectionController::HandleMultiplayerSessionManagerConnected, void, MultiplayerLobbyConnectionController* self) {
+    IMultiplayerSessionManager* sessionManager = self->multiplayerSessionManager;
 
+    int maxPlayers = sessionManager->get_maxPlayerCount();
+    int numActivePlayers = sessionManager->get_connectedPlayerCount();
+
+    // Register player join and leave events
+    sessionManager->add_playerDisconnectedEvent(
+        il2cpp_utils::MakeDelegate<System::Action_1<IConnectedPlayer*>*>(classof(System::Action_1<IConnectedPlayer*>*), static_cast<Il2CppObject*>(nullptr), onPlayerLeave)
+    );
+
+    sessionManager->add_playerConnectedEvent(
+        il2cpp_utils::MakeDelegate<System::Action_1<IConnectedPlayer*>*>(classof(System::Action_1<IConnectedPlayer*>*), static_cast<Il2CppObject*>(nullptr), onPlayerJoin)
+    );
+
+    // Register disconnect from lobby event
+    sessionManager->add_disconnectedEvent(
+        il2cpp_utils::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason>*>(classof(System::Action_1<GlobalNamespace::DisconnectedReason>*), static_cast<Il2CppObject*>(nullptr), onLobbyDisconnect)
+    );
+
+    // Set the number of players in this lobby
+    stManager->statusLock.lock();
+    stManager->players = numActivePlayers + 1;
+    stManager->maxPlayers = maxPlayers;
+    stManager->location = MP_Lobby;
+    stManager->statusLock.unlock();
+
+    MultiplayerJoinLobby(self);
+}
+#endif
 ST_MAKE_HOOK(SongEnd, &StandardLevelGameplayManager::OnDestroy, void, StandardLevelGameplayManager* self) {
     stManager->statusLock.lock();
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
@@ -449,10 +486,19 @@ ST_MAKE_HOOK(ScoreController_HandleNoteWasMissed, &ScoreController::HandleNoteWa
     stManager->statusLock.unlock();
 }
 
-ST_MAKE_HOOK(ScoreController_HandleNoteWasCut, &ScoreController::HandleNoteWasCut, void, ScoreController* self, NoteController* noteController, NoteCutInfo& noteCutInfo) {
+#if defined(BS__1_16) && BS__1_16 > 2
+ST_MAKE_HOOK(ScoreController_HandleNoteWasCut, &ScoreController::HandleNoteWasCut, void, ScoreController* self, NoteController* noteController, ByRef<NoteCutInfo> noteCutInfo)
+#else
+ST_MAKE_HOOK(ScoreController_HandleNoteWasCut, &ScoreController::HandleNoteWasCut, void, ScoreController * self, NoteController * noteController, NoteCutInfo& noteCutInfo)
+#endif
+{
     ScoreController_HandleNoteWasCut(self, noteController, noteCutInfo);
     stManager->statusLock.lock();
-    if(noteCutInfo.get_allIsOK()) stManager->goodCuts++;
+#if defined(BS__1_16) && BS__1_16 > 2
+    if (noteCutInfo.heldRef.get_allIsOK()) stManager->goodCuts++;
+#else
+    if (noteCutInfo.get_allIsOK()) stManager->goodCuts++;
+#endif
     else stManager->badCuts++;
     stManager->statusLock.unlock();
 }
@@ -603,7 +649,11 @@ extern "C" void load() {
     ST_INSTALL_HOOK(logger, GameResume, il2cpp_utils::FindMethodUnsafe("", "PauseController", "HandlePauseMenuManagerDidPressContinueButton", 0));
     ST_INSTALL_HOOK(logger, AudioUpdate, il2cpp_utils::FindMethodUnsafe("", "AudioTimeSyncController", "Update", 0));
     ST_INSTALL_HOOK(logger, MultiplayerSongStart, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLevelScenesTransitionSetupDataSO", "Init", 10));
+#if defined(BS__1_16) && BS__1_16 < 4
     ST_INSTALL_HOOK(logger, MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "GameServerLobbyFlowCoordinator", "DidActivate", 3));
+#else
+    ST_INSTALL_HOOK(logger, MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLobbyConnectionController", "HandleMultiplayerSessionManagerConnected", 0));
+#endif
     ST_INSTALL_HOOK(logger, MultiplayerSongEnd, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLocalActivePlayerGameplayManager", "OnDisable", 0));
     ST_INSTALL_HOOK(logger, GameEnergyUIPanel_HandleGameEnergyDidChange, il2cpp_utils::FindMethodUnsafe("", "GameEnergyUIPanel", "HandleGameEnergyDidChange", 1));
     ST_INSTALL_HOOK(logger, ServerCodeView_RefreshText, il2cpp_utils::FindMethodUnsafe("", "ServerCodeView", "RefreshText", 1));
