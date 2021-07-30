@@ -549,10 +549,10 @@ std::string GetHeadsetType() {
     }    
 }
 
-ST_MAKE_HOOK(SceneManager_ActiveSceneChanged, &UnityEngine::SceneManagement::SceneManager::Internal_ActiveSceneChanged, void, UnityEngine::SceneManagement::Scene previousActiveScene, UnityEngine::SceneManagement::Scene nextActiveScene) {
-    
-    if (nextActiveScene.IsValid()) {
-        std::string sceneName = to_utf8(csstrtostr(nextActiveScene.get_name()));
+ST_MAKE_HOOK(SceneManager_ActiveSceneChanged, &UnityEngine::SceneManagement::SceneManager::Internal_ActiveSceneChanged, void, UnityEngine::SceneManagement::Scene previousActiveScene, UnityEngine::SceneManagement::Scene newActiveScene) {
+    SceneManager_ActiveSceneChanged(previousActiveScene, newActiveScene);
+    if (newActiveScene.IsValid()) {
+        std::string sceneName = to_utf8(csstrtostr(newActiveScene.get_name()));
         std::string shaderWarmup = "ShaderWarmup";
         std::string EmptyTransition = "EmptyTransition";
         if (sceneName == EmptyTransition) stManager->headsetType = GetHeadsetType();
@@ -566,8 +566,6 @@ ST_MAKE_HOOK(SceneManager_ActiveSceneChanged, &UnityEngine::SceneManagement::Sce
         }
         FPSObjectCreated = true;
     }
-
-    SceneManager_ActiveSceneChanged(previousActiveScene, nextActiveScene);
 }
 
 ST_MAKE_HOOK(OptionsViewController_DidActivate, &OptionsViewController::DidActivate, void, OptionsViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {

@@ -12,14 +12,17 @@ if ($args.Count -eq 0 -or $actions -ne $true) {
 $ModID = "streamer-tools"
 $VERSION = "0.1.0-InDev"
     if ($1_16_2build -eq $true) {
-        $BSHook = "2_2_4"
-        $codegen_ver = "0_12_5"
+    echo 1.16.4 Build!
+        $BSHook = "2_2_2"
+        $codegen_ver = "0_12_3"
         $BS_VERSION_PATCH = 2
     }
     else {
-        $BSHook = "2_2_2"
-        $codegen_ver = "0_12_3"
+    echo 1.16.2 Build!
+        $BSHook = "2_2_4"
+        $codegen_ver = "0_12_5"
         $BS_VERSION_PATCH = 4
+
     }
 }
 
