@@ -22,8 +22,8 @@ env:
      module_id: streamer-tools
      BSVersion: 1.16.4
      version: 0.1.0-Dev.${{ github.run_number }}
-     bs_hook: 2_2_3
-     codegen: 0_12_4
+     bs_hook: 2_2_4
+     codegen: 0_12_5
      ndkname: android-ndk-r22
     
 jobs:
