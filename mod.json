@@ -5,14 +5,14 @@
   "version": "0.1.0",
   "author": "ItzWiresDev#6193, EnderdracheLP#2305, ComputerElite#0486, Lauriethefish#6700",
   "packageId": "com.beatgames.beatsaber",
-  "packageVersion": "1.16.1",
+  "packageVersion": "1.16.4",
   "description": "Allows applications to get information from the game like, currently played song.",
   "coverImage": "cover.png",
   "modFiles": [
     "libstreamer-tools.so"
   ],
   "libraryFiles": [
-    "libbeatsaber-hook_1_3_5.so"
+    "libbeatsaber-hook_2_2_4.so"
   ],
   "dependencies": [],
   "fileCopies": []

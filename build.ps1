@@ -6,11 +6,16 @@ echo "Arg $($i) is $($args[$i])"
     elseif ($args[$i] -eq "--debug") { $PARAM += "-DDEBUG_BUILD=1 " }
     elseif ($args[$i] -eq "--1_16_2") { $1_16_2build = $true }
     elseif ($args[$i] -eq "--1_13_2") { $1_13_2build = $true }
+    elseif ($args[$i] -eq "--release") { $release = $true }
     else { $PARAM += $args[$i] }
 }
 if ($args.Count -eq 0 -or $actions -ne $true) {
 $ModID = "streamer-tools"
-$VERSION = "0.1.0-InDev"
+if ($release -eq $true) {
+    $VERSION = "0.1.0"
+} else {
+    $VERSION = "0.1.0-InDev"
+}
     if ($1_16_2build -eq $true) {
     echo 1.16.4 Build!
         $BSHook = "2_2_2"
