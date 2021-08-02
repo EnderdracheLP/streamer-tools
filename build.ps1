@@ -27,7 +27,6 @@ if ($release -eq $true) {
         $BSHook = "2_2_4"
         $codegen_ver = "0_12_5"
         $BS_VERSION_PATCH = 4
-
     }
 }
 
@@ -64,6 +63,6 @@ if (-not ($PSVersionTable.PSEdition -eq "Core")) {
     $buildScript += ".cmd"
 }
 
-& $buildScript NDK_PROJECT_PATH=$PSScriptRoot APP_BUILD_SCRIPT=$PSScriptRoot/Android.mk NDK_APPLICATION_MK=$PSScriptRoot/Application.mk -j 4 --output-sync=none -- VERSION=$VERSION
+& $buildScript NDK_PROJECT_PATH=$PSScriptRoot APP_BUILD_SCRIPT=$PSScriptRoot/Android.mk NDK_APPLICATION_MK=$PSScriptRoot/Application.mk -j 6 --output-sync=none -- VERSION=$VERSION
 
 echo Done

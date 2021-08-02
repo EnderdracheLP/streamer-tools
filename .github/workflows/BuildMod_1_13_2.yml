@@ -23,7 +23,7 @@ env:
      version: 0.1.0-Dev-${{ github.run_number }}
      bs_hook: 1_0_12
      codegen: 0_6_2
-     ndkname: android-ndk-r21
+     #ndkname: android-ndk-r21
     
 jobs:
   build:
@@ -35,31 +35,38 @@ jobs:
       with:
         submodules: true
         lfs: true
-    - name: Install Powershell
-      run: sudo apt-get install -y powershell
 
-    - name: Cache Android NDK
-      id: cache-ndk
-      uses: actions/cache@v2
-      env:
-        cache-name: cache-ndk
-      with:
-        path: ndk
-        key: ${{ runner.os }}-${{ env.cache-name }}-${{ env.ndkname }}
-        restore-keys: |
-          ${{ runner.os }}-${{ env.cache-name }}-${{ env.ndkname }}
+    #- name: Install Powershell
+    #  run: sudo apt-get install -y powershell
+
+    #- name: Cache Android NDK
+    #  id: cache-ndk
+    #  uses: actions/cache@v2
+    #  env:
+    #    cache-name: cache-ndk
+    #  with:
+    #    path: ndk
+    #    key: ${{ runner.os }}-${{ env.cache-name }}-${{ env.ndkname }}
+    #    restore-keys: |
+    #      ${{ runner.os }}-${{ env.cache-name }}-${{ env.ndkname }}
     
-    - name: Install Android NDK
-      if: steps.cache-ndk.outputs.cache-hit != 'true'
-      run: |
-        wget -q -O ndk.zip https://dl.google.com/android/repository/${ndkname}-linux-x86_64.zip
-        unzip -q ndk.zip
-        mv ${ndkname} ndk
+    #- name: Install Android NDK
+    #  if: steps.cache-ndk.outputs.cache-hit != 'true'
+    #  run: |
+    #    wget -q -O ndk.zip https://dl.google.com/android/repository/${ndkname}-linux-x86_64.zip
+    #    unzip -q ndk.zip
+    #    mv ${ndkname} ndk
       
+    #- name: Create ndkpath.txt
+    #  run: |
+    #    cd ndk
+    #    pwd > ${GITHUB_WORKSPACE}/ndkpath.txt
+
     - name: Create ndkpath.txt
       run: |
-        cd ndk
-        pwd > ${GITHUB_WORKSPACE}/ndkpath.txt
+        echo "$ANDROID_NDK_HOME" > ${GITHUB_WORKSPACE}/ndkpath.txt
+        cat ${GITHUB_WORKSPACE}/ndkpath.txt
+
     - name: Get QPM
       if: steps.cache-qpm.outputs.cache-hit != 'true'
       uses: dawidd6/action-download-artifact@v2
@@ -87,6 +94,7 @@ jobs:
         cp qpm_${{ env.BSVersion }}.json qpm.json -f
         chmod +x ./QPM/QPM
         ./QPM/QPM restore
+
     - name: Check dependency Folders
       run: |
         echo "Checking extern Folder"
@@ -100,10 +108,12 @@ jobs:
         echo ""
         echo "Listing all .so files in QPM_Temp"
         find QPM_Temp -type f -name "*.so"
+
     - name: Build
       run: |
         cd ${GITHUB_WORKSPACE}
         pwsh -Command ./build.ps1 --actions
+
     - name: Get Library Name
       id: libname
       run: |
@@ -111,22 +121,26 @@ jobs:
         pattern="lib${module_id}*.so"
         files=( $pattern )
         echo ::set-output name=NAME::"${files[0]}"
+
     - name: Package BMBFmod
       run: |
         cd ${GITHUB_WORKSPACE}
         pwsh -Command ./buildBMBF.ps1 --package
+
     - name: Upload non-debug artifact
       uses: actions/upload-artifact@v2
       with:
         name: ${{ steps.libname.outputs.NAME }}
         path: ./libs/arm64-v8a/${{ steps.libname.outputs.NAME }}
         if-no-files-found: error
+
     - name: Upload debug artifact
       uses: actions/upload-artifact@v2
       with:
         name: debug_${{ steps.libname.outputs.NAME }}
         path: ./obj/local/arm64-v8a/${{ steps.libname.outputs.NAME }}
         if-no-files-found: error
+
     - name: Upload QMOD
       uses: actions/upload-artifact@v2
       with:
