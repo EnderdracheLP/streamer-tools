@@ -195,12 +195,16 @@ std::string ResponseGen(std::string HTTPCode, std::string ContentType = "text/pl
 std::string STManager::GetCoverImage(std::string ImageFormat = "jpg", bool Base64 = true) {
     std::string result;
     Array<uint8_t>* RawCoverbytesArray;
+    LOG_DEBUG_HTTP("Ptr CoverTexture is: %p", coverTexture);
     if (ImageFormat == "jpg") {
         RawCoverbytesArray = UnityEngine::ImageConversion::EncodeToJPG(coverTexture);
+        LOG_DEBUG_HTTP("Ptr RawCoverbytesArray is: %p", RawCoverbytesArray);
     }
     else if (ImageFormat == "png") {
         RawCoverbytesArray = UnityEngine::ImageConversion::EncodeToPNG(coverTexture);
+        LOG_DEBUG_HTTP("Ptr RawCoverbytesArray is: %p", RawCoverbytesArray);
     }
+    if (!RawCoverbytesArray) return result = "";
     if (Base64) {
             return result = "data:image/" + ImageFormat + ";base64," + to_utf8(csstrtostr(System::Convert::ToBase64String(RawCoverbytesArray)));
     }
@@ -346,11 +350,14 @@ void STManager::HandleRequestHTTP(int client_sock) {
             std::unique_lock<std::mutex> lk(STManager::CoverLock);
             STManager::cv.wait_for(lk, std::chrono::seconds(2));
         }
+        std::string tempStr;
         ROUTE_GET("/cover/base64") {
         COVER_B64_JPG:
             if (!coverTexture) goto NotFound;
             else if (CoverChanged[0]) {
-                coverImageBase64 = GetCoverImage();
+                LOG_DEBUG_HTTP("%d", CoverChanged[0]);
+                tempStr = GetCoverImage();
+                if (!tempStr.empty()) coverImageBase64 = tempStr;
                 CoverChanged[0] = false;
             }
             else LOG_DEBUG_HTTP("CoverImageUnchanged");
@@ -363,7 +370,8 @@ void STManager::HandleRequestHTTP(int client_sock) {
         COVER_B64_PNG:
             if (!coverTexture) goto NotFound;
             else if (CoverChanged[1]) {
-                coverImageBase64PNG = GetCoverImage("png");
+                tempStr = GetCoverImage("png");
+                if (!tempStr.empty()) coverImageBase64PNG = tempStr;
                 CoverChanged[1] = false;
             }
             else LOG_DEBUG_HTTP("CoverImageUnchanged");
@@ -375,7 +383,9 @@ void STManager::HandleRequestHTTP(int client_sock) {
         ROUTE_GET("/cover/cover.jpg") {
             if (!coverTexture) goto NotFound;
             else if (CoverChanged[2]) {
-                coverImageJPG = GetCoverImage("jpg", false);
+
+                tempStr = GetCoverImage("jpg", false);
+                if (!tempStr.empty()) coverImageJPG = tempStr;
                 CoverChanged[2] = false;
             }
             else LOG_DEBUG_HTTP("CoverImageUnchanged");
@@ -387,7 +397,8 @@ void STManager::HandleRequestHTTP(int client_sock) {
         ROUTE_GET("/cover/cover.png") {
             if (!coverTexture) goto NotFound;       
             else if (CoverChanged[3]) {
-                coverImagePNG = GetCoverImage("png", false);
+                tempStr = GetCoverImage("png", false);
+                if (!tempStr.empty()) coverImagePNG = tempStr;
                 CoverChanged[3] = false;
             }
             else LOG_DEBUG_HTTP("CoverImageUnchanged");

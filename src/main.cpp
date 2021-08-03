@@ -211,6 +211,7 @@ GetCoverTask:
             UnityEngine::Texture2D* coverTexture;
             // Check if the Texture is Readable and if not duplicate it and read from that
             if (coverSprite->get_texture()->get_isReadable()) {
+                
                 coverTexture = coverSprite->get_texture();
             }
             else {
