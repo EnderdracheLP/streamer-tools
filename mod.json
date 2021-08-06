@@ -3,7 +3,7 @@
   "id": "streamer-tools",
   "name": "Streamer Tools",
   "version": "0.1.0",
-  "author": "EnderdracheLP#2305, ComputerElite#0486, Lauriethefish#6700, ItzWiresDev#6193",
+  "author": "EnderdracheLP#2305, ComputerElite#0486, Lauriethefish#6700, Phaze#6193",
   "packageId": "com.beatgames.beatsaber",
   "packageVersion": "1.16.4",
   "description": "Allows applications to get information from the game like, currently played song.",
