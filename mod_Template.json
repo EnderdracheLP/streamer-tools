@@ -3,7 +3,7 @@
   "id": "streamer-tools",
   "name": "Streamer Tools",
   "version": "{VERSION_NUMBER_PLACEHOLDER}",
-  "author": "EnderdracheLP#2305, ComputerElite#0486, Lauriethefish#6700, ItzWiresDev#6193",
+  "author": "EnderdracheLP, ComputerElite, Lauriethefish; yeah so it's a really long author name as Laurie complained about it being to long :). I hope QuestPatcher likes this. Also check all the other nice mods the Beat Saber community has done. And I can just tell you to buy a Quest 1 as it's black and if you don't want black then you should probably get a quest 2. However don't disable dark mode as that's gonna burn your eyes. Can we paste a wikipedia article here? Let's see... Btw if you don't like that Ender then revert it. But anyways let's continue. I was kinda bored so I played some Smash and now I feel way better and can commit this commit. :)",
   "packageId": "com.beatgames.beatsaber",
   "packageVersion": "{BS_Version}",
   "description": "Allows applications to get information from the game like, currently played song.",
