@@ -19,14 +19,14 @@ rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
 # Creating prebuilt
 include $(CLEAR_VARS)
-# Creating prebuilt for dependency: beatsaber-hook - version: 1.3.5
+# Creating prebuilt for dependency: beatsaber-hook - version: 2.2.5
 include $(CLEAR_VARS)
 LOCAL_MODULE := beatsaber-hook_{BS_Hook}
 LOCAL_EXPORT_C_INCLUDES := extern/beatsaber-hook
 LOCAL_SRC_FILES := extern/libbeatsaber-hook_{BS_Hook}.so
 LOCAL_CPP_FEATURES += exceptions
 include $(PREBUILT_SHARED_LIBRARY)
-# Creating prebuilt for dependency: codegen - version: 0.8.1
+# Creating prebuilt for dependency: codegen - version: 0.12.5
 include $(CLEAR_VARS)
 LOCAL_MODULE := codegen_{CG_VER}
 LOCAL_EXPORT_C_INCLUDES := extern/codegen

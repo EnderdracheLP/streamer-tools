@@ -24,7 +24,7 @@ if ($release -eq $true) {
     }
     else {
     echo "1.16.4 Build!"
-        $BSHook = "2_2_4"
+        $BSHook = "2_2_5"
         $codegen_ver = "0_12_5"
         $BS_VERSION_PATCH = 4
     }
