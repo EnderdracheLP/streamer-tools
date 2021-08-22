@@ -517,11 +517,16 @@ ST_MAKE_HOOK(FPSCounter_Update, &FPSCounter::Update, void, FPSCounter* self) {
 
 ST_MAKE_HOOK(PlayerTransforms_Update, &PlayerTransforms::Update, void, PlayerTransforms* self) {
     PlayerTransforms_Update(self);
-    stManager->statusLock.lock();
-    stManager->Head = self->headTransform;
-    stManager->VR_Right = self->rightHandTransform;
-    stManager->VR_Left = self->leftHandTransform;
-    stManager->statusLock.unlock();
+    if (!self->overrideHeadPos) {
+        stManager->statusLock.lock();
+        if (self->headTransform)
+            stManager->Head = self->headTransform;
+        if (self->rightHandTransform)
+            stManager->VR_Right = self->rightHandTransform;
+        if (self->leftHandTransform)
+            stManager->VR_Left = self->leftHandTransform;
+        stManager->statusLock.unlock();
+    }
 }
 
 bool FPSObjectCreated = false;

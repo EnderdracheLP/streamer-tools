@@ -106,28 +106,41 @@ std::string STManager::constructPositionResponse() {
     rapidjson::Document doc;
     auto& alloc = doc.GetAllocator();
     doc.SetObject();
-    rapidjson::Value HeadPos(rapidjson::kArrayType);
-    HeadPos.PushBack(Head->get_position().x, alloc).PushBack(Head->get_position().y, alloc).PushBack(Head->get_position().z, alloc);
-    doc.AddMember("HeadPos", HeadPos, alloc);
-    rapidjson::Value HeadRot(rapidjson::kArrayType);
-    HeadRot.PushBack(Head->get_eulerAngles().x, alloc).PushBack(Head->get_eulerAngles().y, alloc).PushBack(Head->get_eulerAngles().z, alloc);
-    doc.AddMember("HeadRot", HeadRot, alloc);
-    
-    rapidjson::Value VRC_RightPos(rapidjson::kArrayType);
-    VRC_RightPos.PushBack(VR_Right->get_position().x, alloc).PushBack(VR_Right->get_position().y, alloc).PushBack(VR_Right->get_position().z, alloc);
-    doc.AddMember("VR_RightPos", VRC_RightPos, alloc);
+    if (Head) {
+        UnityEngine::Vector3 HeadVectPos = Head->get_position();
+        rapidjson::Value HeadPos(rapidjson::kArrayType);
+        HeadPos.PushBack(HeadVectPos.x, alloc).PushBack(HeadVectPos.y, alloc).PushBack(HeadVectPos.z, alloc);
+        doc.AddMember("HeadPos", HeadPos, alloc);
 
-    rapidjson::Value VRC_RightRot(rapidjson::kArrayType);
-    VRC_RightRot.PushBack(VR_Right->get_eulerAngles().x, alloc).PushBack(VR_Right->get_eulerAngles().y, alloc).PushBack(VR_Right->get_eulerAngles().z, alloc);
-    doc.AddMember("VR_RightRot", VRC_RightRot, alloc);
+        UnityEngine::Vector3 HeadVectRot = Head->get_eulerAngles();
+        rapidjson::Value HeadRot(rapidjson::kArrayType);
+        HeadRot.PushBack(HeadVectRot.x, alloc).PushBack(HeadVectRot.y, alloc).PushBack(HeadVectRot.z, alloc);
+        doc.AddMember("HeadRot", HeadRot, alloc);
+    }
 
-    rapidjson::Value VRC_LeftPos(rapidjson::kArrayType);
-    VRC_LeftPos.PushBack(VR_Left->get_position().x, alloc).PushBack(VR_Left->get_position().y, alloc).PushBack(VR_Left->get_position().z, alloc);
-    doc.AddMember("VR_LeftPos", VRC_LeftPos, alloc);
+    if (VR_Right) {
+        UnityEngine::Vector3 VRC_RightVectPos = VR_Right->get_position();
+        rapidjson::Value VRC_RightPos(rapidjson::kArrayType);
+        VRC_RightPos.PushBack(VRC_RightVectPos.x, alloc).PushBack(VRC_RightVectPos.y, alloc).PushBack(VRC_RightVectPos.z, alloc);
+        doc.AddMember("VR_RightPos", VRC_RightPos, alloc);
 
-    rapidjson::Value VRC_LeftRot(rapidjson::kArrayType);
-    VRC_LeftRot.PushBack(VR_Left->get_eulerAngles().x, alloc).PushBack(VR_Left->get_eulerAngles().y, alloc).PushBack(VR_Left->get_eulerAngles().z, alloc);
-    doc.AddMember("VR_leftRot", VRC_LeftRot, alloc);
+        UnityEngine::Vector3 VRC_RightVectRot = VR_Right->get_eulerAngles();
+        rapidjson::Value VRC_RightRot(rapidjson::kArrayType);
+        VRC_RightRot.PushBack(VRC_RightVectRot.x, alloc).PushBack(VRC_RightVectRot.y, alloc).PushBack(VRC_RightVectRot.z, alloc);
+        doc.AddMember("VR_RightRot", VRC_RightRot, alloc);
+    }
+
+    if (VR_Left) {
+        UnityEngine::Vector3 VRC_LeftVectPos = VR_Left->get_position();
+        rapidjson::Value VRC_LeftPos(rapidjson::kArrayType);
+        VRC_LeftPos.PushBack(VRC_LeftVectPos.x, alloc).PushBack(VRC_LeftVectPos.y, alloc).PushBack(VRC_LeftVectPos.z, alloc);
+        doc.AddMember("VR_LeftPos", VRC_LeftPos, alloc);
+
+        UnityEngine::Vector3 VRC_LeftVectRot = VR_Left->get_eulerAngles();
+        rapidjson::Value VRC_LeftRot(rapidjson::kArrayType);
+        VRC_LeftRot.PushBack(VRC_LeftVectRot.x, alloc).PushBack(VRC_LeftVectRot.y, alloc).PushBack(VRC_LeftVectRot.z, alloc);
+        doc.AddMember("VR_LeftRot", VRC_LeftRot, alloc);
+    }
 
     // Convert the document into a string
     rapidjson::StringBuffer buffer;
