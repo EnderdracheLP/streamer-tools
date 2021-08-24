@@ -50,6 +50,7 @@ std::string STManager::constructResponse() {
     doc.AddMember("missedNotes", STManager::missedNotes, alloc);
     doc.AddMember("fps", STManager::fps, alloc);
     doc.AddMember("configFetched", configFetched, alloc);
+    doc.AddMember("coverFetchable", STManager::coverFetchable, alloc);
     statusLock.unlock();
 
     // Convert the document into a string

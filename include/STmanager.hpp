@@ -139,6 +139,7 @@ public:
     // WARNING: These std::string types contain raw byte data, and will not make sense as text
     std::string coverImageJPG = "";
     std::string coverImagePNG = "";
+    bool coverFetchable = false; // turns false on level select, true once cover is able to be fetched
 
     int players = 0;
     int maxPlayers = 0;
