@@ -92,7 +92,7 @@ using namespace GlobalNamespace;
 #error No Compatible HOOK macro found
 #endif
 #if !defined(BS__1_13_2) && !defined(BS__1_16)
-#define BS__1_16 4
+#define BS__1_17 0
 #endif
 
 //#define DEBUG_BUILD 1
@@ -257,7 +257,7 @@ ST_MAKE_HOOK(RefreshContent, &StandardLevelDetailView::RefreshContent, void, Sta
     }
     else getLogger().info("BeatmapLevelSO is nullptr");
 }
-#if defined(BS__1_16)
+#if defined(BS__1_16) || defined(BS__1_17)
 #define SONGSTARTHOOK ST_MAKE_HOOK(SongStart, &StandardLevelScenesTransitionSetupDataSO::Init, void, StandardLevelScenesTransitionSetupDataSO* self, Il2CppString* gameMode, IDifficultyBeatmap* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, OverrideEnvironmentSettings* overrideEnvironmentSettings, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, PracticeSettings* practiceSettings, Il2CppString* backButtonText, bool useTestNoteCutSoundEffects)
 #define SONGSTART SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, overrideEnvironmentSettings, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, backButtonText, useTestNoteCutSoundEffects)
 #define CAMPAIGNLEVELSTARTHOOK ST_MAKE_HOOK(CampaignLevelStart, &MissionLevelScenesTransitionSetupDataSO::Init, void, MissionLevelScenesTransitionSetupDataSO* self, Il2CppString* missionId, IDifficultyBeatmap* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, Array<MissionObjective*>* missionObjectives, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, Il2CppString* backButtonText)
@@ -268,7 +268,7 @@ ST_MAKE_HOOK(RefreshContent, &StandardLevelDetailView::RefreshContent, void, Sta
 #define SONGSTART SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, c, d, e, practiceSettings, g, h)
 #define CAMPAIGNLEVELSTART CampaignLevelStart(self, a, b, c, d, e, f, g)
 #else
-#error Define BSVERSION can be BS__1_16 or BS__1_13_2
+#error Define BSVERSION can be BS__1_17, BS__1_16 or BS__1_13_2
 #endif
 
 SONGSTARTHOOK {
@@ -563,7 +563,7 @@ ST_MAKE_HOOK(SceneManager_ActiveSceneChanged, &UnityEngine::SceneManagement::Sce
         std::string EmptyTransition = "EmptyTransition";
         if (sceneName == EmptyTransition) stManager->headsetType = GetHeadsetType();
         else if (sceneName == shaderWarmup) {
-#if defined(BS__1_16) && !defined(BS__1_13_2)
+#if (defined(BS__1_16) || defined(BS__1_17)) && !defined(BS__1_13_2)
             auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::newcsstr("FPSC"));
 #elif defined(BS__1_13_2)
             auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::createcsstr("FPSC"));
