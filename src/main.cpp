@@ -21,6 +21,7 @@
 #include "UnityEngine/Component.hpp"
 #include "UnityEngine/SceneManagement/Scene.hpp"
 #include "UnityEngine/SceneManagement/SceneManager.hpp"
+#include "UnityEngine/Application.hpp"
 
 #include "UnityEngine/ImageConversion.hpp"
 #include "UnityEngine/Sprite.hpp"
@@ -677,4 +678,6 @@ extern "C" void load() {
     getLogger().debug("Installed all hooks!");
 
     stManager = new STManager(getLogger());
+    stManager->gameVersion = to_utf8(csstrtostr(UnityEngine::Application::get_version()));
+
 }

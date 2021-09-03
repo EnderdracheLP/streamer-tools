@@ -68,7 +68,7 @@ std::string STManager::multicastResponse() {
     std::string http = localIP + ":" + std::to_string(PORT_HTTP);
     std::string httpv6 = "[" + localIPv6 + "]:" + std::to_string(PORT_HTTP);
     std::string socket = localIP + ":" + std::to_string(PORT);
-    std::string socketv6 = localIPv6 + ":" + std::to_string(PORT);
+    std::string socketv6 = "[" + localIPv6 + "]:" + std::to_string(PORT);
 
     doc.AddMember("ModID", STModInfo.id, alloc);
     doc.AddMember("ModVersion", STModInfo.version, alloc);
@@ -76,6 +76,7 @@ std::string STManager::multicastResponse() {
     doc.AddMember("HTTP", http, alloc);
     doc.AddMember("Socketv6", socketv6, alloc);
     doc.AddMember("HTTPv6", httpv6, alloc);
+    doc.AddMember("GameVersion", gameVersion, alloc);
 
     // Convert the document into a string
     rapidjson::StringBuffer buffer;

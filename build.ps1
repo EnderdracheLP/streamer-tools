@@ -13,9 +13,9 @@ echo "Arg $($i) is $($args[$i])"
 if ($args.Count -eq 0 -or $actions -ne $true) {
 $ModID = "streamer-tools"
 if ($release -eq $true) {
-    $VERSION = "0.1.3"
+    $VERSION = "0.2.0"
 } else {
-    $VERSION = "0.1.3-InDev"
+    $VERSION = "0.2.0-InDev"
 }
     if ($1_16_2build -eq $true) {
     echo "1.16.2 Build!"

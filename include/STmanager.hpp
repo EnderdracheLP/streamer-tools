@@ -149,6 +149,7 @@ public:
     std::string localIP = "127.0.0.1";
     std::string localIPv6 = "::1";
     std::string headsetType = "Unknown Android";
+    std::string gameVersion = "Unknown";
 
     UnityEngine::Transform* Head;
     UnityEngine::Transform* VR_Right;
