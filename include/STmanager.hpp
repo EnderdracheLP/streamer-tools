@@ -20,7 +20,7 @@
 */
 #define HTTP_LOGGING        1
 #define SOCKET_LOGGING      0
-#define MULTICAST_LOGGING   0
+#define MULTICAST_LOGGING   1
 
 #ifdef DEBUG_BUILD
 #if HTTP_LOGGING == 1

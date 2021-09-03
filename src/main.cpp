@@ -545,7 +545,7 @@ std::string GetHeadsetType() {
         return result = "Oculus Go";
     case 9:
         return result = "Oculus Quest 2";
-#elif defined(BS__1_16)
+#elif defined(BS__1_16) || defined(BS__1_17)
     case 7:
         return result = "Oculus Go";
     case HeadsetType.Oculus_Quest_2:
