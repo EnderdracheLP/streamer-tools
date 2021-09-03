@@ -43,8 +43,8 @@ if ($actions -eq $true) {
     $VERSION = $env:version
     $codegen_ver = $env:codegen
     if ($env:BSVersion -eq "1.17.0") {$BS_VERSION_PATCH = 0}
-#    if ($env:BSVersion -eq "1.16.4") {$BS_VERSION_PATCH = 4}
-#    elseif ($env:BSVersion -eq "1.16.2") {$BS_VERSION_PATCH = 2}
+    elseif ($env:BSVersion -eq "1.16.4") {$BS_VERSION_PATCH = 4}
+    elseif ($env:BSVersion -eq "1.16.2") {$BS_VERSION_PATCH = 2}
     elseif ($env:BSVersion -eq "1.13.2") { $1_13_2build = $true }
 }
 if ($1_13_2build -eq $true) {

@@ -206,7 +206,7 @@ std::string STManager::GetCoverImage(std::string ImageFormat = "jpg", bool Base6
     }
     if (!RawCoverbytesArray) return result = "";
     if (Base64) {
-            return result = "data:image/" + ImageFormat + ";base64," + to_utf8(csstrtostr(System::Convert::ToBase64String(RawCoverbytesArray)));
+        return result = "data:image/" + ImageFormat + ";base64," + to_utf8(csstrtostr(System::Convert::ToBase64String(RawCoverbytesArray)));
     }
     else {
         std::string data(reinterpret_cast<char*>(RawCoverbytesArray->values), RawCoverbytesArray->Length());

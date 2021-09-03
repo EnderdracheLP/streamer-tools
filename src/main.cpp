@@ -161,6 +161,7 @@ void GetCoverTexture(System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* cov
         stManager->cv.notify_one();
         CoverStatus = Completed;
         getLogger().info("Successfully loaded CoverImage");
+        stManager->coverFetchable = true;
     }
     else if (coverSpriteTask->get_IsFaulted()) {
         getLogger().error("GetCover Task Faulted: Satus is, %d", (int)coverSpriteTask->get_Status());
@@ -252,6 +253,7 @@ ST_MAKE_HOOK(RefreshContent, &StandardLevelDetailView::RefreshContent, void, Sta
         bool CustomLevel = (il2cpp_functions::class_is_assignable_from(classof(CustomPreviewBeatmapLevel*), il2cpp_functions::object_get_class(reinterpret_cast<Il2CppObject*>(self->level))));
         stManager->njs = self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed();
         stManager->difficulty = self->selectedDifficultyBeatmap->get_difficulty().value;
+        stManager->coverFetchable = false;
         GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(self->level));
         stManager->statusLock.unlock();
     }
