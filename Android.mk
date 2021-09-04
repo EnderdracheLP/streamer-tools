@@ -62,7 +62,7 @@ LOCAL_SHARED_LIBRARIES += questui
 LOCAL_SHARED_LIBRARIES += customtypes
 LOCAL_SHARED_LIBRARIES += modloader
 LOCAL_LDLIBS += -llog
-LOCAL_CFLAGS += -I'extern/libil2cpp/il2cpp/libil2cpp' -I'extern/codegen/include' -DID='"streamer-tools"' -DVERSION='"$(VERSION)"' -DDEBUG_BUILD=1  -DBS__1_17=0  -I'./shared' -I'./extern' -Ofast
+LOCAL_CFLAGS += -I'extern/libil2cpp/il2cpp/libil2cpp' -I'extern/codegen/include' -DID='"streamer-tools"' -DVERSION='"$(VERSION)"'  -DBS__1_17=0  -I'./shared' -I'./extern' -Ofast
 LOCAL_CPPFLAGS += -std=c++2a -Ofast
 LOCAL_C_INCLUDES += ./include ./src
 include $(BUILD_SHARED_LIBRARY)
