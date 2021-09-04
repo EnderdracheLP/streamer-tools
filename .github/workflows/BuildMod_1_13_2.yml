@@ -95,6 +95,12 @@ jobs:
         chmod +x ./QPM/QPM
         ./QPM/QPM restore
 
+    - name: Set Submodule and Branch
+      run: |
+        git submodule deinit -f extern/config-utils
+        git submodule set-branch --branch version-v0.5.1 extern/config-utils
+        git submodule update --init --recursive --remote
+
     - name: Check dependency Folders
       run: |
         echo "Checking extern Folder"

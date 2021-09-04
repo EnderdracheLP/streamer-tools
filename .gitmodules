@@ -1,5 +1,4 @@
 [submodule "extern/config-utils"]
 	path = extern/config-utils
 	url = https://github.com/darknight1050/config-utils
-[submodule "shared/config-utils"]
-	branch = version-v0.5.1
+	branch = version-v0.6.0
