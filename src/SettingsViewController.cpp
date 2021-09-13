@@ -40,7 +40,15 @@ bool configFetched = false;
 
 Transform* parent;
 
-bool SettingsInit = false;
+enum class SettingsState {
+    NotInit, Updating, Ready
+};
+
+SettingsState state = SettingsState::NotInit;
+
+//bool SettingsInit = false;
+
+//bool NotUpdating = true;
 
 // Defined here, and defined as extern in STmanager.hpp
 GameObject* Decimals;
@@ -52,14 +60,16 @@ GameObject* A_Update;
 void MakeConfigUI(bool UpdateOnly) {
     // Prevents a crash from the client trying to set the config before the config ViewController has first activated
     // This will update the Config Values while the config is open
-    if (UpdateOnly && !SettingsInit) return;
+    if (UpdateOnly && state != SettingsState::Ready) return;
     else if (UpdateOnly) {
+        state = SettingsState::Updating;
         Decimals->GetComponent<IncrementSetting*>()->CurrentValue = (float)getModConfig().DecimalsForNumbers.GetValue();
         Decimals->GetComponent<IncrementSetting*>()->UpdateValue();
         DEnergy->GetComponent<Toggle*>()->set_isOn(getModConfig().DontEnergy.GetValue());
         D_MP_Code->GetComponent<Toggle*>()->set_isOn(getModConfig().DontMpCode.GetValue());
         A_MP_Code->GetComponent<Toggle*>()->set_isOn(getModConfig().AlwaysMpCode.GetValue());
         A_Update->GetComponent<Toggle*>()->set_isOn(getModConfig().AlwaysUpdate.GetValue());
+        state = SettingsState::Ready;
     }
     // Creates the Config UI
     else {
@@ -121,7 +131,7 @@ void MakeConfigUI(bool UpdateOnly) {
 
         A_Update = AddConfigValueToggle(parent, getModConfig().AlwaysUpdate)->get_gameObject();
         BeatSaberUI::AddHoverHint(A_Update, "Update the overlay on song select an not just on song start");
-        SettingsInit = true;
+        state = SettingsState::Ready;
     }
 }
 
@@ -129,7 +139,7 @@ void MakeConfigUI(bool UpdateOnly) {
 
 void StreamerTools::stSettingViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     //InSettings = true;
-    if(firstActivation && !SettingsInit) {
+    if(firstActivation && state == SettingsState::NotInit) {
         get_gameObject()->AddComponent<Touchable*>();
         GameObject* container = BeatSaberUI::CreateScrollableSettingsContainer(get_transform());
         parent = container->get_transform();

@@ -1,9 +1,9 @@
 # Builds a .qmod file for loading with BMBF or QP
 if ($args.Count -eq 0) {
 $ModID = "streamer-tools"
-$VERSION = "0.2.0"
+$VERSION = "0.2.1"
 $BSHook = "2_3_0"
-$BS_Version = "1.17.0"
+$BS_Version = "1.17.1"
 echo "Compiling Mod"
 & $PSScriptRoot/build.ps1 --release
 }

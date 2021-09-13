@@ -20,7 +20,7 @@ on:
 env:
      module_id: streamer-tools
      BSVersion: 1.13.2
-     version: 0.1.0-Dev-${{ github.run_number }}
+     version: 0.2.1-Dev-${{ github.run_number }}
      bs_hook: 1_0_12
      codegen: 0_6_2
      #ndkname: android-ndk-r21

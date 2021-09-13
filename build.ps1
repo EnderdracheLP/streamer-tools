@@ -12,11 +12,11 @@ echo "Arg $($i) is $($args[$i])"
 }
 if ($args.Count -eq 0 -or $actions -ne $true) {
 $ModID = "streamer-tools"
-if ($release -eq $true) {
-    $VERSION = "0.2.0"
-} else {
-    $VERSION = "0.2.0-InDev"
+$VERSION = "0.2.1"
+if ($release -ne $true) {
+    $VERSION += "-InDev"
 }
+
     if ($1_16_2build -eq $true) {
     echo "1.16.2 Build!"
         $BSHook = "2_2_2"
@@ -30,9 +30,8 @@ if ($release -eq $true) {
     $BS_VERSION_PATCH = 4
     }
     else {
-    echo "1.17.0 Build!"
+    echo "1.17.1 Build!"
     $BSHook = "2_3_0"
-    $codegen_ver = "0_13_0"
     $BS_VERSION_PATCH = 0
     }
 }
