@@ -94,7 +94,7 @@ using namespace GlobalNamespace;
 #else
 #error No Compatible HOOK macro found
 #endif
-#if !defined(BS__1_13_2) && !defined(BS__1_16)
+#if !defined(BS__1_13_2) && !defined(BS__1_16) && !defined(BS__1_17)
 #define BS__1_17 0
 #endif
 
@@ -337,7 +337,6 @@ ST_MAKE_HOOK(MultiplayerSongStart, &MultiplayerLevelScenesTransitionSetupDataSO:
     stManager->statusLock.lock();
     stManager->location = MP_Song;
     ResetScores();
-    //if (CoverStatus == Failed && GotBeatmapInfo) GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(previewBeatmapLevel)); // Try loading the Cover again if failed previously
     if (previewBeatmapLevel) {
         stManager->levelName = to_utf8(csstrtostr(previewBeatmapLevel->get_songName()));
         stManager->levelSubName = to_utf8(csstrtostr(previewBeatmapLevel->get_songSubName()));
@@ -345,8 +344,6 @@ ST_MAKE_HOOK(MultiplayerSongStart, &MultiplayerLevelScenesTransitionSetupDataSO:
         stManager->songAuthor = to_utf8(csstrtostr(previewBeatmapLevel->get_songAuthorName()));
         stManager->id = to_utf8(csstrtostr(previewBeatmapLevel->get_levelID()));
         stManager->bpm = previewBeatmapLevel->get_beatsPerMinute();
-        //// Check if level can be assigned as CustomPreviewBeatmapLevel
-        //bool CustomLevel = (il2cpp_functions::class_is_assignable_from(classof(CustomPreviewBeatmapLevel*), il2cpp_functions::object_get_class(reinterpret_cast<Il2CppObject*>(self->level))));
         stManager->njs = difficultyBeatmap->get_noteJumpMovementSpeed();
         stManager->difficulty = beatmapDifficulty.value;
         stManager->coverFetchable = false;
@@ -441,30 +438,20 @@ MAKE_HOOK_FIND_VERBOSE(MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", 
     int numActivePlayers = self->get_connectedPlayerCount();
 
     // Register player join and leave events
-    self->add_connectedEvent(il2cpp_utils::MakeDelegate<System::Action*>(classof(System::Action*), self, onLobbyJoin));
-
     self->add_playerDisconnectedEvent(
         il2cpp_utils::MakeDelegate<System::Action_1<IConnectedPlayer*>*>(classof(System::Action_1<IConnectedPlayer*>*), static_cast<Il2CppObject*>(nullptr), onPlayerLeave)
     );
 
-    //self->add_playerConnectedEvent(
-    //    il2cpp_utils::MakeDelegate<System::Action_1<IConnectedPlayer*>*>(classof(System::Action_1<IConnectedPlayer*>*), static_cast<Il2CppObject*>(nullptr), onPlayerJoin)
-    //);
     self->add_playerConnectedEvent(
         il2cpp_utils::MakeDelegate<System::Action_1<IConnectedPlayer*>*>(classof(System::Action_1<IConnectedPlayer*>*), self, onPlayerJoin)
     );
 
-    // Register disconnect from lobby event
+    // Register connect and disconnect from lobby events
     self->add_disconnectedEvent(
         il2cpp_utils::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason>*>(classof(System::Action_1<GlobalNamespace::DisconnectedReason>*), static_cast<Il2CppObject*>(nullptr), onLobbyDisconnect)
     );
 
-    //// Set the number of players in this lobby
-    //stManager->statusLock.lock();
-    //stManager->players = numActivePlayers + 1;
-    //stManager->maxPlayers = maxPlayers;
-    //stManager->location = MP_Lobby;
-    //stManager->statusLock.unlock();
+    self->add_connectedEvent(il2cpp_utils::MakeDelegate<System::Action*>(classof(System::Action*), self, onLobbyJoin));
 }
 #endif
 ST_MAKE_HOOK(SongEnd, &StandardLevelGameplayManager::OnDestroy, void, StandardLevelGameplayManager* self) {
@@ -474,14 +461,6 @@ ST_MAKE_HOOK(SongEnd, &StandardLevelGameplayManager::OnDestroy, void, StandardLe
     stManager->statusLock.unlock();
     SongEnd(self);
 }
-
-//ST_MAKE_HOOK(MultiplayerSongEnd, &MultiplayerLocalActivePlayerGameplayManager::OnDisable, void, MultiplayerLocalActivePlayerGameplayManager* self) {
-//    stManager->statusLock.lock();
-//    stManager->location = MP_Lobby;
-//    stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
-//    stManager->statusLock.unlock();
-//    MultiplayerSongEnd(self);
-//}
 
 ST_MAKE_HOOK(MultiplayerSongFinish, &MultiplayerLocalActivePlayerGameplayManager::HandleSongDidFinish, void, MultiplayerLocalActivePlayerGameplayManager* self) {
     stManager->statusLock.lock();
@@ -505,22 +484,6 @@ ST_MAKE_HOOK(MultiplayerSpectateDestroy, &MultiplayerSpectatorController::OnDest
     stManager->statusLock.unlock();
     MultiplayerSpectateDestroy(self);
 }
-
-//ST_MAKE_HOOK(MultiplayerSongFail, &MultiplayerLocalActivePlayerGameplayManager::PerformPlayerFail, void, MultiplayerLocalActivePlayerGameplayManager* self) {
-//    stManager->statusLock.lock();
-//    stManager->location = Spectator;
-//    stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
-//    stManager->statusLock.unlock();
-//    MultiplayerSongFail(self);
-//}
-//
-//ST_MAKE_HOOK(MultiplayerSongGivenUp, &MultiplayerLocalActivePlayerGameplayManager::PerformPlayerGivenUp, void, MultiplayerLocalActivePlayerGameplayManager* self) {
-//    stManager->statusLock.lock();
-//    stManager->location = Spectator;
-//    stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
-//    stManager->statusLock.unlock();
-//    MultiplayerSongGivenUp(self);
-//}
 
 ST_MAKE_HOOK(TutorialStart, &TutorialSongController::Awake, void, TutorialSongController* self)   {
     stManager->statusLock.lock();
@@ -683,29 +646,6 @@ extern "C" void setup(ModInfo& info) {
     info.version = VERSION;
     STModInfo = info;
 
-    //#ifdef DEBUG_BUILD
-    //// Disable loggers
-    //// Here's where you can disable individual context Loggers
-    //#ifdef HTTP_LOGGING
-    //// @brief Disables HTTP Server Logger
-    //getLogger().DisableContext("ServerHTTP");
-    //#endif
-    //#ifdef SOCKET_LOGGING
-    //// @brief Disables Socket Server Logger
-    //getLogger().DisableContext("ServerSocket");
-    //#endif
-    //#ifdef MULTICAST_LOGGING
-    //// @brief Disables Multicast Server Logger
-    //getLogger().DisableContext("ServerMulticast");
-    //#endif
-    //#elif
-    //// @brief Disables all Server Loggers
-    //getLogger().DisableContext("ServerMulticast");
-    //getLogger().DisableContext("ServerSocket");
-    //getLogger().DisableContext("ServerHTTP");
-    ////getLogger().DisableContext("Server");
-    //#endif
-
     getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
 
     getLogger().info("Completed setup!");
@@ -751,10 +691,7 @@ extern "C" void load() {
 #else
     ST_INSTALL_HOOK(logger, MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLobbyConnectionController", "HandleMultiplayerSessionManagerConnected", 0));
 #endif
-    //ST_INSTALL_HOOK(logger, MultiplayerSongEnd, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLocalActivePlayerGameplayManager", "OnDisable", 0));
     INSTALL_HOOK(logger, MultiplayerSongFinish);
-    //INSTALL_HOOK(logger, MultiplayerSongFail);
-    //INSTALL_HOOK(logger, MultiplayerSongGivenUp);
     INSTALL_HOOK(logger, MultiplayerSpectateStart);
     INSTALL_HOOK(logger, MultiplayerSpectateDestroy);
     ST_INSTALL_HOOK(logger, GameEnergyUIPanel_HandleGameEnergyDidChange, il2cpp_utils::FindMethodUnsafe("", "GameEnergyUIPanel", "HandleGameEnergyDidChange", 1));
