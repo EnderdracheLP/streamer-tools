@@ -9,7 +9,6 @@ on:
       - '!.github/workflows/BuildMod.yml'
       - '**.json'
       - '!qpm.json'
-      - '!qpm_1.17.0.json'
       - '**.ps1'
       - '!buildQMOD.ps1'
       - '**.md'
@@ -91,7 +90,6 @@ jobs:
       
     - name: QPM Restore
       run: |
-        cp qpm_${{ env.BSVersion }}.json qpm.json -f
         chmod +x ./QPM/QPM
         ./QPM/QPM restore
 
