@@ -95,7 +95,7 @@ using namespace GlobalNamespace;
 #error No Compatible HOOK macro found
 #endif
 #if !defined(BS__1_13_2) && !defined(BS__1_16) && !defined(BS__1_17)
-#define BS__1_17 0
+#define BS__1_17 1
 #endif
 
 //#define DEBUG_BUILD 1
@@ -267,36 +267,23 @@ ST_MAKE_HOOK(RefreshContent, &StandardLevelDetailView::RefreshContent, void, Sta
         getLogger().info("BeatmapLevelSO is nullptr");
     }
 }
-#if defined(BS__1_16) || defined(BS__1_17)
-#define SONGSTARTHOOK ST_MAKE_HOOK(SongStart, &StandardLevelScenesTransitionSetupDataSO::Init, void, StandardLevelScenesTransitionSetupDataSO* self, Il2CppString* gameMode, IDifficultyBeatmap* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, OverrideEnvironmentSettings* overrideEnvironmentSettings, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, PracticeSettings* practiceSettings, Il2CppString* backButtonText, bool useTestNoteCutSoundEffects)
-#define SONGSTART SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, overrideEnvironmentSettings, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, backButtonText, useTestNoteCutSoundEffects)
-#define CAMPAIGNLEVELSTARTHOOK ST_MAKE_HOOK(CampaignLevelStart, &MissionLevelScenesTransitionSetupDataSO::Init, void, MissionLevelScenesTransitionSetupDataSO* self, Il2CppString* missionId, IDifficultyBeatmap* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, Array<MissionObjective*>* missionObjectives, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, Il2CppString* backButtonText)
-#define CAMPAIGNLEVELSTART CampaignLevelStart(self, missionId, difficultyBeatmap, previewBeatmapLevel, missionObjectives, overrideColorScheme, gameplayModifiers, playerSpecificSettings, backButtonText)
-#elif defined(BS__1_13_2)
-#define SONGSTARTHOOK MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, PracticeSettings* practiceSettings, Il2CppString* g, bool h)
-#define CAMPAIGNLEVELSTARTHOOK MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void, Il2CppObject* self, Il2CppObject* a, Il2CppArray* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, Il2CppString* g)
-#define SONGSTART SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, c, d, e, practiceSettings, g, h)
-#define CAMPAIGNLEVELSTART CampaignLevelStart(self, a, b, c, d, e, f, g)
-#else
-#error Define BSVERSION can be BS__1_17, BS__1_16 or BS__1_13_2
-#endif
 
-SONGSTARTHOOK {
+ST_MAKE_HOOK(SongStart, &StandardLevelScenesTransitionSetupDataSO::Init, void, StandardLevelScenesTransitionSetupDataSO* self, Il2CppString* gameMode, IDifficultyBeatmap* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, OverrideEnvironmentSettings* overrideEnvironmentSettings, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, PracticeSettings* practiceSettings, Il2CppString* backButtonText, bool useTestNoteCutSoundEffects) {
     stManager->statusLock.lock();
     stManager->location = Solo_Song;
     ResetScores();
     stManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode
     if (CoverStatus == Failed) GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(previewBeatmapLevel)); // Try loading the Cover again if failed previously
     stManager->statusLock.unlock();
-    SONGSTART;
+    SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, overrideEnvironmentSettings, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, backButtonText, useTestNoteCutSoundEffects);
 }
 
-CAMPAIGNLEVELSTARTHOOK {
+ST_MAKE_HOOK(CampaignLevelStart, &MissionLevelScenesTransitionSetupDataSO::Init, void, MissionLevelScenesTransitionSetupDataSO* self, Il2CppString* missionId, IDifficultyBeatmap* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, Array<MissionObjective*>* missionObjectives, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, Il2CppString* backButtonText) {
     stManager->statusLock.lock();
     stManager->location = Campaign;
     ResetScores();
     stManager->statusLock.unlock();
-    CAMPAIGNLEVELSTART;
+    CampaignLevelStart(self, missionId, difficultyBeatmap, previewBeatmapLevel, missionObjectives, overrideColorScheme, gameplayModifiers, playerSpecificSettings, backButtonText);
 }
 
 ST_MAKE_HOOK(RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank, &RelativeScoreAndImmediateRankCounter::UpdateRelativeScoreAndImmediateRank, void, RelativeScoreAndImmediateRankCounter* self, int score, int modifiedScore, int maxPossibleScore, int maxPossibleModifiedScore) {
@@ -358,7 +345,6 @@ ST_MAKE_HOOK(MultiplayerSongStart, &MultiplayerLevelScenesTransitionSetupDataSO:
     MultiplayerSongStart(self, gameMode, previewBeatmapLevel, beatmapDifficulty, beatmapCharacteristic, difficultyBeatmap, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, useTestNoteCutSoundEffects);
 }
 
-#if !(defined(BS__1_13_2) || defined(BS__1_16) && BS__1_16 < 4)
 void onLobbyJoin(MultiplayerSessionManager* sessionManager) {
     stManager->statusLock.lock();
     stManager->location = MP_Lobby;
@@ -369,18 +355,11 @@ void onLobbyJoin(MultiplayerSessionManager* sessionManager) {
     stManager->maxPlayers = sessionManager->get_maxPlayerCount();
     stManager->statusLock.unlock();
 }
-#endif
 
-#if defined(BS__1_13_2) || defined(BS__1_16) && BS__1_16 < 4
-void onPlayerJoin() {
-    stManager->statusLock.lock();
-    stManager->players++;
-#else
 void onPlayerJoin(MultiplayerSessionManager* sessionManager, IConnectedPlayer * player) {
     stManager->statusLock.lock();
     if (!(player->get_isMe() && player->get_isConnectionOwner()))
         stManager->players++;
-#endif
     stManager->statusLock.unlock();
 }
 
@@ -400,37 +379,6 @@ void onLobbyDisconnect() {
     stManager->statusLock.unlock();
 }
 
-#if defined(BS__1_13_2) || defined(BS__1_16) && BS__1_16 < 4
-ST_MAKE_HOOK(MultiplayerJoinLobby, &GameServerLobbyFlowCoordinator::DidActivate, void, GameServerLobbyFlowCoordinator* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)    {
-    LobbyPlayersDataModel* lobbyPlayersDataModel = reinterpret_cast<LobbyPlayersDataModel*>(self->dyn__lobbyPlayersDataModel());
-    
-    IMultiplayerSessionManager* sessionManager = self->multiplayerSessionManager;
-
-    int maxPlayers = sessionManager->get_maxPlayerCount();
-    int numActivePlayers = sessionManager->get_connectedPlayerCount();
-
-    // Register player join and leave events
-
-    sessionManager->add_playerConnectedEvent(
-        il2cpp_utils::MakeDelegate<System::Action_1<IConnectedPlayer*>*>(classof(System::Action_1<IConnectedPlayer*>*), static_cast<Il2CppObject*>(nullptr), onPlayerJoin)
-    );
-    //lobbyPlayersDataModel->add_didChangeEvent(il2cpp_utils::MakeDelegate<System::Action_1<Il2CppString*>*>(classof(System::Action_1<Il2CppString*>*), sessionManager, onPlayerJoin));
-
-    // Register disconnect from lobby event
-    sessionManager->add_disconnectedEvent(
-        il2cpp_utils::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason>*>(classof(System::Action_1<GlobalNamespace::DisconnectedReason>*), static_cast<Il2CppObject*>(nullptr), onLobbyDisconnect)
-    );
-
-    // Set the number of players in this lobby
-    stManager->statusLock.lock();
-    stManager->players = numActivePlayers + 1;
-    stManager->maxPlayers = maxPlayers;
-    stManager->location = MP_Lobby;
-    stManager->statusLock.unlock();
-
-    MultiplayerJoinLobby(self, firstActivation, addedToHierarchy, screenSystemEnabling);
-}
-#else
 MAKE_HOOK_FIND_VERBOSE(MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "MultiplayerSessionManager", "StartSession", 1), void, MultiplayerSessionManager* self, ConnectedPlayerManager* connectedPlayerManager) {
     MultiplayerJoinLobby(self, connectedPlayerManager);
 
@@ -453,7 +401,6 @@ MAKE_HOOK_FIND_VERBOSE(MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", 
 
     self->add_connectedEvent(il2cpp_utils::MakeDelegate<System::Action*>(classof(System::Action*), self, onLobbyJoin));
 }
-#endif
 ST_MAKE_HOOK(SongEnd, &StandardLevelGameplayManager::OnDestroy, void, StandardLevelGameplayManager* self) {
     stManager->statusLock.lock();
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
@@ -543,19 +490,11 @@ ST_MAKE_HOOK(ScoreController_HandleNoteWasMissed, &ScoreController::HandleNoteWa
     stManager->statusLock.unlock();
 }
 
-#if defined(BS__1_13_2) || defined(BS__1_16) && BS__1_16 < 4
-ST_MAKE_HOOK(ScoreController_HandleNoteWasCut, &ScoreController::HandleNoteWasCut, void, ScoreController* self, NoteController* noteController, NoteCutInfo& noteCutInfo)
-#else
 ST_MAKE_HOOK(ScoreController_HandleNoteWasCut, &ScoreController::HandleNoteWasCut, void, ScoreController* self, NoteController* noteController, ByRef<NoteCutInfo> noteCutInfo)
-#endif
 {
     ScoreController_HandleNoteWasCut(self, noteController, noteCutInfo);
     stManager->statusLock.lock();
-#if defined(BS__1_13_2) || defined(BS__1_16) && BS__1_16 < 4
-    if (noteCutInfo.get_allIsOK()) stManager->goodCuts++;
-#else
     if (noteCutInfo.heldRef.get_allIsOK()) stManager->goodCuts++;
-#endif
     else stManager->badCuts++;
     stManager->statusLock.unlock();
 }
@@ -590,17 +529,10 @@ std::string GetHeadsetType() {
     switch (HeadsetType.value) {
     case HeadsetType.Oculus_Quest:
         return result = "Oculus Quest";
-#ifdef BS__1_13_2
-    case HeadsetType.Oculus_Go:
-        return result = "Oculus Go";
-    case 9:
-        return result = "Oculus Quest 2";
-#elif defined(BS__1_16) || defined(BS__1_17)
     case 7:
         return result = "Oculus Go";
     case HeadsetType.Oculus_Quest_2:
         return result = "Oculus Quest 2";
-#endif
     case 10:
         return result = "Oculus Quest 3/2 Pro";
     default:
@@ -616,11 +548,7 @@ ST_MAKE_HOOK(SceneManager_ActiveSceneChanged, &UnityEngine::SceneManagement::Sce
         std::string EmptyTransition = "EmptyTransition";
         if (sceneName == EmptyTransition) stManager->headsetType = GetHeadsetType();
         else if (sceneName == shaderWarmup) {
-#if (defined(BS__1_16) || defined(BS__1_17)) && !defined(BS__1_13_2)
             auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::newcsstr("FPSC"));
-#elif defined(BS__1_13_2)
-            auto FPSCObject = UnityEngine::GameObject::New_ctor(il2cpp_utils::createcsstr("FPSC"));
-#endif
             UnityEngine::Object::DontDestroyOnLoad(FPSCObject->AddComponent<FPSCounter*>());
         }
         FPSObjectCreated = true;
@@ -669,13 +597,8 @@ extern "C" void load() {
     Logger& logger = getLogger();
     ST_INSTALL_HOOK(logger, PlayerTransforms_Update, il2cpp_utils::FindMethodUnsafe("", "PlayerTransforms", "Update", 0));
     ST_INSTALL_HOOK(logger, RefreshContent, il2cpp_utils::FindMethodUnsafe("", "StandardLevelDetailView", "RefreshContent", 0));
-#if defined(BS__1_16)
     ST_INSTALL_HOOK(logger, SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 10));
     ST_INSTALL_HOOK(logger, CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 8));
-#elif defined(BS__1_13_2)
-    INSTALL_HOOK_OFFSETLESS(logger, SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 9));
-    INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 7));
-#endif
     ST_INSTALL_HOOK(logger, RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank, il2cpp_utils::FindMethodUnsafe("", "RelativeScoreAndImmediateRankCounter", "UpdateRelativeScoreAndImmediateRank", 4));
     ST_INSTALL_HOOK(logger, ScoreController_Update, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "Update", 0));
     ST_INSTALL_HOOK(logger, SongEnd, il2cpp_utils::FindMethodUnsafe("", "StandardLevelGameplayManager", "OnDestroy", 0));
@@ -686,11 +609,7 @@ extern "C" void load() {
     ST_INSTALL_HOOK(logger, GameResume, il2cpp_utils::FindMethodUnsafe("", "PauseController", "HandlePauseMenuManagerDidPressContinueButton", 0));
     ST_INSTALL_HOOK(logger, AudioUpdate, il2cpp_utils::FindMethodUnsafe("", "AudioTimeSyncController", "Update", 0));
     ST_INSTALL_HOOK(logger, MultiplayerSongStart, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLevelScenesTransitionSetupDataSO", "Init", 10));
-#if defined(BS__1_16) && BS__1_16 < 4
-    ST_INSTALL_HOOK(logger, MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "GameServerLobbyFlowCoordinator", "DidActivate", 3));
-#else
     ST_INSTALL_HOOK(logger, MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLobbyConnectionController", "HandleMultiplayerSessionManagerConnected", 0));
-#endif
     INSTALL_HOOK(logger, MultiplayerSongFinish);
     INSTALL_HOOK(logger, MultiplayerSpectateStart);
     INSTALL_HOOK(logger, MultiplayerSpectateDestroy);
