@@ -54,7 +54,7 @@ enum CSt {
 };
 
 enum locations_t {
-    Menu, Solo_Song, MP_Song, Tutorial, Campaign, MP_Lobby, Options
+    Menu, Solo_Song, MP_Song, Tutorial, Campaign, MP_Lobby, Options, Spectator
 };
 
 
@@ -151,9 +151,9 @@ public:
     std::string headsetType = "Unknown Android";
     std::string gameVersion = "Unknown";
 
-    UnityEngine::Transform* Head;
-    UnityEngine::Transform* VR_Right;
-    UnityEngine::Transform* VR_Left;
+    SafePtr<UnityEngine::Transform> Head;
+    SafePtr<UnityEngine::Transform> VR_Right;
+    SafePtr<UnityEngine::Transform> VR_Left;
 
     //LoggerContextObject HTTPLogger = getLogger().WithContext("Server").WithContext("HTTP");
     //LoggerContextObject SocketLogger = getLogger().WithContext("Server").WithContext("Socket");
