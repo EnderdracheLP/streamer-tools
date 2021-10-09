@@ -37,6 +37,11 @@
       "id": "libil2cpp",
       "versionRange": "=0.2.3",
       "additionalData": {}
+    },
+    {
+      "id": "config-utils",
+      "versionRange": "*",
+      "additionalData": {}
     }
   ],
   "additionalData": {}
