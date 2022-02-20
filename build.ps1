@@ -5,22 +5,19 @@ Param (
 [Parameter(Mandatory=$false, HelpMessage="To create a github actions build, assumes specific Environment variables are set")][Alias("github-build")][Switch]$actions
 )
 $NDKPath = Get-Content $PSScriptRoot/ndkpath.txt
-if ($actions -ne $true -or $env:version -eq "") {
-    $QPMpackage = "./qpm.json"
-    $qpmjson = Get-Content $QPMpackage -Raw | ConvertFrom-Json
-    $ModID = $qpmjson.info.id
-    if (-not $Version) {
-        $VERSION = $qpmjson.info.version
-    } else {
-        $VERSION = $Version
-    }
-    if ($release -ne $true -and -not $VERSION.Contains('-Dev')) {
-        $VERSION += "-Dev"
-    }
-    echo "Default version = $VERSION"
+$QPMpackage = "./qpm.json"
+$qpmjson = Get-Content $QPMpackage -Raw | ConvertFrom-Json
+$ModID = $qpmjson.info.id
+if (-not $Version) {
+    $VERSION = $qpmjson.info.version
+} else {
+    $VERSION = $Version
+}
+if ($release -ne $true -and -not $VERSION.Contains('-Dev')) {
+    $VERSION += "-Dev"
 }
 
-if ($env:version = "") {
+if ($env:version -eq "") {
     & qpm-rust package edit --version $VERSION
 }
 
