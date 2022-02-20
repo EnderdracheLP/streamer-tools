@@ -14,7 +14,6 @@
 #ifndef MAKE_HOOK_OFFSETLESS
 #include "beatsaber-hook/shared/utils/hooking.hpp"
 #endif
-//#include "beatsaber-hook/shared/config/config-utils.hpp"
 
 #include "UnityEngine/Resources.hpp"
 #include "UnityEngine/GameObject.hpp"
@@ -44,11 +43,7 @@
 #include "GlobalNamespace/MultiplayerPlayersManager.hpp"
 #include "GlobalNamespace/MultiplayerSessionManager.hpp"
 
-#if defined(BS__1_13_2) || defined(BS__1_16) && BS__1_16 < 4
-#include "GlobalNamespace/GameServerLobbyFlowCoordinator.hpp"
-#else
 #include "GlobalNamespace/MultiplayerLobbyConnectionController.hpp"
-#endif
 
 #include "GlobalNamespace/PracticeSettings.hpp"
 #include "GlobalNamespace/ScoreController.hpp"
