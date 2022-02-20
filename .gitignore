@@ -71,3 +71,4 @@ Android.mk.backup
 /log_timestamp
 /build
 *.cmake
+/CMakeSettings.json
