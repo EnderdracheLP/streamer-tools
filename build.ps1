@@ -1,16 +1,11 @@
 Param (
 [Parameter(Mandatory=$false, HelpMessage="The version the mod should be compiled with")][Alias("ver")][string]$Version,
 [Parameter(Mandatory=$false, HelpMessage="Switch to create a clean compilation")][Alias("rebuild")][Switch]$clean,
-[Parameter(Mandatory=$false, HelpMessage="To create a release build")][Alias("publish")][Switch]$release = $false,
-[Parameter(Mandatory=$false, HelpMessage="To create a github actions build, assumes specific Environment variables are set")][Alias("github-build")][Switch]$actions = $false
+[Parameter(Mandatory=$false, HelpMessage="To create a release build")][Alias("publish")][Switch]$release,
+[Parameter(Mandatory=$false, HelpMessage="To create a github actions build, assumes specific Environment variables are set")][Alias("github-build")][Switch]$actions
 )
 $NDKPath = Get-Content $PSScriptRoot/ndkpath.txt
-for ($i = 0; $i -le $args.Length-1; $i++) {
-echo "Arg $($i) is $($args[$i])"
-    if ($args[$i] -eq "--actions") { $actions = $true }
-    elseif ($args[$i] -eq "--release") { $release = $true }
-}
-if ($actions -ne $true -or $env:version -eq "" -or $args.Count -eq 0) {
+if ($actions -ne $true -or $env:version -eq "") {
     $QPMpackage = "./qpm.json"
     $qpmjson = Get-Content $QPMpackage -Raw | ConvertFrom-Json
     $ModID = $qpmjson.info.id
@@ -25,14 +20,8 @@ if ($actions -ne $true -or $env:version -eq "" -or $args.Count -eq 0) {
     echo "Default version = $VERSION"
 }
 
-if ($env:version -eq "") {
-    echo "Overwrite version with Environment variable"
-    $ModID = $env:module_id
-    $BSHook = $env:bs_hook
-    $VERSION = $env:version
-    $codegen_ver = $env:codegen
-} else {
-        & qpm-rust package edit --version $VERSION
+if ($env:version = "") {
+    & qpm-rust package edit --version $VERSION
 }
 
 if ((Test-Path "./extern/includes/beatsaber-hook/src/inline-hook/And64InlineHook.cpp", "./extern/includes/beatsaber-hook/src/inline-hook/inlineHook.c", "./extern/includes/beatsaber-hook/src/inline-hook/relocate.c") -contains $false) {
