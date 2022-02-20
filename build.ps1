@@ -1,33 +1,73 @@
 Param (
-[Parameter(HelpMessage="The version the mod should be compiled with")][string]$Version
+[Parameter(Mandatory=$false, HelpMessage="The version the mod should be compiled with")][Alias("ver")][string]$Version,
+[Parameter(Mandatory=$false, HelpMessage="Switch to create a clean compilation")][Alias("rebuild")][Switch]$clean,
+[Parameter(Mandatory=$false, HelpMessage="To create a release build")][Alias("publish")][Switch]$release = $false,
+[Parameter(Mandatory=$false, HelpMessage="To create a github actions build, assumes specific Environment variables are set")][Alias("github-build")][Switch]$actions = $false
 )
-$NDKPath = Get-Content $PSScriptRoot/ndkpath.txt -First 1
-if ($env:VERSION) {
-$Version = $env:VERSION
+$NDKPath = Get-Content $PSScriptRoot/ndkpath.txt
+for ($i = 0; $i -le $args.Length-1; $i++) {
+echo "Arg $($i) is $($args[$i])"
+    if ($args[$i] -eq "--actions") { $actions = $true }
+    elseif ($args[$i] -eq "--release") { $release = $true }
 }
-if (!($Version)) {
-$Version = "0.2.2-InDev"
+if ($actions -ne $true -or $env:version -eq "" -or $args.Count -eq 0) {
+    $QPMpackage = "./qpm.json"
+    $qpmjson = Get-Content $QPMpackage -Raw | ConvertFrom-Json
+    $ModID = $qpmjson.info.id
+    if (-not $Version) {
+        $VERSION = $qpmjson.info.version
+    } else {
+        $VERSION = $Version
+    }
+    if ($release -ne $true -and -not $VERSION.Contains('-Dev')) {
+        $VERSION += "-Dev"
+    }
+    echo "Default version = $VERSION"
 }
-if ((Test-Path "./extern/beatsaber-hook/src/inline-hook/And64InlineHook.cpp", "./extern/beatsaber-hook/src/inline-hook/inlineHook.c", "./extern/beatsaber-hook/src/inline-hook/relocate.c") -contains $false) {
+
+if ($env:version -eq "") {
+    echo "Overwrite version with Environment variable"
+    $ModID = $env:module_id
+    $BSHook = $env:bs_hook
+    $VERSION = $env:version
+    $codegen_ver = $env:codegen
+} else {
+        & qpm-rust package edit --version $VERSION
+}
+
+if ((Test-Path "./extern/includes/beatsaber-hook/src/inline-hook/And64InlineHook.cpp", "./extern/includes/beatsaber-hook/src/inline-hook/inlineHook.c", "./extern/includes/beatsaber-hook/src/inline-hook/relocate.c") -contains $false) {
     Write-Host "Critical: Missing inline-hook"
-    if (!(Test-Path "./extern/beatsaber-hook/src/inline-hook/And64InlineHook.cpp")) {
-        Write-Host "./extern/beatsaber-hook/src/inline-hook/And64InlineHook.cpp"
+    if (!(Test-Path "./extern/includes/beatsaber-hook/src/inline-hook/And64InlineHook.cpp")) {
+        Write-Host "./extern/includes/beatsaber-hook/src/inline-hook/And64InlineHook.cpp"
     }
-    if (!(Test-Path "./extern/beatsaber-hook/src/inline-hook/inlineHook.c")) {
-        Write-Host "./extern/beatsaber-hook/src/inline-hook/inlineHook.c"
+    if (!(Test-Path "./extern/includes/beatsaber-hook/src/inline-hook/inlineHook.c")) {
+        Write-Host "./extern/includes/beatsaber-hook/src/inline-hook/inlineHook.c"
     }
-        if (!(Test-Path "./extern/beatsaber-hook/inline-hook/src/relocate.c")) {
-        Write-Host "./extern/beatsaber-hook/src/inline-hook/relocate.c"
+        if (!(Test-Path "./extern/includes/beatsaber-hook/inline-hook/src/relocate.c")) {
+        Write-Host "./extern/includes/beatsaber-hook/src/inline-hook/relocate.c"
     }
-    Write-Host "Task Failed"
+    Write-Host "Task Failed, see output above"
     exit 1;
 }
+echo "Building mod with ModID: $ModID version: $VERSION"
 
-echo "Building Streamer-Tools Version: $Version"
-
-$buildScript = "$NDKPath/build/ndk-build"
-if (-not ($PSVersionTable.PSEdition -eq "Core")) {
-    $buildScript += ".cmd"
+if ($clean.IsPresent)
+{
+    if (Test-Path -Path "build")
+    {
+        remove-item build -R
+    }
 }
 
-& $buildScript NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=./Android.mk NDK_APPLICATION_MK=./Application.mk VERSION=$Version
+if (($clean.IsPresent) -or (-not (Test-Path -Path "build")))
+{
+    $out = new-item -Path build -ItemType Directory
+}
+
+cd build
+& cmake -G "Ninja" -DCMAKE_BUILD_TYPE="RelWithDebInfo" ../
+& cmake --build . -j 6
+$ExitCode = $LastExitCode
+cd ..
+exit $ExitCode
+echo Done

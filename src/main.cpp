@@ -85,17 +85,8 @@
 #include "GlobalNamespace/MultiplayerSpectatorController.hpp"
 using namespace GlobalNamespace;
 
-#if defined(MAKE_HOOK_OFFSETLESS) && !defined(MAKE_HOOK_MATCH)
-#define ST_MAKE_HOOK(name, mPtr, retval, ...) MAKE_HOOK_OFFSETLESS(name, retval, __VA_ARGS__)
-#define ST_INSTALL_HOOK(logger, name, methodInfo) INSTALL_HOOK_OFFSETLESS(logger, name, methodInfo)
-#elif defined(MAKE_HOOK_MATCH)
-#define ST_MAKE_HOOK(name, mPtr, retval, ...) MAKE_HOOK_MATCH(name, mPtr, retval, __VA_ARGS__)
-#define ST_INSTALL_HOOK(logger, name, methodInfo) INSTALL_HOOK(logger, name)
-#else
+#if !defined(MAKE_HOOK_MATCH)
 #error No Compatible HOOK macro found
-#endif
-#if !defined(BS__1_13_2) && !defined(BS__1_16) && !defined(BS__1_17)
-#define BS__1_17 1
 #endif
 
 //#define DEBUG_BUILD 1
@@ -241,24 +232,24 @@ GetCoverTask:
 
 //bool GotBeatmapInfo = false;
 
-ST_MAKE_HOOK(RefreshContent, &StandardLevelDetailView::RefreshContent, void, StandardLevelDetailView* self) {
+MAKE_HOOK_MATCH(RefreshContent, &StandardLevelDetailView::RefreshContent, void, StandardLevelDetailView* self) {
     RefreshContent(self);
 
     // Null Check Level before trying to get any data
-    if (self->level) {
+    if (self->dyn__level()) {
         stManager->statusLock.lock();
-        stManager->levelName = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songName"))));
-        stManager->levelSubName = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songSubName"))));
-        stManager->levelAuthor = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "levelAuthorName"))));
-        stManager->songAuthor = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "songAuthorName"))));
-        stManager->id = to_utf8(csstrtostr((Il2CppString*)CRASH_UNLESS(il2cpp_utils::GetPropertyValue(self->level, "levelID"))));
-        stManager->bpm = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<float>(self->level, "beatsPerMinute"));
+        stManager->levelName = std::string(reinterpret_cast<IPreviewBeatmapLevel*>(self->dyn__level())->get_songName());
+        stManager->levelSubName = std::string(reinterpret_cast<IPreviewBeatmapLevel*>(self->dyn__level())->get_songSubName());
+        stManager->levelAuthor = std::string(reinterpret_cast<IPreviewBeatmapLevel*>(self->dyn__level())->get_levelAuthorName());
+        stManager->songAuthor = std::string(reinterpret_cast<IPreviewBeatmapLevel*>(self->dyn__level())->get_songAuthorName());
+        stManager->id = std::string(reinterpret_cast<IPreviewBeatmapLevel*>(self->dyn__level())->get_levelID());
+        stManager->bpm = reinterpret_cast<IPreviewBeatmapLevel*>(self->dyn__level())->get_beatsPerMinute();
         // Check if level can be assigned as CustomPreviewBeatmapLevel
-        bool CustomLevel = (il2cpp_functions::class_is_assignable_from(classof(CustomPreviewBeatmapLevel*), il2cpp_functions::object_get_class(reinterpret_cast<Il2CppObject*>(self->level))));
-        stManager->njs = self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed();
-        stManager->difficulty = self->selectedDifficultyBeatmap->get_difficulty().value;
+        bool CustomLevel = (il2cpp_functions::class_is_assignable_from(classof(CustomPreviewBeatmapLevel*), il2cpp_functions::object_get_class(reinterpret_cast<Il2CppObject*>(self->dyn__level()))));
+        stManager->njs = self->dyn__selectedDifficultyBeatmap()->get_noteJumpMovementSpeed();
+        stManager->difficulty = self->dyn__selectedDifficultyBeatmap()->get_difficulty().value;
         stManager->coverFetchable = false;
-        GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(self->level));
+        GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(self->dyn__level()));
         stManager->statusLock.unlock();
         //GotBeatmapInfo = true;
     }
@@ -268,7 +259,7 @@ ST_MAKE_HOOK(RefreshContent, &StandardLevelDetailView::RefreshContent, void, Sta
     }
 }
 
-ST_MAKE_HOOK(SongStart, &StandardLevelScenesTransitionSetupDataSO::Init, void, StandardLevelScenesTransitionSetupDataSO* self, Il2CppString* gameMode, IDifficultyBeatmap* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, OverrideEnvironmentSettings* overrideEnvironmentSettings, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, PracticeSettings* practiceSettings, Il2CppString* backButtonText, bool useTestNoteCutSoundEffects) {
+MAKE_HOOK_MATCH(SongStart, &StandardLevelScenesTransitionSetupDataSO::Init, void, StandardLevelScenesTransitionSetupDataSO* self, StringW gameMode, IDifficultyBeatmap* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, OverrideEnvironmentSettings* overrideEnvironmentSettings, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, PracticeSettings* practiceSettings, StringW backButtonText, bool useTestNoteCutSoundEffects) {
     stManager->statusLock.lock();
     stManager->location = Solo_Song;
     ResetScores();
@@ -278,7 +269,7 @@ ST_MAKE_HOOK(SongStart, &StandardLevelScenesTransitionSetupDataSO::Init, void, S
     SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, overrideEnvironmentSettings, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, backButtonText, useTestNoteCutSoundEffects);
 }
 
-ST_MAKE_HOOK(CampaignLevelStart, &MissionLevelScenesTransitionSetupDataSO::Init, void, MissionLevelScenesTransitionSetupDataSO* self, Il2CppString* missionId, IDifficultyBeatmap* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, Array<MissionObjective*>* missionObjectives, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, Il2CppString* backButtonText) {
+MAKE_HOOK_MATCH(CampaignLevelStart, &MissionLevelScenesTransitionSetupDataSO::Init, void, MissionLevelScenesTransitionSetupDataSO* self, StringW missionId, IDifficultyBeatmap* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, ArrayW<MissionObjective*> missionObjectives, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, StringW backButtonText) {
     stManager->statusLock.lock();
     stManager->location = Campaign;
     ResetScores();
@@ -286,50 +277,50 @@ ST_MAKE_HOOK(CampaignLevelStart, &MissionLevelScenesTransitionSetupDataSO::Init,
     CampaignLevelStart(self, missionId, difficultyBeatmap, previewBeatmapLevel, missionObjectives, overrideColorScheme, gameplayModifiers, playerSpecificSettings, backButtonText);
 }
 
-ST_MAKE_HOOK(RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank, &RelativeScoreAndImmediateRankCounter::UpdateRelativeScoreAndImmediateRank, void, RelativeScoreAndImmediateRankCounter* self, int score, int modifiedScore, int maxPossibleScore, int maxPossibleModifiedScore) {
+MAKE_HOOK_MATCH(RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank, &RelativeScoreAndImmediateRankCounter::UpdateRelativeScoreAndImmediateRank, void, RelativeScoreAndImmediateRankCounter* self, int score, int modifiedScore, int maxPossibleScore, int maxPossibleModifiedScore) {
     RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank(self, score, modifiedScore, maxPossibleScore, maxPossibleModifiedScore);
     stManager->statusLock.lock();
     stManager->score = modifiedScore;
-    stManager->rank = to_utf8(csstrtostr(RankModel::GetRankName(self->get_immediateRank())));
+    stManager->rank = std::string(RankModel::GetRankName(self->get_immediateRank()));
     stManager->accuracy = self->get_relativeScore();
     stManager->statusLock.unlock();
 }
 
-ST_MAKE_HOOK(GameEnergyUIPanel_HandleGameEnergyDidChange, &GameEnergyUIPanel::HandleGameEnergyDidChange, void, GameEnergyUIPanel* self, float energy) {
+MAKE_HOOK_MATCH(GameEnergyUIPanel_HandleGameEnergyDidChange, &GameEnergyUIPanel::HandleGameEnergyDidChange, void, GameEnergyUIPanel* self, float energy) {
     GameEnergyUIPanel_HandleGameEnergyDidChange(self, energy);
     stManager->statusLock.lock();
     stManager->energy = energy;
     stManager->statusLock.unlock();
 }
 
-ST_MAKE_HOOK(ServerCodeView_RefreshText, &ServerCodeView::RefreshText, void, ServerCodeView* self, bool refreshText) {
+MAKE_HOOK_MATCH(ServerCodeView_RefreshText, &ServerCodeView::RefreshText, void, ServerCodeView* self, bool refreshText) {
     ServerCodeView_RefreshText(self, refreshText);
-    if (self->serverCode) {
+    if (self->dyn__serverCode()) {
         stManager->statusLock.lock();
-        stManager->mpGameId = to_utf8(csstrtostr(self->serverCode));
-        stManager->mpGameIdShown = self->codeIsShown;
+        stManager->mpGameId = to_utf8(csstrtostr(self->dyn__serverCode()));
+        stManager->mpGameIdShown = self->dyn__codeIsShown();
         stManager->statusLock.unlock();
     }
 }
 
-ST_MAKE_HOOK(ScoreController_Update, &ScoreController::Update, void, ScoreController* self) {
+MAKE_HOOK_MATCH(ScoreController_Update, &ScoreController::Update, void, ScoreController* self) {
     stManager->statusLock.lock();
-    stManager->combo = self->combo;
+    stManager->combo = self->dyn__combo();
     stManager->statusLock.unlock();
     ScoreController_Update(self);
 }
 
 // Multiplayer song starting is handled differently
-ST_MAKE_HOOK(MultiplayerSongStart, &MultiplayerLevelScenesTransitionSetupDataSO::Init, void, MultiplayerLevelScenesTransitionSetupDataSO* self, Il2CppString* gameMode, IPreviewBeatmapLevel* previewBeatmapLevel, BeatmapDifficulty beatmapDifficulty, BeatmapCharacteristicSO* beatmapCharacteristic, IDifficultyBeatmap* difficultyBeatmap, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, PracticeSettings* practiceSettings, bool useTestNoteCutSoundEffects) {
+MAKE_HOOK_MATCH(MultiplayerSongStart, &MultiplayerLevelScenesTransitionSetupDataSO::Init, void, MultiplayerLevelScenesTransitionSetupDataSO* self, StringW gameMode, IPreviewBeatmapLevel* previewBeatmapLevel, BeatmapDifficulty beatmapDifficulty, BeatmapCharacteristicSO* beatmapCharacteristic, IDifficultyBeatmap* difficultyBeatmap, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, PracticeSettings* practiceSettings, bool useTestNoteCutSoundEffects) {
     stManager->statusLock.lock();
     stManager->location = MP_Song;
     ResetScores();
     if (previewBeatmapLevel) {
-        stManager->levelName = to_utf8(csstrtostr(previewBeatmapLevel->get_songName()));
-        stManager->levelSubName = to_utf8(csstrtostr(previewBeatmapLevel->get_songSubName()));
-        stManager->levelAuthor = to_utf8(csstrtostr(previewBeatmapLevel->get_levelAuthorName()));
-        stManager->songAuthor = to_utf8(csstrtostr(previewBeatmapLevel->get_songAuthorName()));
-        stManager->id = to_utf8(csstrtostr(previewBeatmapLevel->get_levelID()));
+        stManager->levelName = std::string(previewBeatmapLevel->get_songName());
+        stManager->levelSubName = std::string(previewBeatmapLevel->get_songSubName());
+        stManager->levelAuthor = std::string(previewBeatmapLevel->get_levelAuthorName());
+        stManager->songAuthor = std::string(previewBeatmapLevel->get_songAuthorName());
+        stManager->id = std::string(previewBeatmapLevel->get_levelID());
         stManager->bpm = previewBeatmapLevel->get_beatsPerMinute();
         stManager->njs = difficultyBeatmap->get_noteJumpMovementSpeed();
         stManager->difficulty = beatmapDifficulty.value;
@@ -337,7 +328,7 @@ ST_MAKE_HOOK(MultiplayerSongStart, &MultiplayerLevelScenesTransitionSetupDataSO:
         GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(previewBeatmapLevel));
     }
     else {
-        getLogger().info("IPreviewBeatmapLevel is %p", previewBeatmapLevel);
+        getLogger().debug("IPreviewBeatmapLevel is %p", previewBeatmapLevel);
     }
     stManager->statusLock.unlock();
 
@@ -401,7 +392,7 @@ MAKE_HOOK_FIND_VERBOSE(MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", 
 
     self->add_connectedEvent(il2cpp_utils::MakeDelegate<System::Action*>(classof(System::Action*), self, onLobbyJoin));
 }
-ST_MAKE_HOOK(SongEnd, &StandardLevelGameplayManager::OnDestroy, void, StandardLevelGameplayManager* self) {
+MAKE_HOOK_MATCH(SongEnd, &StandardLevelGameplayManager::OnDestroy, void, StandardLevelGameplayManager* self) {
     stManager->statusLock.lock();
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
     stManager->location = Menu;
@@ -409,7 +400,7 @@ ST_MAKE_HOOK(SongEnd, &StandardLevelGameplayManager::OnDestroy, void, StandardLe
     SongEnd(self);
 }
 
-ST_MAKE_HOOK(MultiplayerSongFinish, &MultiplayerLocalActivePlayerGameplayManager::HandleSongDidFinish, void, MultiplayerLocalActivePlayerGameplayManager* self) {
+MAKE_HOOK_MATCH(MultiplayerSongFinish, &MultiplayerLocalActivePlayerGameplayManager::HandleSongDidFinish, void, MultiplayerLocalActivePlayerGameplayManager* self) {
     stManager->statusLock.lock();
     stManager->location = MP_Lobby;
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
@@ -417,7 +408,7 @@ ST_MAKE_HOOK(MultiplayerSongFinish, &MultiplayerLocalActivePlayerGameplayManager
     MultiplayerSongFinish(self);
 }
 
-ST_MAKE_HOOK(MultiplayerSpectateStart, &MultiplayerSpectatorController::Start, void, MultiplayerSpectatorController* self) {
+MAKE_HOOK_MATCH(MultiplayerSpectateStart, &MultiplayerSpectatorController::Start, void, MultiplayerSpectatorController* self) {
     stManager->statusLock.lock();
     stManager->location = Spectator;
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
@@ -425,21 +416,21 @@ ST_MAKE_HOOK(MultiplayerSpectateStart, &MultiplayerSpectatorController::Start, v
     MultiplayerSpectateStart(self);
 }
 
-ST_MAKE_HOOK(MultiplayerSpectateDestroy, &MultiplayerSpectatorController::OnDestroy, void, MultiplayerSpectatorController* self) {
+MAKE_HOOK_MATCH(MultiplayerSpectateDestroy, &MultiplayerSpectatorController::OnDestroy, void, MultiplayerSpectatorController* self) {
     stManager->statusLock.lock();
     stManager->location = MP_Lobby;
     stManager->statusLock.unlock();
     MultiplayerSpectateDestroy(self);
 }
 
-ST_MAKE_HOOK(TutorialStart, &TutorialSongController::Awake, void, TutorialSongController* self)   {
+MAKE_HOOK_MATCH(TutorialStart, &TutorialSongController::Awake, void, TutorialSongController* self)   {
     stManager->statusLock.lock();
     stManager->location = Tutorial;
     ResetScores();
     stManager->statusLock.unlock();
     TutorialStart(self);
 }
-ST_MAKE_HOOK(TutorialEnd, &TutorialSongController::OnDestroy, void, TutorialSongController* self)   {
+MAKE_HOOK_MATCH(TutorialEnd, &TutorialSongController::OnDestroy, void, TutorialSongController* self)   {
     stManager->statusLock.lock();
     stManager->location = Menu;
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
@@ -447,7 +438,7 @@ ST_MAKE_HOOK(TutorialEnd, &TutorialSongController::OnDestroy, void, TutorialSong
     TutorialEnd(self);
 }
 
-ST_MAKE_HOOK(CampaignLevelEnd, &MissionLevelGameplayManager::OnDestroy, void, MissionLevelGameplayManager* self)   {
+MAKE_HOOK_MATCH(CampaignLevelEnd, &MissionLevelGameplayManager::OnDestroy, void, MissionLevelGameplayManager* self)   {
     stManager->statusLock.lock();
     stManager->location = Menu;
     stManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
@@ -455,20 +446,20 @@ ST_MAKE_HOOK(CampaignLevelEnd, &MissionLevelGameplayManager::OnDestroy, void, Mi
     CampaignLevelEnd(self);
 }
 
-ST_MAKE_HOOK(GamePause, &PauseController::Pause, void, PauseController* self)   {
+MAKE_HOOK_MATCH(GamePause, &PauseController::Pause, void, PauseController* self)   {
     stManager->statusLock.lock();
     stManager->paused = true;
     stManager->statusLock.unlock();
     GamePause(self);
 }
-ST_MAKE_HOOK(GameResume, &PauseController::HandlePauseMenuManagerDidPressContinueButton, void, PauseController* self)   {
+MAKE_HOOK_MATCH(GameResume, &PauseController::HandlePauseMenuManagerDidPressContinueButton, void, PauseController* self)   {
     stManager->statusLock.lock();
     stManager->paused = false;
     stManager->statusLock.unlock();
     GameResume(self);
 }
 
-ST_MAKE_HOOK(AudioUpdate, &AudioTimeSyncController::Update, void, AudioTimeSyncController* self) {
+MAKE_HOOK_MATCH(AudioUpdate, &AudioTimeSyncController::Update, void, AudioTimeSyncController* self) {
     AudioUpdate(self);
 
     //float time = CRASH_UNLESS(il2cpp_utils::RunMethodUnsafe<float>(self, "get_songTime"));
@@ -483,14 +474,14 @@ ST_MAKE_HOOK(AudioUpdate, &AudioTimeSyncController::Update, void, AudioTimeSyncC
     stManager->statusLock.unlock();
 }
 
-ST_MAKE_HOOK(ScoreController_HandleNoteWasMissed, &ScoreController::HandleNoteWasMissed, void, ScoreController* self, NoteController* note) {
+MAKE_HOOK_MATCH(ScoreController_HandleNoteWasMissed, &ScoreController::HandleNoteWasMissed, void, ScoreController* self, NoteController* note) {
     ScoreController_HandleNoteWasMissed(self, note);
     stManager->statusLock.lock();
     stManager->missedNotes++;
     stManager->statusLock.unlock();
 }
 
-ST_MAKE_HOOK(ScoreController_HandleNoteWasCut, &ScoreController::HandleNoteWasCut, void, ScoreController* self, NoteController* noteController, ByRef<NoteCutInfo> noteCutInfo)
+MAKE_HOOK_MATCH(ScoreController_HandleNoteWasCut, &ScoreController::HandleNoteWasCut, void, ScoreController* self, NoteController* noteController, ByRef<NoteCutInfo> noteCutInfo)
 {
     ScoreController_HandleNoteWasCut(self, noteController, noteCutInfo);
     stManager->statusLock.lock();
@@ -499,24 +490,24 @@ ST_MAKE_HOOK(ScoreController_HandleNoteWasCut, &ScoreController::HandleNoteWasCu
     stManager->statusLock.unlock();
 }
 
-ST_MAKE_HOOK(FPSCounter_Update, &FPSCounter::Update, void, FPSCounter* self) {
+MAKE_HOOK_MATCH(FPSCounter_Update, &FPSCounter::Update, void, FPSCounter* self) {
     FPSCounter_Update(self);
     
     stManager->statusLock.lock();
-    stManager->fps = self->currentFPS;
+    stManager->fps = self->get_currentFPS();
     stManager->statusLock.unlock();
 }
 
-ST_MAKE_HOOK(PlayerTransforms_Update, &PlayerTransforms::Update, void, PlayerTransforms* self) {
+MAKE_HOOK_MATCH(PlayerTransforms_Update, &PlayerTransforms::Update, void, PlayerTransforms* self) {
     PlayerTransforms_Update(self);
-    if (!self->overrideHeadPos) {
+    if (!self->dyn__overrideHeadPos()) {
         stManager->statusLock.lock();
-        if (self->headTransform)
-            stManager->Head = self->headTransform;
-        if (self->rightHandTransform)
-            stManager->VR_Right = self->rightHandTransform;
-        if (self->leftHandTransform)
-            stManager->VR_Left = self->leftHandTransform;
+        if (self->dyn__headTransform())
+            stManager->Head = self->dyn__headTransform();
+        if (self->dyn__rightHandTransform())
+            stManager->VR_Right = self->dyn__rightHandTransform();
+        if (self->dyn__leftHandTransform())
+            stManager->VR_Left = self->dyn__leftHandTransform();
         stManager->statusLock.unlock();
     }
 }
@@ -536,11 +527,11 @@ std::string GetHeadsetType() {
     case 10:
         return result = "Oculus Quest 3/2 Pro";
     default:
-        return result = "Unknown " + to_utf8(csstrtostr(GlobalNamespace::OVRPlugin::get_productName()));
+        return result = "Unknown " + std::string(GlobalNamespace::OVRPlugin::get_productName());
     }    
 }
 
-ST_MAKE_HOOK(SceneManager_ActiveSceneChanged, &UnityEngine::SceneManagement::SceneManager::Internal_ActiveSceneChanged, void, UnityEngine::SceneManagement::Scene previousActiveScene, UnityEngine::SceneManagement::Scene newActiveScene) {
+MAKE_HOOK_MATCH(SceneManager_ActiveSceneChanged, &UnityEngine::SceneManagement::SceneManager::Internal_ActiveSceneChanged, void, UnityEngine::SceneManagement::Scene previousActiveScene, UnityEngine::SceneManagement::Scene newActiveScene) {
     SceneManager_ActiveSceneChanged(previousActiveScene, newActiveScene);
     if (newActiveScene.IsValid()) {
         std::string sceneName = to_utf8(csstrtostr(newActiveScene.get_name()));
@@ -555,14 +546,14 @@ ST_MAKE_HOOK(SceneManager_ActiveSceneChanged, &UnityEngine::SceneManagement::Sce
     }
 }
 
-ST_MAKE_HOOK(OptionsViewController_DidActivate, &OptionsViewController::DidActivate, void, OptionsViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
+MAKE_HOOK_MATCH(OptionsViewController_DidActivate, &OptionsViewController::DidActivate, void, OptionsViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     OptionsViewController_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
     stManager->statusLock.lock();
     stManager->location = Options;
     stManager->statusLock.unlock();
 }
 
-ST_MAKE_HOOK(MainMenuViewController_DidActivate, &MainMenuViewController::DidActivate, void, MainMenuViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
+MAKE_HOOK_MATCH(MainMenuViewController_DidActivate, &MainMenuViewController::DidActivate, void, MainMenuViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
     MainMenuViewController_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
     stManager->statusLock.lock();
     stManager->location = Menu;
@@ -574,7 +565,7 @@ extern "C" void setup(ModInfo& info) {
     info.version = VERSION;
     STModInfo = info;
 
-    getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
+    getLogger().info("Modloader name: %s tag: %s", Modloader::getInfo().name.c_str(), Modloader::getInfo().tag.c_str());
 
     getLogger().info("Completed setup!");
 }
@@ -586,41 +577,37 @@ extern "C" void load() {
 
     getModConfig().Init(STModInfo);
 
-    #ifndef REGISTER_FUNCTION
     custom_types::Register::AutoRegister();
-    #else
-    custom_types::Register::RegisterType<StreamerTools::stSettingViewController>();
-    #endif
     QuestUI::Register::RegisterModSettingsViewController<StreamerTools::stSettingViewController*>(STModInfo);
 
     // Install our function hooks
-    Logger& logger = getLogger();
-    ST_INSTALL_HOOK(logger, PlayerTransforms_Update, il2cpp_utils::FindMethodUnsafe("", "PlayerTransforms", "Update", 0));
-    ST_INSTALL_HOOK(logger, RefreshContent, il2cpp_utils::FindMethodUnsafe("", "StandardLevelDetailView", "RefreshContent", 0));
-    ST_INSTALL_HOOK(logger, SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 10));
-    ST_INSTALL_HOOK(logger, CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 8));
-    ST_INSTALL_HOOK(logger, RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank, il2cpp_utils::FindMethodUnsafe("", "RelativeScoreAndImmediateRankCounter", "UpdateRelativeScoreAndImmediateRank", 4));
-    ST_INSTALL_HOOK(logger, ScoreController_Update, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "Update", 0));
-    ST_INSTALL_HOOK(logger, SongEnd, il2cpp_utils::FindMethodUnsafe("", "StandardLevelGameplayManager", "OnDestroy", 0));
-    ST_INSTALL_HOOK(logger, CampaignLevelEnd, il2cpp_utils::FindMethodUnsafe("", "MissionLevelGameplayManager", "OnDestroy", 0));
-    ST_INSTALL_HOOK(logger, TutorialStart, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "Awake", 0));
-    ST_INSTALL_HOOK(logger, TutorialEnd, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "OnDestroy", 0));
-    ST_INSTALL_HOOK(logger, GamePause, il2cpp_utils::FindMethodUnsafe("", "PauseController", "Pause", 0));
-    ST_INSTALL_HOOK(logger, GameResume, il2cpp_utils::FindMethodUnsafe("", "PauseController", "HandlePauseMenuManagerDidPressContinueButton", 0));
-    ST_INSTALL_HOOK(logger, AudioUpdate, il2cpp_utils::FindMethodUnsafe("", "AudioTimeSyncController", "Update", 0));
-    ST_INSTALL_HOOK(logger, MultiplayerSongStart, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLevelScenesTransitionSetupDataSO", "Init", 10));
-    ST_INSTALL_HOOK(logger, MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLobbyConnectionController", "HandleMultiplayerSessionManagerConnected", 0));
+    LoggerContextObject logger = getLogger().WithContext("Hook");
+    INSTALL_HOOK(logger, PlayerTransforms_Update);
+    INSTALL_HOOK(logger, RefreshContent);
+    INSTALL_HOOK(logger, SongStart);
+    INSTALL_HOOK(logger, CampaignLevelStart);
+    INSTALL_HOOK(logger, RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank);
+    INSTALL_HOOK(logger, ScoreController_Update);
+    INSTALL_HOOK(logger, SongEnd);
+    INSTALL_HOOK(logger, CampaignLevelEnd);
+    INSTALL_HOOK(logger, TutorialStart);
+    INSTALL_HOOK(logger, TutorialEnd);
+    INSTALL_HOOK(logger, GamePause);
+    INSTALL_HOOK(logger, GameResume);
+    INSTALL_HOOK(logger, AudioUpdate);
+    INSTALL_HOOK(logger, MultiplayerSongStart);
+    INSTALL_HOOK(logger, MultiplayerJoinLobby);
     INSTALL_HOOK(logger, MultiplayerSongFinish);
     INSTALL_HOOK(logger, MultiplayerSpectateStart);
     INSTALL_HOOK(logger, MultiplayerSpectateDestroy);
-    ST_INSTALL_HOOK(logger, GameEnergyUIPanel_HandleGameEnergyDidChange, il2cpp_utils::FindMethodUnsafe("", "GameEnergyUIPanel", "HandleGameEnergyDidChange", 1));
-    ST_INSTALL_HOOK(logger, ServerCodeView_RefreshText, il2cpp_utils::FindMethodUnsafe("", "ServerCodeView", "RefreshText", 1));
-    ST_INSTALL_HOOK(logger, ScoreController_HandleNoteWasMissed, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "HandleNoteWasMissed", 1));
-    ST_INSTALL_HOOK(logger, ScoreController_HandleNoteWasCut, il2cpp_utils::FindMethodUnsafe("", "ScoreController", "HandleNoteWasCut", 2));
-    ST_INSTALL_HOOK(logger, FPSCounter_Update, il2cpp_utils::FindMethodUnsafe("", "FPSCounter", "Update", 0));
-    ST_INSTALL_HOOK(logger, SceneManager_ActiveSceneChanged, il2cpp_utils::FindMethodUnsafe("UnityEngine.SceneManagement", "SceneManager", "Internal_ActiveSceneChanged", 2));
-    ST_INSTALL_HOOK(logger, OptionsViewController_DidActivate, il2cpp_utils::FindMethodUnsafe("", "OptionsViewController", "DidActivate", 3));
-    ST_INSTALL_HOOK(logger, MainMenuViewController_DidActivate, il2cpp_utils::FindMethodUnsafe("", "MainMenuViewController", "DidActivate", 3));
+    INSTALL_HOOK(logger, GameEnergyUIPanel_HandleGameEnergyDidChange);
+    INSTALL_HOOK(logger, ServerCodeView_RefreshText);
+    INSTALL_HOOK(logger, ScoreController_HandleNoteWasMissed);
+    INSTALL_HOOK(logger, ScoreController_HandleNoteWasCut);
+    INSTALL_HOOK(logger, FPSCounter_Update);
+    INSTALL_HOOK(logger, SceneManager_ActiveSceneChanged);
+    INSTALL_HOOK(logger, OptionsViewController_DidActivate);
+    INSTALL_HOOK(logger, MainMenuViewController_DidActivate);
 
 
     getLogger().debug("Installed all hooks!");

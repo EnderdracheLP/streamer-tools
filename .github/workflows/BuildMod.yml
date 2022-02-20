@@ -17,12 +17,10 @@ on:
     branches: [ master, dev ]
 
 env:
-     module_id: streamer-tools
+     module_id: Streamer-Tools
      BSVersion: 1.17.1
      version: 0.2.2-Dev.${{ github.run_number }}
-     bs_hook: 2_3_0
-     codegen: 0_14_0
-     ndkname: android-ndk-r23
+     ndkname: android-ndk-r24
     
 jobs:
   build:
@@ -38,43 +36,58 @@ jobs:
     #- name: Install Powershell
     #  run: sudo apt-get install -y powershell
 
-    - name: Cache Android NDK
-      id: cache-ndk
-      uses: actions/cache@v2
-      env:
-        cache-name: cache-ndk
-      with:
-        path: ndk
-        key: ${{ runner.os }}-${{ env.cache-name }}-${{ env.ndkname }}
-        restore-keys: |
-          ${{ runner.os }}-${{ env.cache-name }}-${{ env.ndkname }}
+    #- name: Cache Android NDK
+    #  id: cache-ndk
+    #  uses: actions/cache@v2
+    #  env:
+    #    cache-name: cache-ndk
+    #  with:
+    #    path: ndk
+    #    key: ${{ runner.os }}-${{ env.cache-name }}-${{ env.ndkname }}
+    #    restore-keys: |
+    #      ${{ runner.os }}-${{ env.cache-name }}-${{ env.ndkname }}
     
-    - name: Install Android NDK
-      if: steps.cache-ndk.outputs.cache-hit != 'true'
-      run: |
-        wget -q -O ndk.zip https://dl.google.com/android/repository/${ndkname}-linux.zip
-        unzip -q ndk.zip
-        mv ${ndkname} ndk
-      
-    - name: Create ndkpath.txt
-      run: |
-        cd ndk
-        pwd > ${GITHUB_WORKSPACE}/ndkpath.txt
+    #- name: Install Android NDK
+    #  if: steps.cache-ndk.outputs.cache-hit != 'true'
+    #  run: |
+    #    wget -q -O ndk.zip https://dl.google.com/android/repository/${ndkname}-linux.zip
+    #    unzip -q ndk.zip
+    #    mv ${ndkname} ndk
       
     #- name: Create ndkpath.txt
     #  run: |
-    #    echo "$ANDROID_NDK_LATEST_HOME" > ${GITHUB_WORKSPACE}/ndkpath.txt
-    #    cat ${GITHUB_WORKSPACE}/ndkpath.txt
+    #    cd ndk
+    #    pwd > ${GITHUB_WORKSPACE}/ndkpath.txt
+      
+    - name: Create ndkpath.txt
+      run: |
+        echo "$ANDROID_NDK_LATEST_HOME" > ${GITHUB_WORKSPACE}/ndkpath.txt
+        cat ${GITHUB_WORKSPACE}/ndkpath.txt
+
+    #- name: Get QPM
+    #  if: steps.cache-qpm.outputs.cache-hit != 'true'
+    #  uses: dawidd6/action-download-artifact@v2
+    #  with:
+    #    github_token: ${{secrets.GITHUB_TOKEN}}
+    #    workflow: main.yml
+    #    name: QPM-ubuntu-x64
+    #    path: QPM
+    #    repo: sc2ad/QuestPackageManager
 
     - name: Get QPM
       if: steps.cache-qpm.outputs.cache-hit != 'true'
       uses: dawidd6/action-download-artifact@v2
       with:
         github_token: ${{secrets.GITHUB_TOKEN}}
-        workflow: main.yml
-        name: QPM-ubuntu-x64
+        workflow: cargo-build.yml
+        name: linux-qpm-rust
         path: QPM
-        repo: sc2ad/QuestPackageManager
+        repo: RedBrumbler/QuestPackageManager-Rust
+        
+    - name: QPM Collapse
+      run: |
+        chmod +x ./QPM/qpm-rust
+        ./QPM/qpm-rust collapse
 
     - name: QPM Dependencies Cache
       id: cache-qpm-deps
@@ -82,7 +95,7 @@ jobs:
       env:
         cache-name: cache-qpm-deps
       with:
-        path: QPM_Temp
+        path: /home/runner/.local/share/QPM-Rust/cache
         key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('qpm.json', '.github/BuildMod.yml') }}
         restore-keys: |
           ${{ runner.os }}-${{ env.cache-name }}-
@@ -90,32 +103,31 @@ jobs:
       
     - name: QPM Restore
       run: |
-        chmod +x ./QPM/QPM
-        ./QPM/QPM restore
+        ./QPM/qpm-rust restore
 
     - name: Check dependency Folders
       run: |
-        echo "Checking extern Folder"
-        ls -lh ${GITHUB_WORKSPACE}/extern/
+        echo "Checking extern includes"
+        ls -lh ${GITHUB_WORKSPACE}/extern/includes
         echo ""
-        echo "Checking QPM_Temp Folders"
-        ls -lh QPM_Temp/
+        echo "Checking libs"
+        ls -lh ${GITHUB_WORKSPACE}/extern/libs
         echo ""
-        echo "Listing beatsaber-hook folder"
-        ls QPM_Temp/beatsaber-hook/
+        echo "Checking QPM-Rust/cache Folder"
+        ls -lh $HOME/.local/share/QPM-Rust/cache
         echo ""
-        echo "Listing all .so files in QPM_Temp"
-        find QPM_Temp -type f -name "*.so"
 
     - name: Build
       run: |
         cd ${GITHUB_WORKSPACE}
-        pwsh -Command ./build.ps1 --actions
+        ./QPM/qpm-rust package edit --version ${{ env.version }}
+        ./QPM/qpm-rust qmod build
+        pwsh -Command ./build.ps1 -actions
 
     - name: Get Library Name
       id: libname
       run: |
-        cd ./libs/arm64-v8a/
+        cd ./build/
         pattern="lib${module_id}*.so"
         files=( $pattern )
         echo ::set-output name=NAME::"${files[0]}"
@@ -123,25 +135,27 @@ jobs:
     - name: Package QMOD
       run: |
         cd ${GITHUB_WORKSPACE}
-        pwsh -Command ./buildQMOD.ps1 --package
+        pwsh -Command ./buildQMOD.ps1 -package
 
     - name: Upload non-debug artifact
       uses: actions/upload-artifact@v2
       with:
         name: ${{ steps.libname.outputs.NAME }}
-        path: ./libs/arm64-v8a/${{ steps.libname.outputs.NAME }}
+        path: ./build/${{ steps.libname.outputs.NAME }}
         if-no-files-found: error
+
 
     - name: Upload debug artifact
       uses: actions/upload-artifact@v2
       with:
         name: debug_${{ steps.libname.outputs.NAME }}
-        path: ./obj/local/arm64-v8a/${{ steps.libname.outputs.NAME }}
+        path: ./build/debug/${{ steps.libname.outputs.NAME }}
         if-no-files-found: error
+
 
     - name: Upload QMOD
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ env.module_id }}-(UNZIP-for-QMOD)
-        path: ./${{ env.module_id }}.qmod
+        name: ${{ env.module_id }}-(UNZIP-for-QMOD).qmod
+        path: ./${{ env.module_id }}_${{ env.version }}.qmod
         if-no-files-found: warn
