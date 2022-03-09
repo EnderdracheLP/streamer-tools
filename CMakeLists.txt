@@ -1,12 +1,15 @@
 # include some defines automatically made by qpm
 include(qpm_defines.cmake)
 
+# override mod id
+set(MOD_ID "Streamer-Tools")
+
 # Enable link time optimization
 # In my experience, this can be highly unstable but it nets a huge size optimization and likely performance
 # However, the instability was seen using Android.mk/ndk-build builds. With Ninja + CMake, this problem seems to have been solved.
 # As always, test thoroughly
 # - Fern
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+# set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 cmake_minimum_required(VERSION 3.21)
 project(${COMPILE_ID})
@@ -21,7 +24,7 @@ set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # compile options used
 add_compile_options(-frtti -fexceptions)
-add_compile_options(-Ofast)
+add_compile_options(-O3)
 # compile definitions used
 add_compile_definitions(VERSION=\"${MOD_VERSION}\")
 add_compile_definitions(ID=\"${MOD_ID}\")
@@ -40,8 +43,6 @@ add_library(
 )
 
 target_include_directories(${COMPILE_ID} PRIVATE .)
-
-target_include_directories(${COMPILE_ID} PRIVATE extern/includes/questui_components)
 
 # add src dir as include dir
 target_include_directories(${COMPILE_ID} PRIVATE ${SOURCE_DIR})

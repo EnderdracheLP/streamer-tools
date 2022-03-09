@@ -4,7 +4,7 @@
   "info": {
     "name": "Streamer Tools",
     "id": "Streamer-Tools",
-    "version": "0.3.0-Dev",
+    "version": "0.3.0",
     "url": null,
     "additionalData": {
       "overrideSoName": "libStreamer-Tools.so"
@@ -13,7 +13,7 @@
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "^3.6.7",
+      "versionRange": "^3.6.8",
       "additionalData": {
         "extraFiles": [
           "src/inline-hook"
@@ -22,17 +22,17 @@
     },
     {
       "id": "codegen",
-      "versionRange": "^0.19.3",
+      "versionRange": "^0.20.0",
       "additionalData": {}
     },
     {
       "id": "questui",
-      "versionRange": "^0.13.1",
+      "versionRange": "^0.13.2",
       "additionalData": {}
     },
     {
       "id": "custom-types",
-      "versionRange": "^0.15.6",
+      "versionRange": "^0.15.7",
       "additionalData": {}
     },
     {

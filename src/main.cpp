@@ -78,6 +78,7 @@
 #include "GlobalNamespace/PauseController.hpp"
 #include "GlobalNamespace/AudioTimeSyncController.hpp"
 #include "GlobalNamespace/MultiplayerSpectatorController.hpp"
+#include "GlobalNamespace/MultiplayerSessionManager_SessionType.hpp"
 using namespace GlobalNamespace;
 
 #if !defined(MAKE_HOOK_MATCH)
@@ -365,8 +366,8 @@ void onLobbyDisconnect() {
     stManager->statusLock.unlock();
 }
 
-MAKE_HOOK_FIND_VERBOSE(MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "MultiplayerSessionManager", "StartSession", 1), void, MultiplayerSessionManager* self, ConnectedPlayerManager* connectedPlayerManager) {
-    MultiplayerJoinLobby(self, connectedPlayerManager);
+MAKE_HOOK_MATCH(MultiplayerJoinLobby, &MultiplayerSessionManager::StartSession, void, MultiplayerSessionManager* self, GlobalNamespace::MultiplayerSessionManager_SessionType sessionType, ConnectedPlayerManager* connectedPlayerManager) {
+    MultiplayerJoinLobby(self, sessionType, connectedPlayerManager);
 
     int maxPlayers = self->get_maxPlayerCount();
     int numActivePlayers = self->get_connectedPlayerCount();
