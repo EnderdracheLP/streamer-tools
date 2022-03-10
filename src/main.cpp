@@ -109,14 +109,19 @@ void ResetScores() {
     stManager->energy = 0.5f;
 }
 
-UnityEngine::Texture2D* DuplicateTexture(UnityEngine::Texture2D* source) {
+UnityEngine::Texture2D* DuplicateTexture(UnityEngine::Sprite* source) {
     using namespace UnityEngine;
-    RenderTexture* renderTex = RenderTexture::GetTemporary(source->get_width(), source->get_height(), 0, UnityEngine::RenderTextureFormat::Default, UnityEngine::RenderTextureReadWrite::Linear);
-    Graphics::Blit(source, renderTex);
+    Rect size = source->GetTextureRect();
+    Texture2D* texture = source->get_texture();
+    
+    RenderTexture* renderTex = RenderTexture::GetTemporary(texture->get_width(), texture->get_height(), 0, UnityEngine::RenderTextureFormat::Default, UnityEngine::RenderTextureReadWrite::Linear);
+    Graphics::Blit(texture, renderTex);
     RenderTexture* previous = RenderTexture::get_active();
     RenderTexture::set_active(renderTex);
-    Texture2D* readableText = Texture2D::New_ctor(source->get_width(), source->get_height());
-    readableText->ReadPixels(UnityEngine::Rect(0, 0, renderTex->get_width(), renderTex->get_height()), 0, 0);
+    Texture2D* readableText = Texture2D::New_ctor(size.get_width() + 8, size.get_height() + 8);
+    //readableText->ReadPixels(UnityEngine::Rect(0, 0, renderTex->get_width(), renderTex->get_height()), 0, 0); // Shows the full 2048x2048 atlas
+    //readableText->ReadPixels(UnityEngine::Rect(size.get_x() - 4, size.get_y() - 4, size.get_width() + 8, size.get_height() + 8), 0, 0); // Shows the full 168x168 of the individual cover
+    readableText->ReadPixels(UnityEngine::Rect(size.get_x(), size.get_y(), size.get_width(), size.get_height()), 0, 0); // This works, image size 160x160
     readableText->Apply();
     RenderTexture::set_active(previous);
     RenderTexture::ReleaseTemporary(renderTex);
@@ -207,7 +212,7 @@ GetCoverTask:
                 coverTexture = coverSprite->get_texture();
             }
             else {
-                coverTexture = DuplicateTexture(coverSprite->get_texture());
+                coverTexture = DuplicateTexture(coverSprite);
             }
             stManager->coverTexture = coverTexture;
             for (int i = 0; i < 4; i++) {
