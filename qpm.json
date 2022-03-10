@@ -21,25 +21,25 @@
       }
     },
     {
-      "id": "codegen",
-      "versionRange": "^0.20.0",
-      "additionalData": {}
-    },
-    {
-      "id": "questui",
-      "versionRange": "^0.13.2",
-      "additionalData": {}
-    },
-    {
-      "id": "custom-types",
-      "versionRange": "^0.15.7",
-      "additionalData": {}
-    },
-    {
-      "id": "config-utils",
-      "versionRange": "*",
-      "additionalData": {}
-    },
+		  "id": "codegen",
+		  "versionRange": "^0.21.0",
+		  "additionalData": {}
+		},
+		{
+		  "id": "questui",
+		  "versionRange": "^0.13.2",
+		  "additionalData": {}
+		},
+		{
+		  "id": "custom-types",
+		  "versionRange": "^0.15.7",
+		  "additionalData": {}
+		},
+		{
+		  "id": "config-utils",
+		  "versionRange": "*",
+		  "additionalData": {}
+		},
     {
       "id": "modloader",
       "versionRange": "^1.2.3",

@@ -79,6 +79,7 @@
 #include "GlobalNamespace/AudioTimeSyncController.hpp"
 #include "GlobalNamespace/MultiplayerSpectatorController.hpp"
 #include "GlobalNamespace/MultiplayerSessionManager_SessionType.hpp"
+#include "GlobalNamespace/ComboController.hpp"
 using namespace GlobalNamespace;
 
 #if !defined(MAKE_HOOK_MATCH)
@@ -255,14 +256,14 @@ MAKE_HOOK_MATCH(RefreshContent, &StandardLevelDetailView::RefreshContent, void, 
     }
 }
 
-MAKE_HOOK_MATCH(SongStart, &StandardLevelScenesTransitionSetupDataSO::Init, void, StandardLevelScenesTransitionSetupDataSO* self, StringW gameMode, IDifficultyBeatmap* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, OverrideEnvironmentSettings* overrideEnvironmentSettings, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, PracticeSettings* practiceSettings, StringW backButtonText, bool useTestNoteCutSoundEffects) {
+MAKE_HOOK_MATCH(SongStart, &StandardLevelScenesTransitionSetupDataSO::Init, void, StandardLevelScenesTransitionSetupDataSO* self, StringW gameMode, IDifficultyBeatmap* dbm, IPreviewBeatmapLevel* previewBeatmapLevel, OverrideEnvironmentSettings* overrideEnvironmentSettings, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, PracticeSettings* practiceSettings, StringW backButtonText, bool startPaused, bool useTestNoteCutSoundEffects) {
     stManager->statusLock.lock();
     stManager->location = Solo_Song;
     ResetScores();
     stManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode
     if (CoverStatus == Failed) GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(previewBeatmapLevel)); // Try loading the Cover again if failed previously
     stManager->statusLock.unlock();
-    SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, overrideEnvironmentSettings, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, backButtonText, useTestNoteCutSoundEffects);
+    SongStart(self, gameMode, dbm, previewBeatmapLevel, overrideEnvironmentSettings, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, backButtonText, startPaused, useTestNoteCutSoundEffects);
 }
 
 MAKE_HOOK_MATCH(CampaignLevelStart, &MissionLevelScenesTransitionSetupDataSO::Init, void, MissionLevelScenesTransitionSetupDataSO* self, StringW missionId, IDifficultyBeatmap* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, ArrayW<MissionObjective*> missionObjectives, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, StringW backButtonText) {
@@ -299,12 +300,21 @@ MAKE_HOOK_MATCH(ServerCodeView_RefreshText, &ServerCodeView::RefreshText, void, 
     }
 }
 
-MAKE_HOOK_MATCH(ScoreController_Update, &ScoreController::Update, void, ScoreController* self) {
+void ComboChanged(int value) {
     stManager->statusLock.lock();
-    stManager->combo = self->dyn__combo();
+    stManager->combo = value;
     stManager->statusLock.unlock();
-    ScoreController_Update(self);
 }
+
+MAKE_HOOK_MATCH(ComboController_Start, &ComboController::Start, void, ComboController* self) {
+    self->add_comboDidChangeEvent(
+        il2cpp_utils::MakeDelegate<System::Action_1<int>*>(classof(System::Action_1<int>*), static_cast<Il2CppObject*>(nullptr), ComboChanged)
+    );
+    
+    ComboController_Start(self);
+}
+
+
 
 // Multiplayer song starting is handled differently
 MAKE_HOOK_MATCH(MultiplayerSongStart, &MultiplayerLevelScenesTransitionSetupDataSO::Init, void, MultiplayerLevelScenesTransitionSetupDataSO* self, StringW gameMode, IPreviewBeatmapLevel* previewBeatmapLevel, BeatmapDifficulty beatmapDifficulty, BeatmapCharacteristicSO* beatmapCharacteristic, IDifficultyBeatmap* difficultyBeatmap, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, PracticeSettings* practiceSettings, bool useTestNoteCutSoundEffects) {
@@ -583,7 +593,7 @@ extern "C" void load() {
     INSTALL_HOOK(logger, SongStart);
     INSTALL_HOOK(logger, CampaignLevelStart);
     INSTALL_HOOK(logger, RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmediateRank);
-    INSTALL_HOOK(logger, ScoreController_Update);
+    INSTALL_HOOK(logger, ComboController_Start);
     INSTALL_HOOK(logger, SongEnd);
     INSTALL_HOOK(logger, CampaignLevelEnd);
     INSTALL_HOOK(logger, TutorialStart);
