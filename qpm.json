@@ -4,7 +4,7 @@
   "info": {
     "name": "Streamer Tools",
     "id": "Streamer-Tools",
-    "version": "0.3.0",
+    "version": "0.5.1",
     "url": null,
     "additionalData": {
       "overrideSoName": "libStreamer-Tools.so"
@@ -12,39 +12,41 @@
   },
   "dependencies": [
     {
-      "id": "beatsaber-hook",
-      "versionRange": "^3.6.8",
-      "additionalData": {
-        "extraFiles": [
-          "src/inline-hook"
-        ]
-      }
-    },
-    {
-		  "id": "codegen",
-		  "versionRange": "^0.21.0",
-		  "additionalData": {}
+			"id": "beatsaber-hook",
+			"versionRange": "^3.7.4",
+			"additionalData": {
+				"extraFiles": [
+					"src/inline-hook"
+				]
+			}
 		},
 		{
-		  "id": "questui",
-		  "versionRange": "^0.13.2",
-		  "additionalData": {}
+			"id": "modloader",
+			"versionRange": "=1.2.3",
+			"additionalData": {
+				
+			}
 		},
 		{
-		  "id": "custom-types",
-		  "versionRange": "^0.15.7",
-		  "additionalData": {}
-		},
-		{
-		  "id": "config-utils",
-		  "versionRange": "*",
-		  "additionalData": {}
-		},
-    {
-      "id": "modloader",
-      "versionRange": "^1.2.3",
-      "additionalData": {}
-    }
+			"id": "codegen",
+			"versionRange": "^0.22.0",
+			"additionalData": {}
+		  },
+		  {
+			"id": "questui",
+			"versionRange": "^0.13.5",
+			"additionalData": {}
+		  },
+		  {
+			"id": "custom-types",
+			"versionRange": "^0.15.9",
+			"additionalData": {}
+		  },
+		  {
+			"id": "config-utils",
+			"versionRange": "*",
+			"additionalData": {}
+		  }
   ],
   "additionalData": {}
 }

@@ -288,7 +288,7 @@ MAKE_HOOK_MATCH(RelativeScoreAndImmediateRankCounter_UpdateRelativeScoreAndImmed
     stManager->statusLock.unlock();
 }
 
-MAKE_HOOK_MATCH(GameEnergyUIPanel_HandleGameEnergyDidChange, &GameEnergyUIPanel::HandleGameEnergyDidChange, void, GameEnergyUIPanel* self, float energy) {
+MAKE_HOOK_MATCH(GameEnergyUIPanel_HandleGameEnergyDidChange, &GameEnergyUIPanel::RefreshEnergyUI, void, GameEnergyUIPanel* self, float energy) {
     GameEnergyUIPanel_HandleGameEnergyDidChange(self, energy);
     stManager->statusLock.lock();
     stManager->energy = energy;
