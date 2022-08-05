@@ -238,20 +238,20 @@ MAKE_HOOK_MATCH(RefreshContent, &StandardLevelDetailView::RefreshContent, void, 
     RefreshContent(self);
 
     // Null Check Level before trying to get any data
-    if (self->dyn__level()) {
+    if (self->level) {
         stManager->statusLock.lock();
-        stManager->levelName = std::string(reinterpret_cast<IPreviewBeatmapLevel*>(self->dyn__level())->get_songName());
-        stManager->levelSubName = std::string(reinterpret_cast<IPreviewBeatmapLevel*>(self->dyn__level())->get_songSubName());
-        stManager->levelAuthor = std::string(reinterpret_cast<IPreviewBeatmapLevel*>(self->dyn__level())->get_levelAuthorName());
-        stManager->songAuthor = std::string(reinterpret_cast<IPreviewBeatmapLevel*>(self->dyn__level())->get_songAuthorName());
-        stManager->id = std::string(reinterpret_cast<IPreviewBeatmapLevel*>(self->dyn__level())->get_levelID());
-        stManager->bpm = reinterpret_cast<IPreviewBeatmapLevel*>(self->dyn__level())->get_beatsPerMinute();
+        stManager->levelName = std::string(reinterpret_cast<IPreviewBeatmapLevel*>(self->level)->get_songName());
+        stManager->levelSubName = std::string(reinterpret_cast<IPreviewBeatmapLevel*>(self->level)->get_songSubName());
+        stManager->levelAuthor = std::string(reinterpret_cast<IPreviewBeatmapLevel*>(self->level)->get_levelAuthorName());
+        stManager->songAuthor = std::string(reinterpret_cast<IPreviewBeatmapLevel*>(self->level)->get_songAuthorName());
+        stManager->id = std::string(reinterpret_cast<IPreviewBeatmapLevel*>(self->level)->get_levelID());
+        stManager->bpm = reinterpret_cast<IPreviewBeatmapLevel*>(self->level)->get_beatsPerMinute();
         // Check if level can be assigned as CustomPreviewBeatmapLevel
-        bool CustomLevel = (il2cpp_functions::class_is_assignable_from(classof(CustomPreviewBeatmapLevel*), il2cpp_functions::object_get_class(reinterpret_cast<Il2CppObject*>(self->dyn__level()))));
-        stManager->njs = self->dyn__selectedDifficultyBeatmap()->get_noteJumpMovementSpeed();
-        stManager->difficulty = self->dyn__selectedDifficultyBeatmap()->get_difficulty().value;
+        bool CustomLevel = (il2cpp_functions::class_is_assignable_from(classof(CustomPreviewBeatmapLevel*), il2cpp_functions::object_get_class(reinterpret_cast<Il2CppObject*>(self->level))));
+        stManager->njs = self->selectedDifficultyBeatmap->get_noteJumpMovementSpeed();
+        stManager->difficulty = self->selectedDifficultyBeatmap->get_difficulty().value;
         stManager->coverFetchable = false;
-        GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(self->dyn__level()));
+        GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(self->level));
         stManager->statusLock.unlock();
         //GotBeatmapInfo = true;
     }
@@ -297,10 +297,10 @@ MAKE_HOOK_MATCH(GameEnergyUIPanel_HandleGameEnergyDidChange, &GameEnergyUIPanel:
 
 MAKE_HOOK_MATCH(ServerCodeView_RefreshText, &ServerCodeView::RefreshText, void, ServerCodeView* self, bool refreshText) {
     ServerCodeView_RefreshText(self, refreshText);
-    if (self->dyn__serverCode()) {
+    if (self->serverCode) {
         stManager->statusLock.lock();
-        stManager->mpGameId = to_utf8(csstrtostr(self->dyn__serverCode()));
-        stManager->mpGameIdShown = self->dyn__codeIsShown();
+        stManager->mpGameId = to_utf8(csstrtostr(self->serverCode));
+        stManager->mpGameIdShown = self->codeIsShown;
         stManager->statusLock.unlock();
     }
 }
@@ -511,14 +511,14 @@ MAKE_HOOK_MATCH(FPSCounter_Update, &FPSCounter::Update, void, FPSCounter* self) 
 
 MAKE_HOOK_MATCH(PlayerTransforms_Update, &PlayerTransforms::Update, void, PlayerTransforms* self) {
     PlayerTransforms_Update(self);
-    if (!self->dyn__overrideHeadPos()) {
+    if (!self->overrideHeadPos) {
         stManager->statusLock.lock();
-        if (self->dyn__headTransform())
-            stManager->Head = self->dyn__headTransform();
-        if (self->dyn__rightHandTransform())
-            stManager->VR_Right = self->dyn__rightHandTransform();
-        if (self->dyn__leftHandTransform())
-            stManager->VR_Left = self->dyn__leftHandTransform();
+        if (self->headTransform)
+            stManager->Head = self->headTransform;
+        if (self->rightHandTransform)
+            stManager->VR_Right = self->rightHandTransform;
+        if (self->leftHandTransform)
+            stManager->VR_Left = self->leftHandTransform;
         stManager->statusLock.unlock();
     }
 }
