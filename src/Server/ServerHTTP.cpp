@@ -390,7 +390,7 @@ void STManager::HandleRequestHTTP(int client_sock) {
             }
             else LOG_DEBUG_HTTP("CoverImageUnchanged");
 
-            response = ResponseGen("200 OK", "image/jpg", /*stats*/ coverImageJPG);
+            response = ResponseGen("200 OK", "image/jpeg", /*stats*/ coverImageJPG);
             SendResponseHTTP(client_sock, response);
             return;
         }
