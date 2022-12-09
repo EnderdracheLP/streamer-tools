@@ -80,6 +80,7 @@
 #include "GlobalNamespace/MultiplayerSpectatorController.hpp"
 #include "GlobalNamespace/MultiplayerSessionManager_SessionType.hpp"
 #include "GlobalNamespace/ComboController.hpp"
+#include "GlobalNamespace/BeatmapDataCache.hpp"
 using namespace GlobalNamespace;
 
 #if !defined(MAKE_HOOK_MATCH)
@@ -87,8 +88,6 @@ using namespace GlobalNamespace;
 #endif
 
 //#define DEBUG_BUILD 1
-
-DEFINE_CONFIG(ModConfig);
 
 ModInfo STModInfo;
 
@@ -261,14 +260,14 @@ MAKE_HOOK_MATCH(RefreshContent, &StandardLevelDetailView::RefreshContent, void, 
     }
 }
 
-MAKE_HOOK_MATCH(SongStart, &StandardLevelScenesTransitionSetupDataSO::Init, void, StandardLevelScenesTransitionSetupDataSO* self, StringW gameMode, IDifficultyBeatmap* dbm, IPreviewBeatmapLevel* previewBeatmapLevel, OverrideEnvironmentSettings* overrideEnvironmentSettings, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, PracticeSettings* practiceSettings, StringW backButtonText, bool startPaused, bool useTestNoteCutSoundEffects) {
+MAKE_HOOK_MATCH(SongStart, &StandardLevelScenesTransitionSetupDataSO::Init, void, StandardLevelScenesTransitionSetupDataSO* self, StringW gameMode, IDifficultyBeatmap* dbm, IPreviewBeatmapLevel* previewBeatmapLevel, OverrideEnvironmentSettings* overrideEnvironmentSettings, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, PracticeSettings* practiceSettings, StringW backButtonText, bool startPaused, bool useTestNoteCutSoundEffects, BeatmapDataCache* beatmapDataCache) {
     stManager->statusLock.lock();
     stManager->location = Solo_Song;
     ResetScores();
     stManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode
     if (CoverStatus == Failed) GetCover(reinterpret_cast<GlobalNamespace::PreviewBeatmapLevelSO*>(previewBeatmapLevel)); // Try loading the Cover again if failed previously
     stManager->statusLock.unlock();
-    SongStart(self, gameMode, dbm, previewBeatmapLevel, overrideEnvironmentSettings, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, backButtonText, startPaused, useTestNoteCutSoundEffects);
+    SongStart(self, gameMode, dbm, previewBeatmapLevel, overrideEnvironmentSettings, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, backButtonText, startPaused, useTestNoteCutSoundEffects, beatmapDataCache);
 }
 
 MAKE_HOOK_MATCH(CampaignLevelStart, &MissionLevelScenesTransitionSetupDataSO::Init, void, MissionLevelScenesTransitionSetupDataSO* self, StringW missionId, IDifficultyBeatmap* difficultyBeatmap, IPreviewBeatmapLevel* previewBeatmapLevel, ArrayW<MissionObjective*> missionObjectives, ColorScheme* overrideColorScheme, GameplayModifiers* gameplayModifiers, PlayerSpecificSettings* playerSpecificSettings, StringW backButtonText) {
