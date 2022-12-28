@@ -4,7 +4,7 @@
   "info": {
     "name": "Streamer Tools",
     "id": "Streamer-Tools",
-    "version": "0.6.0",
+    "version": "0.8.0",
     "url": null,
     "additionalData": {
       "overrideSoName": "libStreamer-Tools.so"
