@@ -10,13 +10,4 @@ DECLARE_CONFIG(ModConfig,
     CONFIG_VALUE(AlwaysMpCode, bool, "AlwaysShowMpCode", false);
     CONFIG_VALUE(AlwaysUpdate, bool, "UpdateOnSongSelect", false);
     CONFIG_VALUE(LastChanged, int, "LastChanged", 0);
-
-    CONFIG_INIT_FUNCTION(
-        CONFIG_INIT_VALUE(DecimalsForNumbers);
-        CONFIG_INIT_VALUE(DontEnergy);
-        CONFIG_INIT_VALUE(DontMpCode);
-        CONFIG_INIT_VALUE(AlwaysMpCode);
-        CONFIG_INIT_VALUE(AlwaysUpdate);
-        CONFIG_INIT_VALUE(LastChanged);
-    )
 )
