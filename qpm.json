@@ -4,7 +4,7 @@
   "info": {
     "name": "Streamer Tools",
     "id": "Streamer-Tools",
-    "version": "0.8.0",
+    "version": "0.9.0",
     "url": null,
     "additionalData": {
       "overrideSoName": "libStreamer-Tools.so"
@@ -31,20 +31,19 @@
       "additionalData": {}
     },
     {
+      "id": "config-utils",
+      "versionRange": "^1.0.1",
+      "additionalData": {}
+    },
+    {
       "id": "questui",
-      "versionRange": "^0.17.9",
+      "versionRange": "^0.17.10",
       "additionalData": {}
     },
     {
       "id": "codegen",
-      "versionRange": "^0.31.0",
-      "additionalData": {}
-    },
-    {
-      "id": "config-utils",
-      "versionRange": "^1.0.1",
+      "versionRange": "^0.32.0",
       "additionalData": {}
     }
-  ],
-  "additionalData": {}
+  ]
 }
