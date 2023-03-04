@@ -1,12 +1,12 @@
 
 {
     "_QPVersion": "0.1.1",
-    "name": "Streamer Tools",
-    "id": "Streamer-Tools",
+    "name": "${mod_name}",
+    "id": "${mod_id}",
     "author": "EnderdracheLP, ComputerElite, Lauriethefish, Phaze",
-    "version": "0.9.0",
+    "version": "${version}",
     "packageId": "com.beatgames.beatsaber",
-    "packageVersion": "1.27.0_3631150051",
+    "packageVersion": "1.28.0_4124311467",
     "description": "Allows applications to get information from the game like, currently played song.",
     "coverImage": "cover.png",
     "dependencies": [],
