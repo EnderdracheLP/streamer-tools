@@ -5,8 +5,8 @@
       "cStandard": "c11",
       "defines": [
         "BS__1_16=1",
-        "ID=\"streamer-tools\"",
-        "VERSION=\"0.1.0\"",
+        "ID=\"#{id}\"",
+        "VERSION=\"#{version}\"",
         "__GNUC__",
         "__aarch64__"
       ],
