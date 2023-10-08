@@ -524,6 +524,38 @@ MAKE_HOOK_MATCH(PlayerTransforms_Update, &PlayerTransforms::Update, void, Player
 
 bool FPSObjectCreated = false;
 
+/*
+Reference OVRPlugin current
+    public enum SystemHeadset
+    {
+        None = 0,
+
+        // Standalone headsets
+        Oculus_Quest = 8,
+        Oculus_Quest_2 = 9,
+        Meta_Quest_Pro = 10,
+        Meta_Quest_3 = 11,
+        Placeholder_12,
+        Placeholder_13,
+        Placeholder_14,
+
+        // PC headsets
+        Rift_DK1 = 0x1000,
+        Rift_DK2,
+        Rift_CV1,
+        Rift_CB,
+        Rift_S,
+        Oculus_Link_Quest,
+        Oculus_Link_Quest_2,
+        Meta_Link_Quest_Pro,
+        Meta_Link_Quest_3,
+        PC_Placeholder_4105,
+        PC_Placeholder_4106,
+        PC_Placeholder_4107
+    }
+*/
+
+
 std::string GetHeadsetType() {
     GlobalNamespace::OVRPlugin::SystemHeadset HeadsetType = GlobalNamespace::OVRPlugin::GetSystemHeadsetType();
     std::string result;
@@ -535,7 +567,9 @@ std::string GetHeadsetType() {
     case HeadsetType.Oculus_Quest_2:
         return result = "Oculus Quest 2";
     case 10:
-        return result = "Oculus Quest 3/2 Pro";
+        return result = "Meta Quest Pro";
+    case 11:
+        return result = "Meta Quest 3";
     default:
         return result = "Unknown " + std::string(GlobalNamespace::OVRPlugin::get_productName());
     }    
